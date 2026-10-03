@@ -1,0 +1,10 @@
+{
+  "name": "블록 미궁",
+  "short_name": "블록 미궁",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16121f",
+  "theme_color": "#16121f",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -1,0 +1,225 @@
+// 실제 브라우저에서 게임을 처음부터 끝까지 돌려 보는 점검 스크립트.
+// 사용: 개발 서버(npm run dev -- --port 5183)를 띄운 뒤 node tools/e2e.mjs [스크린샷 폴더]
+import { chromium } from 'playwright-core';
+import { readFileSync, mkdirSync } from 'node:fs';
+
+const BASE = process.env.E2E_URL ?? 'http://localhost:5183/';
+const shotDir = process.argv[2] ?? 'e2e-shots';
+mkdirSync(shotDir, { recursive: true });
+const levels = JSON.parse(readFileSync(new URL('../src/data/levels.json', import.meta.url), 'utf8'));
+const KEY = { U: 'ArrowUp', R: 'ArrowRight', D: 'ArrowDown', L: 'ArrowLeft' };
+
+const browser = await chromium.launch({ channel: 'msedge' });
+const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+const errors = [];
+page.on('pageerror', (e) => errors.push(String(e)));
+page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+const shot = (name) => page.screenshot({ path: `${shotDir}/${name}.png` });
+const check = (cond, msg) => {
+  if (!cond) throw new Error('점검 실패: ' + msg);
+  console.log('통과: ' + msg);
+};
+
+// 새 블록이나 기믹이 처음 나오면 뜨는 규칙 카드를 닫는다
+let ruleCards = 0;
+const dismissRule = async (shotName) => {
+  await page.waitForTimeout(250);
+  if (!(await page.locator('.rule-tag').count())) return;
+  ruleCards += await page.locator('.rule').count();
+  if (shotName) await shot(shotName);
+  await page.click('.modal [data-a=ok]');
+  await page.waitForSelector('.backdrop', { state: 'detached' });
+};
+
+await page.goto(BASE);
+await page.evaluate(() => localStorage.clear());
+await page.reload();
+await page.waitForSelector('.title-screen');
+await page.waitForTimeout(600);
+await shot('01-title');
+check((await page.evaluate(() => document.documentElement.scrollWidth)) <= 390, '타이틀이 화면 폭을 넘지 않는다');
+
+// 처음 시작하면 튜토리얼 4단계를 차례로 한다
+await page.click('[data-a=start]');
+const TUT = ['RRDDLL', 'RRRDDL', 'DDRRDR', 'DDRRRD'];
+for (let i = 0; i < TUT.length; i++) {
+  await page.waitForSelector('.play-screen.tutorial');
+  await page.waitForTimeout(700);
+  const tipText = await page.textContent('.tip p');
+  if (!tipText.trim()) throw new Error(`튜토리얼 ${i + 1}: 안내 문구가 비어 있음`);
+  if (i === 0) check(await page.locator('.hand').isVisible(), '튜토리얼 1에 손 안내가 보인다');
+  if (i === 1) await shot('02a-tutorial');
+  if (i === 2) {
+    // 붙어 있는 상자 두 개를 밀면 막히고, 되돌리기 안내로 바뀐다
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(200);
+    check((await page.textContent('.tip p')) !== tipText, '막히면 안내 문구가 되돌리기 안내로 바뀐다');
+    await page.keyboard.press('z');
+  }
+  for (const ch of TUT[i]) {
+    await page.keyboard.press(KEY[ch]);
+    await page.waitForTimeout(140);
+  }
+  await page.waitForSelector('.clear-title', { timeout: 5000 });
+  await page.waitForTimeout(400);
+  if (i === TUT.length - 1) await shot('02b-tutorial-done');
+  await page.click('[data-a=go]');
+}
+await page.waitForSelector('.play-screen:not(.tutorial)');
+check((await page.textContent('.stage-title b')) === '1-1', '튜토리얼을 마치면 1-1로 들어간다');
+check((await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')).tutorial)) === 4, '튜토리얼 완료가 저장된다');
+await dismissRule();
+
+await page.click('[data-a=back]');
+await page.waitForSelector('.select-screen');
+await shot('02-select');
+check((await page.locator('.stage').count()) === 30, '스테이지 30개가 보인다');
+check((await page.locator('.stage.locked').count()) === 24, '월드 2~5는 잠겨 있다');
+check(
+  await page.evaluate(() => [...document.querySelectorAll('.topbar > *')].every((e) => e.getBoundingClientRect().right <= innerWidth)),
+  '상단 버튼이 화면 안에 있다',
+);
+
+// 잠긴 스테이지를 누르면 안내가 뜬다
+await page.locator('.stage.locked').first().click();
+check(await page.locator('.toast').isVisible(), '잠긴 월드 안내가 뜬다');
+
+// 모든 레벨을 저장된 해답으로 클리어한다
+for (const lv of levels) {
+  await page.goto(`${BASE}?go=play:${lv.id}`);
+  await page.waitForSelector('.play-screen canvas');
+  await page.waitForTimeout(250);
+  await dismissRule(lv.world === 3 && lv.index <= 2 ? '03a-rule-card' : undefined);
+  if (lv.index === 1 || lv.id === '5-6') await shot(`play-${lv.id}`);
+  if (lv.id === '3-2') {
+    // 막히는 방향 입력, 되돌리기, 재시작
+    await page.keyboard.press(KEY[lv.solution[0]]);
+    await page.keyboard.press('z');
+    check((await page.textContent('[data-moves]')) === '0', '되돌리기로 이동 수가 0으로 돌아간다');
+    await page.keyboard.press(KEY[lv.solution[0]]);
+    await page.click('[data-a=restart]');
+    check((await page.textContent('[data-moves]')) === '0', '재시작으로 이동 수가 0으로 돌아간다');
+    // 힌트(광고 자리 표시가 떴다가 닫힌다)
+    await page.click('[data-a=hint]');
+    await page.waitForSelector('.ad-placeholder');
+    await page.waitForSelector('.ad-placeholder', { state: 'detached', timeout: 8000 });
+    await page.waitForTimeout(300);
+    await shot('03-hint');
+  }
+  for (const ch of lv.solution) {
+    await page.keyboard.press(KEY[ch]);
+    await page.waitForTimeout(lv.id === '1-1' ? 120 : 15);
+  }
+  await page.waitForSelector('.clear-title', { timeout: 5000 });
+  await page.waitForTimeout(1500);
+  const stars = await page.locator('.stars.big i.on').count();
+  if (stars !== 3) throw new Error(`${lv.id}: 최소 이동 수로 깼는데 별이 ${stars}개`);
+  if (lv.id === '1-1') {
+    await shot('04-clear');
+    await page.click('[data-a=next]');
+    await page.waitForSelector('.play-screen');
+    await dismissRule();
+    check((await page.textContent('.stage-title b')) === '1-2', '"다음 레벨"로 1-2에 들어간다');
+  }
+}
+console.log('통과: 30개 레벨을 모두 저장된 해답으로 클리어, 전부 별 3개');
+check(ruleCards >= 7, `블록 3종과 기믹 4종의 규칙 카드가 한 번씩 뜬다 (실제 ${ruleCards}개)`);
+
+const data = await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')));
+check(data.gold === 2700, `첫 클리어와 별 골드 합계 2,700 (실제 ${data.gold})`);
+
+// 스와이프 입력
+await page.goto(`${BASE}?go=play:1-1`);
+await page.waitForSelector('.play-screen canvas');
+const box = await page.locator('.board-wrap').boundingBox();
+const cx = box.x + box.width / 2;
+const cy = box.y + box.height / 2;
+const delta = { U: [0, -60], R: [60, 0], D: [0, 60], L: [-60, 0] }[levels[0].solution[0]];
+await page.mouse.move(cx, cy);
+await page.mouse.down();
+await page.mouse.move(cx + delta[0], cy + delta[1], { steps: 4 });
+await page.mouse.up();
+check((await page.textContent('[data-moves]')) === '1', '스와이프로 한 칸 이동한다');
+
+await page.goto(`${BASE}?go=select`);
+await page.waitForSelector('.select-screen');
+check((await page.locator('.stage.cleared').count()) === 30, '클리어한 30칸이 채워진다');
+await page.evaluate(() => document.querySelector('.world-list').scrollTo(0, 0));
+await shot('05-select-cleared');
+
+// 뽑기: 골드가 떨어질 때까지 돌린다
+await page.click('[data-a=cosmetics]');
+await page.waitForSelector('.cosmetics-screen');
+// 연속 뽑기: 골드 2,700이면 최대인 10회가 된다
+check((await page.textContent('[data-a=multi]')).includes('10'), '골드가 충분하면 10연속 버튼이 보인다');
+await page.click('[data-a=multi]');
+await page.waitForSelector('.multi-card', { timeout: 5000 });
+await page.waitForTimeout(900);
+await shot('06a-multi-result');
+check((await page.locator('.multi-card').count()) === 10, '10연속 결과에 10개가 나온다');
+check((await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')).gold)) === 2300, '10연속에 400골드를 쓴다');
+await page.click('.modal [data-a=ok]');
+await page.waitForSelector('.backdrop', { state: 'detached' });
+await page.waitForTimeout(100);
+
+let draws = 10;
+for (;;) {
+  const gold = await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')).gold);
+  if (gold < 40 || (await page.locator('[data-a=draw]').isDisabled())) break;
+  await page.click('[data-a=draw]');
+  if (draws === 10) {
+    await page.waitForTimeout(1300);
+    await shot('06-chest-open');
+  }
+  await page.waitForSelector('.reveal', { timeout: 5000 });
+  if (draws === 10) {
+    await page.waitForTimeout(400);
+    await shot('07-reveal');
+  }
+  await page.click('.modal [data-a=ok]');
+  await page.waitForSelector('.backdrop', { state: 'detached' });
+  await page.waitForTimeout(80);
+  draws++;
+}
+const after = await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')));
+console.log(`통과: 뽑기 ${draws}회, 보유 ${after.owned.length}/30종, 남은 골드 ${after.gold}`);
+check(draws >= 30 && after.owned.length >= 24, '뽑기로 유물이 모인다');
+await shot('08-inventory');
+
+// 얻은 스킨과 자국을 장착하고 플레이 화면에 반영되는지 본다
+await page.click('[data-tab=skin]');
+await page.locator('.item:not(.missing)').last().click();
+await page.click('[data-tab=trail]');
+await page.locator('.item:not(.missing)').last().click();
+await shot('09-trails');
+const equipped = await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')));
+check(equipped.skin !== 'default' && equipped.trail !== 'none', `스킨(${equipped.skin})과 자국(${equipped.trail})이 장착된다`);
+await page.goto(`${BASE}?go=play:4-3`);
+await page.waitForSelector('.play-screen canvas');
+for (const ch of levels.find((l) => l.id === '4-3').solution.slice(0, 9)) {
+  await page.keyboard.press(KEY[ch]);
+  await page.waitForTimeout(90);
+}
+await shot('10-play-with-skin');
+
+// 360~399골드면 9연속이 된다
+await page.goto(BASE + '?go=cosmetics&gold=380');
+await page.waitForSelector('.cosmetics-screen');
+if (await page.locator('[data-a=draw]').isEnabled()) {
+  const label = await page.textContent('[data-a=multi]');
+  check(label.includes('9') && label.includes('360'), `380골드면 9연속 360골드 버튼이 된다 (실제: ${label.trim()})`);
+} else console.log('건너뜀: 유물을 모두 모아 연속 뽑기 버튼이 없음');
+
+// 설정
+await page.goto(BASE);
+await page.click('[data-a=settings]');
+await page.waitForSelector('.setting');
+await shot('11-settings');
+await page.click('[data-k=lang]');
+await page.waitForTimeout(300);
+check((await page.textContent('.logo')) === 'Block Labyrinth', '언어를 영어로 바꾸면 제목이 바뀐다');
+
+check(errors.length === 0, `콘솔 오류 없음 ${errors.join(' | ')}`);
+await browser.close();
+console.log('전체 점검 통과');

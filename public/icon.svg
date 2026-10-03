@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2f5c"/><stop offset="1" stop-color="#16121f"/></linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe59a"/><stop offset=".55" stop-color="#ffc94d"/><stop offset="1" stop-color="#d8922a"/></linearGradient>
+    <linearGradient id="crate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0c88a"/><stop offset="1" stop-color="#d9a45f"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="268" y="196" width="176" height="176" rx="30" fill="#93622b"/>
+  <rect x="268" y="178" width="176" height="172" rx="30" fill="url(#crate)"/>
+  <path d="M306 214h100v100H306zM306 214l100 100M406 214L306 314" fill="none" stroke="#7a4a1c" stroke-opacity=".6" stroke-width="10" stroke-linejoin="round"/>
+  <ellipse cx="168" cy="372" rx="92" ry="22" fill="#000" opacity=".3"/>
+  <rect x="72" y="176" width="192" height="192" rx="70" fill="url(#body)" stroke="#000" stroke-opacity=".2" stroke-width="6"/>
+  <ellipse cx="160" cy="262" rx="20" ry="25" fill="#fff"/><ellipse cx="228" cy="262" rx="20" ry="25" fill="#fff"/>
+  <ellipse cx="168" cy="262" rx="10" ry="13" fill="#1c1a26"/><ellipse cx="236" cy="262" rx="10" ry="13" fill="#1c1a26"/>
+</svg>
