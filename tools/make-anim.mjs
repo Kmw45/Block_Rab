@@ -15,11 +15,14 @@ const WORK = resolve('art/rig');
 const FRAME = 240; // 시트 한 칸의 크기(px)
 const CANVAS = 400;
 const GROUND = 352; // 발바닥 높이
-const HIP_Y = 316; // 다리가 몸통에 붙는 높이
+const HIP_Y = 322; // 다리가 몸통에 붙는 높이
 const CX = 200;
 const BODY_BOX = [200, 196]; // 몸통(모자 포함)이 들어가는 최대 크기
-const LEG = [42, 46];
-const ARM_H = 60;
+const LEG = [52, 38]; // 발은 납작한 타원
+const ARM_H = 50;
+const CRYSTAL_H = 64; // 머리 위에 떠 있는 결정의 높이
+const CRYSTAL_GAP = 44; // 몸통 꼭대기에서 결정 중심까지의 거리
+const SKINS = JSON.parse(readFileSync(new URL('./skins.json', import.meta.url), 'utf8'));
 
 // 동작과 프레임 수, 초당 프레임. src/render/draw.ts의 ANIMS와 순서·개수가 같아야 한다.
 const CLIPS = [
@@ -62,6 +65,14 @@ async function sideEdges(buf, w, h) {
   return [mid - half, mid + half];
 }
 
+// 스킨은 팔다리 그림이 따로 없다. 주인공의 팔다리를 스킨 색으로 물들여 쓴다.
+async function limb(id, part) {
+  const own = `${PARTS}/${id}_${part}.png`;
+  if (existsSync(own)) return trimmed(own);
+  const base = await trimmed(`${PARTS}/default_${part}.png`);
+  return { ...base, data: await sharp(base.data).tint(SKINS[id]?.color ?? SKINS.default.color).png().toBuffer() };
+}
+
 async function prepare(id) {
   const body = await trimmed(`${PARTS}/${id}_body.png`);
   const scale = Math.min(BODY_BOX[0] / body.w, BODY_BOX[1] / body.h);
@@ -70,10 +81,10 @@ async function prepare(id) {
   const bodyBuf = await sharp(body.data).resize(bw, bh).png().toBuffer();
   const [el, er] = await sideEdges(bodyBuf, bw, bh);
 
-  const arm = await trimmed(`${PARTS}/${id}_arm.png`);
-  const aw = Math.max(26, Math.min(44, Math.round((arm.w * ARM_H) / arm.h)));
+  const arm = await limb(id, 'arm');
+  const aw = Math.max(30, Math.min(46, Math.round((arm.w * ARM_H) / arm.h)));
   const armBuf = await sharp(arm.data).resize(aw, ARM_H, { fit: 'fill' }).png().toBuffer();
-  const leg = await trimmed(`${PARTS}/${id}_leg.png`);
+  const leg = await limb(id, 'leg');
   const legBuf = await sharp(leg.data).resize(LEG[0], LEG[1], { fit: 'fill' }).png().toBuffer();
 
   writeFileSync(resolve(WORK, 'body.png'), bodyBuf);
@@ -84,7 +95,11 @@ async function prepare(id) {
 
   const bodyX = CX - bw / 2;
   const bodyY = HIP_Y + 12 - bh; // 몸통 아래쪽이 다리 윗부분을 살짝 덮는다
-  return { bw, bh, aw, bodyX, bodyY, shoulderL: bodyX + el + 7, shoulderR: bodyX + er - 7, shoulderY: bodyY + bh * 0.6 };
+  // 결정은 어떤 스킨을 입어도 그대로 남는다
+  const crystal = await trimmed(`${PARTS}/crystal.png`);
+  const cw = Math.round((crystal.w * CRYSTAL_H) / crystal.h);
+  writeFileSync(resolve(WORK, 'crystal.png'), await sharp(crystal.data).resize(cw, CRYSTAL_H, { fit: 'fill' }).png().toBuffer());
+  return { bw, bh, aw, cw, bodyX, bodyY, shoulderL: bodyX + el + 7, shoulderR: bodyX + er - 7, shoulderY: bodyY + bh * 0.6 };
 }
 
 const num = (target, param, lo, hi, mid) => ({
@@ -111,7 +126,7 @@ function wave(param, duration, amp, phase = 0, center = 0, cycles = 1) {
 }
 
 function buildRig(g) {
-  const hipDX = 30;
+  const hipDX = 38;
   const p = (id, min, max, description) => ({ id, min, max, default: 0, description });
   return {
     format: 'rev2d',
@@ -128,6 +143,7 @@ function buildRig(g) {
       p('LegR', -1, 1, '오른다리 회전'),
       p('LiftL', 0, 1, '왼발 들기'),
       p('LiftR', 0, 1, '오른발 들기'),
+      p('Float', -1, 1, '결정이 떠서 오르내리는 정도'),
     ],
     textures: [
       { id: 'body', path: 'body.png', width: g.bw, height: g.bh },
@@ -135,6 +151,7 @@ function buildRig(g) {
       { id: 'armR', path: 'armR.png', width: g.aw, height: ARM_H },
       { id: 'legL', path: 'legL.png', width: LEG[0], height: LEG[1] },
       { id: 'legR', path: 'legR.png', width: LEG[0], height: LEG[1] },
+      { id: 'crystal', path: 'crystal.png', width: g.cw, height: CRYSTAL_H },
     ],
     bones: [
       { id: 'root', x: CX, y: GROUND, length: 0, description: '바닥. Hop이 통째로 들어 올린다.' },
@@ -143,6 +160,7 @@ function buildRig(g) {
       { id: 'body', parent: 'root', x: 0, y: HIP_Y - GROUND, length: 0, description: '몸통. 엉덩이를 축으로 기울고 눌린다.' },
       { id: 'armL', parent: 'body', x: g.shoulderL - CX, y: g.shoulderY - HIP_Y, length: 0 },
       { id: 'armR', parent: 'body', x: g.shoulderR - CX, y: g.shoulderY - HIP_Y, length: 0 },
+      { id: 'crystal', parent: 'body', x: 0, y: g.bodyY - CRYSTAL_GAP - HIP_Y, length: 0, description: '머리 위의 결정. 몸통을 따라다니며 따로 떠서 오르내린다.' },
     ],
     warps: [],
     parts: [
@@ -151,6 +169,7 @@ function buildRig(g) {
       { id: 'armL', parent: 'armL', shape: { type: 'image', texture: 'armL', x: g.shoulderL - g.aw * 0.7, y: g.shoulderY - 10, w: g.aw, h: ARM_H }, z: 2 },
       { id: 'armR', parent: 'armR', shape: { type: 'image', texture: 'armR', x: g.shoulderR - g.aw * 0.3, y: g.shoulderY - 10, w: g.aw, h: ARM_H }, z: 2 },
       { id: 'body', parent: 'body', shape: { type: 'image', texture: 'body', x: g.bodyX, y: g.bodyY, w: g.bw, h: g.bh }, z: 3 },
+      { id: 'crystal', parent: 'crystal', shape: { type: 'image', texture: 'crystal', x: CX - g.cw / 2, y: g.bodyY - CRYSTAL_GAP - CRYSTAL_H / 2, w: g.cw, h: CRYSTAL_H }, z: 4 },
     ],
     bindings: [
       num01('bone:root.y', 'Hop', GROUND, GROUND - 62),
@@ -166,6 +185,8 @@ function buildRig(g) {
       num01('bone:legR.y', 'LiftR', HIP_Y - GROUND, HIP_Y - GROUND - 20),
       num01('bone:legL.scaleY', 'LiftL', 1, 0.72),
       num01('bone:legR.scaleY', 'LiftR', 1, 0.72),
+      num('bone:crystal.y', 'Float', g.bodyY - CRYSTAL_GAP - HIP_Y - 7, g.bodyY - CRYSTAL_GAP - HIP_Y + 7),
+      num('bone:crystal.rotation', 'Float', -6, 6),
     ],
     animations: [
       {
@@ -265,14 +286,16 @@ const only = process.argv[2]?.split(',');
 const skins = readdirSync(PARTS)
   .filter((f) => f.endsWith('_body.png'))
   .map((f) => f.slice(0, -9))
-  .filter((id) => existsSync(`${PARTS}/${id}_arm.png`) && existsSync(`${PARTS}/${id}_leg.png`))
   .filter((id) => !only || only.includes(id));
 
 let first = true;
 const scale = String(FRAME / CANVAS);
 for (const id of skins) {
   const geometry = await prepare(id);
-  writeFileSync(resolve(WORK, 'blob.r2d.json'), JSON.stringify(buildRig(geometry), null, 1));
+  const rig = buildRig(geometry);
+  // 결정은 모든 동작에서 몸과 어긋난 박자로 떠다닌다
+  for (const a of rig.animations) a.tracks.push(wave('Float', a.duration, 0.85, 0.15));
+  writeFileSync(resolve(WORK, 'blob.r2d.json'), JSON.stringify(rig, null, 1));
   if (first) {
     console.log(rev2d(['validate', 'blob.r2d.json']).trim().split('\n').slice(-3).join(' | '));
     first = false;

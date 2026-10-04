@@ -30,6 +30,7 @@ function spec(key) {
   if (key === 'floor' || ['tile_pit', 'tile_oneway', 'tile_ice', 'tile_switch', 'tile_door', 'tile_crumble'].includes(key)) return { size: 256, fill: 1, opaque: true };
   if (key === 'tile_portal') return { size: 256, fill: 0.96 };
   if (key === 'ui_bg') return { size: 540, height: 810, fill: 1, opaque: true };
+  if (key.startsWith('story_')) return { size: 720, height: 480, fill: 1, opaque: true };
   if (key === 'ui_home_bg') return { size: 720, height: 1080, fill: 1, opaque: true };
   if (key === 'ui_title_art') return { size: 640, fill: 1, opaque: true };
   if (['fx_spark', 'fx_ring', 'fx_burst'].includes(key)) return { size: 256, fill: 1, opaque: true }; // 검은 배경, 더하기 합성용

@@ -16,7 +16,7 @@ export const TUTORIALS: TutorialLevel[] = [
     id: 'T-1',
     rows: ['P..', '##.', 'E..'],
     solution: 'RRDDLL',
-    start: ['화면을 밀어서 움직여요.\n빛나는 출구까지 가 보세요!', 'Swipe to move.\nReach the glowing exit!'],
+    start: ['화면을 밀어서 정령을 움직여요.\n빛나는 출구까지 가 보세요!', 'Swipe to move the spirit.\nReach the glowing exit!'],
   },
   {
     id: 'T-2',
@@ -37,6 +37,6 @@ export const TUTORIALS: TutorialLevel[] = [
     id: 'T-4',
     rows: ['P.X..', '.###.', '.B...', '###E#'],
     solution: 'DDRRRD',
-    start: ['어두운 돌은 절대 움직이지 않아요.\n적게 움직일수록 별을 많이 받아요.', 'Dark stones never move.\nFewer moves earn more stars.'],
+    start: ['빛을 잃은 돌은 절대 움직이지 않아요.\n적게 움직일수록 별을 많이 받아요.', 'Stones that lost their light never move.\nFewer moves earn more stars.'],
   },
 ];

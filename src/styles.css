@@ -547,6 +547,10 @@ h2 {
   animation: fade-in 0.18s;
 }
 
+.modal > * {
+  flex-shrink: 0;
+}
+
 .backdrop.out {
   opacity: 0;
   transition: opacity 0.18s;
@@ -560,7 +564,8 @@ h2 {
 
 .modal {
   width: min(100%, 380px);
-  max-height: 100%;
+  /* 내용이 화면보다 길면(규칙 카드가 여러 장일 때) 창 안에서 스크롤한다 */
+  max-height: calc(100dvh - 40px);
   overflow-y: auto;
   padding: 24px 20px 22px;
   border-radius: 26px;
@@ -1367,6 +1372,20 @@ h2 {
   width: auto;
   max-width: 100%;
 }
+/* 규칙이 여러 장이면 목록만 스크롤해 확인 버튼이 화면 안에 남게 한다 */
+.rule-list {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100dvh - 300px);
+  overflow-y: auto;
+}
+
+.rule-list .rule {
+  flex-shrink: 0;
+}
+
 .rule {
   align-self: stretch;
   display: flex;
@@ -2056,4 +2075,166 @@ h2 {
   width: 46px;
   height: 46px;
   margin: 0;
+}
+
+/* ───── 도입 이야기 ───── */
+
+.story-screen {
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  background: radial-gradient(120% 80% at 50% 30%, #2a1d44, #0c0816 75%);
+}
+
+.story-skip {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 14px;
+}
+
+.story-frame {
+  width: min(100%, 440px);
+  aspect-ratio: 3 / 2;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #120c1e;
+  box-shadow:
+    0 0 0 3px #e9c46a,
+    0 0 0 6px rgba(0, 0, 0, 0.45),
+    0 14px 30px rgba(0, 0, 0, 0.55);
+}
+
+.story-pic {
+  width: 100%;
+  height: 100%;
+  background: center / cover no-repeat;
+  animation: story-pic 5s ease-out both;
+}
+
+.story-caption {
+  min-height: 4.2em;
+  display: flex;
+  align-items: center;
+}
+
+.story-text {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.65;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  animation: story-text 0.6s 0.2s ease both;
+}
+
+.story-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.story-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  transition: background 0.2s;
+}
+
+.story-dots i.on {
+  background: #ffd24d;
+  box-shadow: 0 0 8px #ffd24d;
+}
+
+@keyframes story-pic {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+  12% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes story-text {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ───── 던전 머리말의 이야기와 빛 ───── */
+
+.world-head {
+  flex-wrap: wrap;
+}
+
+.world-story {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  word-break: keep-all;
+  color: var(--muted);
+}
+
+.world.themed .world-story {
+  color: rgba(255, 244, 220, 0.82);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.world-lit {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 7px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: #2a1c05;
+  background: linear-gradient(#ffe58a, #f2b33d);
+  text-shadow: none;
+  box-shadow: 0 0 8px rgba(255, 210, 77, 0.7);
+}
+
+/* 빛을 되찾지 못한 던전은 머리 그림이 어둡고 바랜다 */
+.world.themed:not(.lit) .world-head {
+  background:
+    linear-gradient(90deg, rgba(10, 6, 18, 0.92), rgba(10, 6, 18, 0.72) 55%, rgba(10, 6, 18, 0.5)),
+    linear-gradient(rgba(96, 96, 112, 0.75), rgba(96, 96, 112, 0.75)),
+    var(--banner) center / cover no-repeat;
+  background-blend-mode: normal, saturation, normal;
+}
+
+.world.themed.lit .world-head {
+  background:
+    linear-gradient(90deg, rgba(10, 6, 18, 0.82), rgba(10, 6, 18, 0.35) 55%, rgba(10, 6, 18, 0)),
+    var(--banner) center / cover no-repeat;
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    0 0 16px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* 고비 스테이지와 보스 스테이지: 칸 모서리에 붉은 불씨를 단다 */
+.stage.tough {
+  position: relative;
+}
+
+.stage.tough:not(.locked)::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd9c2, #ff6a4d 45%, #b3261a);
+  box-shadow:
+    0 0 0 2px #2a0b08,
+    0 0 8px #ff6a4d;
 }

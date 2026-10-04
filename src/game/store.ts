@@ -10,6 +10,7 @@ export interface LevelInfo {
   minMoves: number;
   pushes: number;
   solution: string;
+  role?: 'intro' | 'easy' | 'mid' | 'hard' | 'rest' | 'boss'; // 던전 안에서 맡은 역할(tools/generate-levels.ts의 SLOTS)
 }
 
 export const LEVELS = levelData as LevelInfo[];
@@ -39,6 +40,7 @@ export interface SaveData {
   lastLevel: string;
   tutorial: number; // 끝낸 튜토리얼 단계 수
   tips: string[]; // 이미 본 블록 설명
+  story: boolean; // 도입 이야기를 봤다
   adDrawDay: string;
   adDrawCount: number; // 오늘 광고로 뽑은 횟수
   lastAdAt: number; // 마지막으로 광고를 본 시각(ms)
@@ -71,6 +73,7 @@ function defaults(): SaveData {
     lastLevel: '1-1',
     tutorial: 0,
     tips: [],
+    story: false,
     adDrawDay: '',
     adDrawCount: 0,
     lastAdAt: 0,

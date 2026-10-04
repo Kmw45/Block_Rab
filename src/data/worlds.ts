@@ -1,6 +1,9 @@
 export interface WorldTheme {
   ko: string;
   en: string;
+  // 스테이지 화면의 던전 머리말에 보여 주는 한 줄 이야기
+  storyKo: string;
+  storyEn: string;
   bgTop: string;
   bgBottom: string;
   accent: string;
@@ -16,6 +19,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '무너진 유적',
     en: 'Crumbling Ruins',
+    storyKo: "빛이 꺼지며 가장 먼저 무너진 회랑. 꺼진 바닥을 메워 길을 이어요.",
+    storyEn: "The first halls to fall when the light went out. Fill the gaps to go on.",
     bgTop: '#2b2540',
     bgBottom: '#16121f',
     accent: '#f2a541',
@@ -28,6 +33,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '버려진 광산',
     en: 'Abandoned Mine',
+    storyKo: "빛을 캐던 광산. 수레 길은 한쪽으로만 흘러요.",
+    storyEn: "Where light was once mined. The cart tracks run one way only.",
     bgTop: '#1f3340',
     bgBottom: '#0f1a22',
     accent: '#4fd1a5',
@@ -40,6 +47,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '얼음 동굴',
     en: 'Ice Cavern',
+    storyKo: "빛이 떠나자 얼어붙은 동굴. 한번 미끄러지면 멈출 수 없어요.",
+    storyEn: "A cave that froze when the light left. Once you slide, you cannot stop.",
     bgTop: '#1d2f55',
     bgBottom: '#0d1630',
     accent: '#7fd4ff',
@@ -52,6 +61,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '마법 서고',
     en: 'Arcane Archive',
+    storyKo: "미궁의 기억이 잠든 서고. 마법진은 같은 마법인 정령만 탈 수 있어요.",
+    storyEn: "Where the labyrinth's memory sleeps. Only a spirit, made of the same magic, can ride the circles.",
     bgTop: '#40252f',
     bgBottom: '#1f1016',
     accent: '#ff7d6b',
@@ -64,6 +75,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '톱니 성채',
     en: 'Clockwork Keep',
+    storyKo: "기계로 미궁을 다스리려던 성. 빛인 정령은 스위치를 누를 수 없어요.",
+    storyEn: "A keep that tried to rule by machine. A spirit of light cannot press a switch.",
     bgTop: '#3a3320',
     bgBottom: '#1a160c',
     accent: '#e6c15a',
@@ -76,6 +89,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '용암 동굴',
     en: 'Lava Cavern',
+    storyKo: "심장의 열기가 새어 나온 동굴. 지나온 바닥은 무너져 내려요.",
+    storyEn: "The heart's heat leaks into this cave. The floor falls away behind you.",
     bgTop: '#40201a',
     bgBottom: '#1c0c09',
     accent: '#ff8a3d',
@@ -88,6 +103,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '쌍둥이 신전',
     en: 'Twin Temple',
+    storyKo: "빛과 그림자를 함께 모시던 신전. 쌍둥이는 언제나 함께 움직여요.",
+    storyEn: "A temple to light and shadow. The twins always move together.",
     bgTop: '#3d2a3c',
     bgBottom: '#1b1120',
     accent: '#ff9ccb',
@@ -100,6 +117,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '미궁의 심장',
     en: 'Heart of the Labyrinth',
+    storyKo: "돌아왔어요. 흩어진 빛을 모아 심장을 다시 밝혀요.",
+    storyEn: "Home at last. Gather the scattered light and relight the heart.",
     bgTop: '#3a2a52',
     bgBottom: '#170f26',
     accent: '#d48cff',

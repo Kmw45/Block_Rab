@@ -24,6 +24,8 @@ import { AnimName, TRAIL_LIFE, TrailMark, drawBlock, drawCharacter, drawFixed, d
 import { getSheet, getSprite, getTinted } from './sprites';
 
 const TAU = Math.PI * 2;
+// 캐릭터 칸 가운데에서 머리 위 결정까지의 높이(칸 단위)
+const CRYSTAL_Y = 0.62;
 const MOVE_TIME = 0.16;
 const SLIDE_TIME_PER_CELL = 0.055;
 
@@ -85,6 +87,7 @@ export class BoardView {
   private particles: Particle[] = [];
   private marks: TrailMark[] = [];
   private hint: Dir[] = [];
+  private hintT0 = -9;
   private winT0 = -1;
   private introT0 = -9;
   private warpT0 = -9; // 순간이동으로 나타난 시각. 캐릭터만 다시 튀어나온다
@@ -305,8 +308,33 @@ export class BoardView {
     this.playAnim(dir === 1 || dir === 3 ? 'pushS' : 'pushF', 0.3);
   }
 
+  // 힌트는 정령의 머리 위 결정이 길을 비춰 주는 것이다. 켜지는 순간 결정에서 빛이 튄다.
   setHint(dirs: Dir[]): void {
+    if (dirs.length && !this.hint.length) {
+      this.hintT0 = now();
+      const [x, y] = this.xy(this.state.p);
+      this.spawn(x + 0.5, y + 0.5 - CRYSTAL_Y, { color: '#ffe07a', speed: 0, life: 0.5, size: 0.3, tex: 'fx_ring', grow: 2.4 });
+      for (let i = 0; i < 8; i++) this.spawn(x + 0.5, y + 0.5 - CRYSTAL_Y, { color: '#fff3b0', speed: 1.8, life: 0.5, size: 0.13, tex: 'fx_spark' });
+    }
     this.hint = dirs;
+  }
+
+  private drawCrystalGlow(time: number, s: number): void {
+    const { ctx } = this;
+    const flash = Math.max(0, 1 - (time - this.hintT0) / 0.5);
+    const pulse = 0.8 + Math.sin(time * 5) * 0.2;
+    const r = s * (0.4 + flash * 0.35);
+    const y = -s * CRYSTAL_Y;
+    const g = ctx.createRadialGradient(0, y, 0, 0, y, r);
+    g.addColorStop(0, `rgba(255,246,200,${Math.min(1, pulse + flash)})`);
+    g.addColorStop(0.4, `rgba(255,214,92,${Math.min(1, (pulse + flash) * 0.4)})`);
+    g.addColorStop(1, 'rgba(255,214,92,0)');
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   playWin(): void {
@@ -901,6 +929,7 @@ export class BoardView {
     ctx.scale(intro, intro);
     const moving = time < this.animUntil;
     drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, squash, { name: moving ? this.animName : 'idle', t: moving ? time - this.animT0 : time });
+    if (this.hint.length) this.drawCrystalGlow(time, s);
     ctx.restore();
   }
 }

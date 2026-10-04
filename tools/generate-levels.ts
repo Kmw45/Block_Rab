@@ -1,10 +1,14 @@
-// 레벨 후보를 무작위로 만들고 솔버로 걸러 월드당 6개를 고른다.
+// 레벨 후보를 무작위로 만들고 솔버로 걸러 월드당 12개를 난이도 편성표(SLOTS)에 맞춰 고른다.
+// 통과 조건: 풀린다, 밀지 않고는 못 푼다, 그 던전의 블록과 기믹을 해답에서 쓴다,
+// 쓸모없는 칸이 없다(모든 상태를 탐색해 캐릭터도 블록도 닿지 않는 칸·못 미는 블록은 벽으로 정리한 뒤 다시 검증),
+// 해답 밖의 갈 수 있는 칸(헷갈리는 길)이 조금은 있다.
 // 사용: npm run levels -- [월드당 초] [시드] [월드 번호 쉼표 목록]
 // 월드별 결과를 tools/level-cache에 따로 저장하므로, 모자란 월드만 다시 돌리거나 여러 월드를 동시에 돌릴 수 있다.
 // 여덟 월드의 결과가 모두 있으면 src/data/levels.json으로 합친다.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { BlockKind, DIR_CHARS, TILE_DOOR, TILE_ONEWAY, initialState, parseLevel, step, Dir, BoardDef } from '../src/core/board';
 import { solve } from '../src/core/solver';
+import { explore, findWaste, markMove } from '../src/core/reach';
 
 interface WorldSpec {
   world: number;
@@ -60,7 +64,31 @@ interface Candidate {
   score: number;
   kindsPushed: number;
   intro: boolean;
+  teaches: boolean; // 소개용인데 그 던전의 기믹까지 해답에서 쓴다
+  role?: Role;
 }
+
+// 던전 한 곳의 12칸 편성. [역할, 본편 후보를 쉬운 순으로 줄 세웠을 때의 위치(0~1)]
+// 레퍼런스: Patrick's Parabox는 작은 판에서 규칙 하나를 가르친 뒤 넓은 판에서 응용시키고,
+// 캔디크러시 계열은 난이도를 톱니 모양으로 올린다(고비 뒤에 쉬운 판을 두어 이탈을 막는다).
+// 그래서 소개 1 → 연습 2 → 응용 2 → 고비 → 쉬어가기 → 응용 2 → 고비 → 쉬어가기 → 보스 순이다.
+type Role = 'intro' | 'easy' | 'mid' | 'hard' | 'rest' | 'boss';
+const SLOTS: [Role, number][] = [
+  ['intro', 0],
+  ['easy', 0.05],
+  ['easy', 0.18],
+  ['mid', 0.35],
+  ['mid', 0.5],
+  ['hard', 0.8],
+  ['rest', 0.25],
+  ['mid', 0.58],
+  ['mid', 0.68],
+  ['hard', 0.9],
+  ['rest', 0.42],
+  ['boss', 1],
+];
+const MIN_OPEN = 0.45; // 정리한 뒤에도 판의 이만큼은 벽이 아니어야 한다
+const MIN_DECOY = 3; // 본편은 해답 밖의 갈 수 있는 칸이 이만큼은 있어야 한다
 
 function kindGroup(k: BlockKind): string {
   return k === 'railH' || k === 'railV' ? 'rail' : k;
@@ -151,7 +179,7 @@ function randomRows(spec: WorldSpec, rnd: () => number): string[] {
   return rows;
 }
 
-function evaluate(rows: string[], spec: WorldSpec): Candidate | null {
+function evaluate(rows: string[], spec: WorldSpec, repaired = false): Candidate | null {
   const def = parseLevel(rows);
   const frozenAll = parseLevel(freezeAll(rows));
   if (solve(frozenAll, initialState(frozenAll), { maxStates: SOLVE_CAP }).status !== 'unsolvable') return null;
@@ -183,17 +211,51 @@ function evaluate(rows: string[], spec: WorldSpec): Candidate | null {
     return null;
   }
 
-  const reach = solve(def, initialState(def), { maxStates: REACH_CAP, exhaustive: true });
-  if (reach.status === 'limit') return null;
+  // 모든 상태를 탐색해 퍼즐에 전혀 쓰이지 않는 것을 찾는다
+  const reach = explore(def, REACH_CAP);
+  const waste = findWaste(def, reach);
+  if (!waste) return null;
+  if (waste.dead.length || waste.deadDoors.length || waste.deadPits.length || waste.stuck.length) {
+    if (repaired) return null;
+    // 쌍둥이 블록은 고정 블록으로 바꾸면 나머지의 움직임이 달라지므로 고치지 않고 버린다
+    if (waste.stuck.some((i) => def.kinds[i] === 'link')) return null;
+    // 닿지 않는 칸은 벽으로, 못 미는 블록은 고정 블록으로 바꾼다. 어차피 닿지 않으므로 풀이는 그대로다.
+    const cells = rows.join('').split('');
+    [...waste.dead, ...waste.deadDoors, ...waste.deadPits].forEach((c) => (cells[c] = '#'));
+    waste.stuck.forEach((i) => (cells[def.startPos[i]] = 'X'));
+    if (cells.filter((ch) => ch === '@').length === 1) return null;
+    const fixed = rows.map((_, y) => cells.slice(y * def.w, (y + 1) * def.w).join(''));
+    return evaluate(fixed, spec, true);
+  }
+  let open = 0;
+  for (let c = 0; c < def.w * def.h; c++) if (def.solid[c] === 0) open++;
+  if (open < def.w * def.h * MIN_OPEN) return null;
+
+  // 해답 밖의 갈 수 있는 칸: 헷갈리게 하는 길
+  const onPath = new Uint8Array(def.w * def.h);
+  let s = initialState(def);
+  onPath[s.p] = 1;
+  s.b.forEach((c) => (onPath[c] = 1));
+  for (const d of res.path) {
+    const r = step(def, s, d);
+    markMove(def, s.p, d, r.walkTo, r.state.p, onPath);
+    r.state.b.forEach((c) => (onPath[c] = 1));
+    s = r.state;
+  }
+  let decoys = 0;
+  for (let c = 0; c < def.w * def.h; c++) if (def.solid[c] === 0 && !onPath[c]) decoys++;
+  if (!intro && decoys < MIN_DECOY) return null;
 
   return {
     rows,
     minMoves: moves,
     pushes: res.pushes,
     solution: res.path.map((d) => DIR_CHARS[d]).join(''),
-    score: moves + res.pushes * 2,
+    // 난이도: 해답 길이와 밀기 수에, 헤맬 수 있는 넓이(가능한 상태 수)를 더한다
+    score: moves + res.pushes * 2 + Math.log2(reach.states) * 1.5,
     kindsPushed: groups.size,
     intro,
+    teaches: intro && (!spec.gimmicks.length || spec.gimmicks.some((g) => used.has(g))),
   };
 }
 
@@ -205,22 +267,29 @@ function variants(rows: string[]): string[] {
   return [rows, flipH, flipV, both].map((r) => r.join('/'));
 }
 
+// 편성표의 칸마다 그 난이도 위치에 가장 가까운 후보를 고른다. 결과는 편성표 순서다.
 function pick(cands: Candidate[]): Candidate[] {
-  const intros = cands.filter((c) => c.intro).sort((a, b) => a.score - b.score);
+  const teach = cands.filter((c) => c.intro && c.teaches);
+  const intros = (teach.length ? teach : cands.filter((c) => c.intro)).sort((a, b) => a.score - b.score);
   const mains = cands.filter((c) => !c.intro).sort((a, b) => a.score - b.score);
   const out: Candidate[] = [];
-  if (intros.length) out.push(intros[Math.floor(intros.length / 2)]);
-  const need = PER_WORLD - out.length;
   const used = new Set<number>();
-  for (let i = 0; i < need && mains.length; i++) {
-    let idx = Math.round(((i + 0.5) / need) * (mains.length - 1));
-    if (i === need - 1) idx = mains.length - 1;
-    while (used.has(idx) && idx > 0) idx--;
-    if (used.has(idx)) continue;
+  for (const [role, q] of SLOTS) {
+    if (role === 'intro' && intros.length) {
+      out.push({ ...intros[Math.floor(intros.length / 2)], role });
+      continue;
+    }
+    const want = Math.round(q * (mains.length - 1));
+    let idx = -1;
+    for (let d = 0; d < mains.length && idx < 0; d++) {
+      if (want - d >= 0 && !used.has(want - d)) idx = want - d;
+      else if (want + d < mains.length && !used.has(want + d)) idx = want + d;
+    }
+    if (idx < 0) continue;
     used.add(idx);
-    out.push(mains[idx]);
+    out.push({ ...mains[idx], role });
   }
-  return out.sort((a, b) => a.score - b.score);
+  return out;
 }
 
 // 칸 하나를 바꾼 배치. 캐릭터와 출구는 그대로 두고 움직이는 블록 수 제한을 지킨다.
@@ -360,7 +429,7 @@ for (const spec of WORLDS.filter((w) => !onlyWorlds || onlyWorlds.includes(w.wor
   const mains = passed.filter((c) => !c.intro).length;
   console.log(
     `월드 ${spec.world}: 후보 ${tried}개 중 통과 ${passed.length}개 (소개용 ${passed.length - mains}, 본편 ${mains}) -> ` +
-      chosen.map((c) => `${c.minMoves}수/${c.pushes}밀기`).join(', '),
+      chosen.map((c) => `${c.role}:${c.minMoves}수/${c.pushes}밀기`).join(', '),
   );
   if (chosen.length < PER_WORLD) {
     console.error(`월드 ${spec.world}: ${PER_WORLD}개를 채우지 못했습니다 (${chosen.length}개)`);
@@ -374,6 +443,7 @@ for (const spec of WORLDS.filter((w) => !onlyWorlds || onlyWorlds.includes(w.wor
     minMoves: c.minMoves,
     pushes: c.pushes,
     solution: c.solution,
+    role: c.role,
   }));
   writeFileSync(new URL(`world-${spec.world}.json`, CACHE), JSON.stringify(out));
 }

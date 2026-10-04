@@ -3,7 +3,7 @@ import { sfx, unlockAudio } from './game/audio';
 import { DEV_MODE, LEVELS, loadSave, save } from './game/store';
 import { initFx } from './render/fx';
 import { loadSprites } from './render/sprites';
-import { applyArt, showCosmetics, showPlay, showSelect, showTitle, showTutorial } from './ui/app';
+import { applyArt, showCosmetics, showPlay, showSelect, showStory, showTitle, showTutorial } from './ui/app';
 
 loadSave();
 initFx();
@@ -23,7 +23,7 @@ document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 void loadSprites().then(() => {
   applyArt();
-  // 개발 서버와 개발자 모드(?dev) 전용 바로가기: go=select | cosmetics | play:3-2 | tut:0, gold=500
+  // 개발 서버와 개발자 모드(?dev) 전용 바로가기: go=select | cosmetics | story | play:3-2 | tut:0, gold=500
   if (import.meta.env.DEV || DEV_MODE) {
     if (DEV_MODE) document.documentElement.classList.add('dev-mode');
     const q = new URLSearchParams(location.search);
@@ -31,6 +31,7 @@ void loadSprites().then(() => {
     const go = q.get('go') ?? '';
     if (go === 'select') return showSelect();
     if (go === 'cosmetics') return showCosmetics();
+    if (go === 'story') return showStory(showTitle);
     if (go.startsWith('tut:')) return showTutorial(Number(go.split(':')[1]));
     const level = LEVELS.find((l) => l.id === go.split(':')[1]);
     if (level) return showPlay(level);

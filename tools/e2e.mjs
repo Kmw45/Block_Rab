@@ -39,8 +39,16 @@ await page.waitForTimeout(600);
 await shot('01-title');
 check((await page.evaluate(() => document.documentElement.scrollWidth)) <= 390, '타이틀이 화면 폭을 넘지 않는다');
 
-// 처음 시작하면 튜토리얼 4단계를 차례로 한다
+// 처음 시작하면 도입 이야기 3장을 본 뒤 튜토리얼 4단계를 차례로 한다
 await page.click('[data-a=start]');
+await page.waitForSelector('.story-screen');
+for (let i = 0; i < 3; i++) {
+  await page.waitForTimeout(500);
+  check((await page.textContent('.story-text')).trim().length > 0 && (await page.locator('.story-pic').count()) === 1, `도입 이야기 ${i + 1}장에 그림과 글이 있다`);
+  await shot('01b-story-' + (i + 1));
+  await page.click('.story-screen [data-a=next]');
+}
+check(await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save')).story), '도입 이야기를 본 것이 저장된다');
 const TUT = ['RRDDLL', 'RRRDDL', 'DDRRDR', 'DDRRRD'];
 for (let i = 0; i < TUT.length; i++) {
   await page.waitForSelector('.play-screen.tutorial');

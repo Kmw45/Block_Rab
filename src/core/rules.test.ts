@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DIR_CHARS, Dir, initialState, parseLevel, step } from './board';
 import { solve } from './solver';
+import { explore, findWaste } from './reach';
 import levels from '../data/levels.json';
 import { ITEMS, RARITY_WEIGHT } from '../data/items';
 import { PITY_STREAK, rollGacha, starsFor } from '../game/store';
@@ -189,6 +190,17 @@ describe('별과 뽑기', () => {
         expect(sinceNew).toBeLessThanOrEqual(PITY_STREAK);
       }
       expect(draws).toBeLessThanOrEqual(117);
+    }
+  });
+});
+
+describe('레벨 구성', () => {
+  it('모든 레벨에 쓸모없는 칸과 못 미는 블록이 없다', () => {
+    for (const lv of levels) {
+      const def = parseLevel(lv.rows);
+      const waste = findWaste(def, explore(def));
+      expect(waste, lv.id + ' 탐색 한도').not.toBeNull();
+      expect({ id: lv.id, ...waste }).toEqual({ id: lv.id, dead: [], deadDoors: [], deadPits: [], stuck: [] });
     }
   });
 });

@@ -179,6 +179,7 @@ function showSettings(rerender: () => void): void {
     <h2>${t('settings')}</h2>
     ${toggle('sfx')}${toggle('music')}${toggle('vibration')}
     <button class="setting" data-k="lang"><span>${t('language')}</span><b>${save.lang === 'ko' ? '한국어' : 'English'}</b></button>
+    <button class="setting link" data-k="story">${t('storyReplay')}</button>
     <a class="setting link" href="./privacy.html" target="_blank" rel="noopener">${t('privacy')}</a>
     <button class="setting danger" data-k="reset">${t('reset')}</button>
     <button class="btn" data-k="close">${t('ok')}</button>`);
@@ -198,6 +199,9 @@ function showSettings(rerender: () => void): void {
       m.close();
       rerender();
       showSettings(rerender);
+    } else if (k === 'story') {
+      m.close();
+      showStory(rerender);
     } else if (k === 'reset') {
       confirmModal(t('resetConfirm'), () => {
         resetSave();
@@ -262,11 +266,16 @@ export function showTitle(): void {
   // 처음이면 스테이지 선택보다 튜토리얼을 먼저 한다
   el.querySelector('[data-a=start]')!.addEventListener('click', () => {
     // 이미 진행 기록이 있는 사람에게는 튜토리얼을 강요하지 않는다
-    if (needTutorial) showTutorial(save.tutorial);
-    else {
-      playOrigin = 'home';
-      showPlay(cur);
-    }
+    const go = () => {
+      if (needTutorial) showTutorial(save.tutorial);
+      else {
+        playOrigin = 'home';
+        showPlay(cur);
+      }
+    };
+    // 도입 이야기는 처음 한 번만 보여 준다
+    if (!DEV_MODE && !save.story) showStory(go);
+    else go();
   });
   el.querySelector('[data-a=settings]')!.addEventListener('click', () => showSettings(showTitle));
   // 홈의 캐릭터: 평소에는 숨쉬고, 누르면 폴짝 뛴다
@@ -309,6 +318,43 @@ export function showTitle(): void {
   dispose = () => cancelAnimationFrame(raf);
 }
 
+// ───────── 도입 이야기 ─────────
+
+const STORY_PAGES = 3;
+
+// 그림 한 장에 글 한 줄씩 넘겨 본다. 끝나거나 건너뛰면 done으로 이어진다.
+export function showStory(done: () => void): void {
+  let page = 0;
+  const el = html(`
+    <div class="story-screen">
+      <button class="link-btn story-skip" data-a="skip">${t('storySkip')}</button>
+      <div class="story-frame"></div>
+      <div class="story-caption"></div>
+      <div class="story-dots">${'<i></i>'.repeat(STORY_PAGES)}</div>
+      <button class="btn big" data-a="next"></button>
+    </div>`);
+  const show = () => {
+    const img = getSprite('story_' + (page + 1));
+    // 통째로 다시 넣어 그림과 글이 들어오는 움직임을 처음부터 재생한다
+    el.querySelector('.story-frame')!.innerHTML = img ? `<div class="story-pic" style="background-image:url('${img.src}')"></div>` : '';
+    el.querySelector('.story-caption')!.innerHTML = `<p class="story-text pre">${t(('story' + (page + 1)) as StringKey)}</p>`;
+    el.querySelectorAll('.story-dots i').forEach((dot, i) => dot.classList.toggle('on', i === page));
+    el.querySelector('[data-a=next]')!.textContent = t(page === STORY_PAGES - 1 ? 'storyStart' : 'storyNext');
+  };
+  const finish = () => {
+    save.story = true;
+    persist();
+    done();
+  };
+  mount(el, WORLD_COUNT);
+  show();
+  el.querySelector('[data-a=skip]')!.addEventListener('click', finish);
+  el.querySelector('[data-a=next]')!.addEventListener('click', () => {
+    if (++page >= STORY_PAGES) finish();
+    else show();
+  });
+}
+
 // ───────── 스테이지 선택 ─────────
 
 // 던전 테마 그림을 그 구역의 CSS 변수로 넘긴다
@@ -331,20 +377,23 @@ export function showSelect(): void {
   for (let w = 1; w <= WORLD_COUNT; w++) {
     const th = WORLDS[w - 1];
     const unlocked = isWorldUnlocked(w);
+    // 던전을 모두 지나면 그곳에 빛이 돌아온다. 머리 그림이 밝아진다.
+    const lit = isWorldCleared(w);
     const cells = worldLevels(w)
       .map((lv) => {
         const stars = save.stars[lv.id] ?? 0;
         const state = !unlocked ? 'locked' : stars > 0 ? 'cleared' : save.skipped === lv.id ? 'skipped' : 'open';
-        return `<div class="stage-wrap"><button class="stage ${state}" data-id="${lv.id}">${unlocked ? lv.index : art('ui_lock', ICON.lock)}</button>${starsHtml(stars)}</div>`;
+        return `<div class="stage-wrap"><button class="stage ${state} ${lv.role === 'hard' || lv.role === 'boss' ? 'tough' : ''}" data-id="${lv.id}">${unlocked ? lv.index : art('ui_lock', ICON.lock)}</button>${starsHtml(stars)}</div>`;
       })
       .join('');
     list += `
-      <section class="world ${unlocked ? '' : 'locked'} ${getSprite('ui_banner_' + w) ? 'themed' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark};${themeVars(w)}">
+      <section class="world ${unlocked ? '' : 'locked'} ${lit ? 'lit' : ''} ${getSprite('ui_banner_' + w) ? 'themed' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark};${themeVars(w)}">
         <div class="world-head">
           ${art('emblem_' + w, '', 'emblem')}
           <span class="world-no">${t('world')} ${w}</span>
           <h2>${worldName(w)}</h2>
           <span class="world-stars">${ICON.star}${worldStars(w)}/${LEVELS_PER_WORLD * 3}</span>
+          <p class="world-story">${lit ? `<b class="world-lit">${t('worldLit')}</b>` : ''}${save.lang === 'ko' ? th.storyKo : th.storyEn}</p>
         </div>
         <div class="stage-grid">${cells}</div>
       </section>`;
@@ -790,7 +839,7 @@ function showRuleCard(def: BoardDef): void {
       </div>`,
     )
     .join('');
-  const m = modal(`<span class="rule-tag">${t('newRule')}</span>${rows}<button class="btn" data-a="ok">${t('gotIt')}</button>`);
+  const m = modal(`<span class="rule-tag">${t('newRule')}</span><div class="rule-list">${rows}</div><button class="btn" data-a="ok">${t('gotIt')}</button>`);
   m.el.querySelector('[data-a=ok]')!.addEventListener('click', m.close);
 }
 // ───────── 클리어 ─────────
