@@ -1734,3 +1734,326 @@ h2 {
   font-family: var(--display);
   color: var(--gold);
 }
+.has-ui .rule {
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.has-ui .rule-img,
+.has-ui .rule-symbol {
+  width: 58px;
+  height: 58px;
+}
+
+.has-ui .rule p {
+  font-size: 0.84rem;
+}
+
+/* ───── 홈 화면 ───── */
+
+.home-top {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-screen .tagline {
+  margin-bottom: 18px;
+}
+
+.btn.big.play {
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.15;
+  min-width: 250px;
+}
+
+.btn.big.play small {
+  font-family: system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.home-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  width: min(100%, 300px);
+}
+
+.home-row .btn {
+  position: relative;
+  flex: 1;
+  font-size: 1rem;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.home-row .art-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* 받을 수 있는 것이 있음을 알리는 빨간 점 */
+.dot {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ff4b3e;
+  box-shadow: 0 0 0 2px #fff;
+  animation: logo-float 1.4s ease-in-out infinite;
+}
+
+/* ───── 광고 보상 ───── */
+
+.ad-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-right: 6px;
+  border-radius: 6px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fff;
+  background: #e0483b;
+  vertical-align: 0.12em;
+}
+
+.modal .btn.bonus {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.ad-draw {
+  margin-top: 2px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  font-size: 0.86rem;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1.5px var(--panel-line);
+}
+
+/* ───── 홈 화면: 배경 장면 위에 캐릭터가 서 있다 ───── */
+
+.home-scene {
+  position: absolute;
+  inset: 0;
+  background: center / cover no-repeat;
+}
+
+.home-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(12, 7, 20, 0.72), rgba(12, 7, 20, 0.1) 24%, transparent 50%, rgba(12, 7, 20, 0.78) 80%, rgba(12, 7, 20, 0.96));
+}
+
+.title-screen.home {
+  justify-content: flex-start;
+}
+
+.title-screen.home > .logo,
+.title-screen.home > .tagline,
+.title-screen.home > .btn,
+.title-screen.home > .home-row {
+  position: relative;
+}
+
+.title-screen.home .logo {
+  margin-top: 11vh;
+  font-size: clamp(2.6rem, 14vw, 4rem);
+}
+
+.title-screen.home .tagline {
+  margin: 2px 0 0;
+  color: rgba(255, 244, 220, 0.85);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.title-screen.home .btn.play {
+  margin-top: auto;
+}
+
+.title-screen.home .home-row {
+  margin-bottom: 4vh;
+}
+
+/* 캐릭터의 발이 배경 그림의 단상(높이 70% 지점)에 오게 놓는다 */
+.title-screen.home .mascot {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  width: 250px;
+  height: 250px;
+  transform: translate(-50%, -88%);
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.45));
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.mascot.small {
+  width: 124px;
+  height: 124px;
+  margin: -14px 0 -16px;
+}
+
+/* ───── 보물 상자 동작 ───── */
+
+.chest canvas.chest-anim {
+  position: absolute;
+  left: -32.9%;
+  top: -45.3%;
+  width: 166%;
+  height: 166%;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
+}
+
+.chest.has-anim img.closed {
+  opacity: 0;
+}
+
+.chest.has-anim .art {
+  animation: none !important;
+}
+
+.chest[data-state='open'] canvas.chest-anim {
+  display: none;
+}
+
+/* ───── 던전 테마별 스테이지 칸과 머리 그림 ───── */
+
+.has-ui .stage {
+  background-image: var(--stage-open, var(--ui-stage-open));
+  color: #fff;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.75),
+    0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.has-ui .stage.cleared {
+  background-image: var(--stage-cleared, var(--ui-stage-cleared));
+  color: #fff;
+  text-shadow:
+    0 2px 0 rgba(60, 30, 0, 0.85),
+    0 0 8px rgba(60, 30, 0, 0.7);
+}
+
+.has-ui .stage.locked {
+  background-image: var(--ui-stage-locked);
+}
+
+/* 머리 그림: 던전의 풍경을 깔고 왼쪽을 어둡게 해 제목이 읽히게 한다 */
+.world.themed .world-head {
+  position: relative;
+  margin: -2px -4px 12px;
+  padding: 16px 12px;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(10, 6, 18, 0.88), rgba(10, 6, 18, 0.55) 55%, rgba(10, 6, 18, 0.15)),
+    var(--banner) center / cover no-repeat;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--accent) 65%, transparent),
+    0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+.world.themed .world-head h2 {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.world.themed .world-stars {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.world.themed.locked .world-head {
+  opacity: 1;
+  filter: grayscale(0.85) brightness(0.7);
+}
+
+/* 상단 줄: 골드 숫자가 길어져도 버튼 글자가 꺾이지 않게 한다 */
+.topbar .pill-btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+.topbar .gold-pill {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.gold-pill .coin {
+  flex: none;
+}
+
+/* ───── 별을 잃는 순간 ───── */
+
+.moves .target.lost {
+  animation: star-lost 0.5s ease-out;
+}
+
+@keyframes star-lost {
+  0% {
+    transform: scale(1.5);
+    filter: brightness(1.6) drop-shadow(0 0 6px #ff5b4d);
+  }
+  25% {
+    transform: scale(1.2) translateX(-4px);
+  }
+  50% {
+    transform: scale(1.1) translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+.moves .target {
+  transform-origin: right center;
+}
+
+/* ───── 던전 완료 ───── */
+
+.world-done {
+  align-self: stretch;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 30%, transparent), transparent);
+  animation: modal-in 0.5s 0.9s cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
+}
+
+.world-done span {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.world-done b {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  color: var(--gold);
+}
+
+.world-done .emblem {
+  width: 46px;
+  height: 46px;
+  margin: 0;
+}

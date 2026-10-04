@@ -13,14 +13,14 @@ export interface LevelInfo {
 }
 
 export const LEVELS = levelData as LevelInfo[];
-export const LEVELS_PER_WORLD = 6;
-export const WORLD_COUNT = 5;
+export const LEVELS_PER_WORLD = 12;
+export const WORLD_COUNT = 8;
 
 export const GOLD_FIRST_CLEAR = 30;
 export const GOLD_PER_STAR = 20;
 export const GOLD_REPLAY = 5;
 export const REPLAY_DAILY_LIMIT = 10;
-export const GACHA_COST = 40;
+export const GACHA_COST = 130;
 export const PITY_STREAK = 3; // 중복이 이만큼 이어지면 다음은 새 아이템 확정
 
 export interface SaveData {
@@ -39,6 +39,9 @@ export interface SaveData {
   lastLevel: string;
   tutorial: number; // 끝낸 튜토리얼 단계 수
   tips: string[]; // 이미 본 블록 설명
+  adDrawDay: string;
+  adDrawCount: number; // 오늘 광고로 뽑은 횟수
+  lastAdAt: number; // 마지막으로 광고를 본 시각(ms)
   sfx: boolean;
   music: boolean;
   vibration: boolean;
@@ -68,6 +71,9 @@ function defaults(): SaveData {
     lastLevel: '1-1',
     tutorial: 0,
     tips: [],
+    adDrawDay: '',
+    adDrawCount: 0,
+    lastAdAt: 0,
     sfx: true,
     music: true,
     vibration: true,
@@ -112,6 +118,11 @@ export function worldLevels(world: number): LevelInfo[] {
 
 export function isPassed(id: string): boolean {
   return (save.stars[id] ?? 0) > 0 || save.skipped === id;
+}
+
+// 그 던전의 스테이지를 모두 지났는가(건너뛴 것 포함)
+export function isWorldCleared(world: number): boolean {
+  return worldLevels(world).every((l) => isPassed(l.id));
 }
 
 export function isWorldUnlocked(world: number): boolean {
@@ -177,6 +188,48 @@ export function recordClear(level: LevelInfo, moves: number): ClearReward {
   return { stars, newStars, gold, firstClear, bestMoves: save.best[level.id] };
 }
 
+export const AD_DRAWS_PER_DAY = 2;
+export const AD_MIN_GAP_MS = 90000; // 전면 광고 사이의 최소 간격
+
+// 이어서 할 스테이지: 아직 못 깬 첫 스테이지, 다 깼으면 별 3개가 아닌 첫 스테이지
+export function currentLevel(): LevelInfo {
+  return (
+    LEVELS.find((l) => isWorldUnlocked(l.world) && !isPassed(l.id)) ??
+    LEVELS.find((l) => (save.stars[l.id] ?? 0) < 3) ??
+    LEVELS[LEVELS.length - 1]
+  );
+}
+
+export function totalStars(): number {
+  return LEVELS.reduce((n, l) => n + (save.stars[l.id] ?? 0), 0);
+}
+
+// 오늘 남은 광고 뽑기 횟수
+export function adDrawsLeft(): number {
+  return save.adDrawDay === today() ? Math.max(0, AD_DRAWS_PER_DAY - save.adDrawCount) : AD_DRAWS_PER_DAY;
+}
+
+export function useAdDraw(): void {
+  if (save.adDrawDay !== today()) {
+    save.adDrawDay = today();
+    save.adDrawCount = 0;
+  }
+  save.adDrawCount++;
+  persist();
+}
+
+// 클리어 보상을 광고로 두 배로 받을 때 더하는 골드
+export function addBonusGold(amount: number): void {
+  save.gold += amount;
+  persist();
+}
+
+// 그 치장 아이템을 쓸 수 있는가. 개발자 모드에서는 뽑지 않아도 전부 쓸 수 있다.
+// 뽑기 자체는 실제 보유 목록으로 돌아가므로 개발자 모드에서도 그대로 시험할 수 있다.
+export function owns(id: string): boolean {
+  return DEV_MODE || save.owned.includes(id);
+}
+
 export function allCollected(): boolean {
   return save.owned.length >= ITEMS.length;
 }
@@ -211,10 +264,11 @@ export function rollGacha(owned: Set<string>, dupStreak: number, rnd: () => numb
   return { item, isNew, guaranteed, dupStreak: isNew ? 0 : dupStreak + 1 };
 }
 
-export function drawGacha(rnd: () => number = Math.random): GachaResult | null {
-  if (save.gold < GACHA_COST || allCollected()) return null;
+// free: 광고 뽑기처럼 골드를 쓰지 않는 뽑기
+export function drawGacha(rnd: () => number = Math.random, free = false): GachaResult | null {
+  if ((!free && save.gold < GACHA_COST) || allCollected()) return null;
   const r = rollGacha(new Set(save.owned), save.dupStreak, rnd);
-  save.gold -= GACHA_COST;
+  if (!free) save.gold -= GACHA_COST;
   save.dupStreak = r.dupStreak;
   if (r.isNew) save.owned.push(r.item.id);
   persist();
@@ -225,7 +279,7 @@ export function equip(id: string): void {
   const item = ITEM_BY_ID.get(id);
   if (id === DEFAULT_SKIN) save.skin = id;
   else if (id === DEFAULT_TRAIL) save.trail = id;
-  else if (item && save.owned.includes(id)) {
+  else if (item && owns(id)) {
     if (item.type === 'skin') save.skin = id;
     else save.trail = id;
   }

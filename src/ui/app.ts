@@ -7,7 +7,11 @@ import {
   TILE_ONEWAY,
   TILE_PIT,
   TILE_PORTAL,
+  TILE_CRUMBLE,
+  TILE_DOOR,
   TILE_SLIP,
+  TILE_SWITCH,
+  doorsOpen,
   initialState,
   parseLevel,
   step,
@@ -20,32 +24,42 @@ import { ads } from '../game/ads';
 import { applyAudioSettings, sfx, vibrate } from '../game/audio';
 import { StringKey, t } from '../game/i18n';
 import {
+  AD_MIN_GAP_MS,
+  ClearReward,
   DEV_MODE,
   GACHA_COST,
   GachaResult,
+  LEVELS_PER_WORLD,
   LEVELS,
   LevelInfo,
   WORLD_COUNT,
+  adDrawsLeft,
+  addBonusGold,
   allCollected,
   canSkip,
+  currentLevel,
   drawGacha,
   drawsUntilGuarantee,
   equip,
+  isWorldCleared,
   isWorldUnlocked,
   nextLevel,
+  owns,
   persist,
   recordClear,
   resetSave,
   save,
   skipLevel,
   starsFor,
+  totalStars,
+  useAdDraw,
   worldLevels,
   worldStars,
 } from '../game/store';
 import { BoardView } from '../render/boardView';
-import { drawBlock, drawCharacter, drawTrail } from '../render/draw';
+import { AnimName, drawBlock, drawCharacter, drawTrail } from '../render/draw';
 import { burst } from '../render/fx';
-import { getSprite } from '../render/sprites';
+import { getSheet, getSprite } from '../render/sprites';
 
 const app = document.getElementById('app')!;
 let dispose: (() => void) | null = null;
@@ -196,25 +210,81 @@ function showSettings(rerender: () => void): void {
 
 // ───────── 타이틀 ─────────
 
+// 화면 위에서 움직이는 캐릭터(홈, 결과 창). 캔버스가 화면에서 사라지면 스스로 멈춘다.
+// clip: 지금 재생할 동작과 그 동작 안에서의 시간을 돌려준다.
+function startMascot(canvas: HTMLCanvasElement, clip: (time: number) => { name: AnimName; t: number }): void {
+  const ctx = canvas.getContext('2d')!;
+  const size = canvas.width;
+  const frame = (ms: number) => {
+    if (!canvas.isConnected) return;
+    requestAnimationFrame(frame);
+    const time = ms / 1000;
+    ctx.clearRect(0, 0, size, size);
+    drawCharacter(ctx, save.skin, size / 2, size * 0.56, size * 0.9, 2, time, 1, clip(time));
+  };
+  requestAnimationFrame(frame);
+}
+
+// 보물 상자 동작 시트의 구성: [시작 프레임, 프레임 수, 초당 프레임]. tools/make-chest.mjs의 CLIPS와 같아야 한다.
+const CHEST_ANIMS = { idle: [0, 16, 10], shake: [16, 20, 20] } as const;
+const CHEST_COLS = 6;
+const CHEST_FRAME = 256;
+
+// 플레이 화면에서 뒤로 갈 곳. 홈의 플레이 버튼으로 들어왔으면 홈, 스테이지 메뉴에서 골랐으면 메뉴로 돌아간다.
+let playOrigin: 'home' | 'select' = 'home';
+
+// 홈 화면. 플레이 버튼 하나로 이어서 하고, 스테이지 메뉴는 따로 둔다.
 export function showTitle(): void {
+  const needTutorial = !DEV_MODE && save.tutorial < TUTORIALS.length && Object.keys(save.stars).length === 0;
+  const cur = currentLevel();
+  const hasFreeDraw = !allCollected() && adDrawsLeft() > 0;
+  const homeBg = getSprite('ui_home_bg');
   const el = html(`
-    <div class="title-screen">
+    <div class="title-screen ${homeBg ? 'home' : ''}">
+      ${homeBg ? `<div class="home-scene" style="background-image:url('${homeBg.src}')"></div>` : ''}
+      <div class="home-top">${goldPill()}<span class="total-stars">${starsHtml(1)}<b>${totalStars()}</b>/${LEVELS.length * 3}</span></div>
       <button class="icon-btn corner" data-a="settings">${art('icon_settings', ICON.settings)}</button>
-      ${art('ui_title_art', '', 'key-art')}
-      <canvas class="hero ${getSprite('ui_title_art') ? 'over-art' : ''}" width="560" height="400"></canvas>
+      ${homeBg ? '<canvas class="mascot" width="400" height="400"></canvas>' : art('ui_title_art', '', 'key-art')}
+      <canvas class="hero ${homeBg || getSprite('ui_title_art') ? 'over-art' : ''}" width="560" height="400"></canvas>
       <h1 class="logo">${t('title')}</h1>
       <p class="tagline">${t('subtitle')}</p>
-      <button class="btn big" data-a="start">${t('start')}</button>
+      <button class="btn big play" data-a="start">
+        ${needTutorial ? t('start') : `${t('play')}<small>${cur.world}-${cur.index} · ${worldName(cur.world)}</small>`}
+      </button>
+      <div class="home-row">
+        <button class="btn ghost" data-a="stages">${t('stages')}</button>
+        <button class="btn ghost" data-a="cosmetics">${art('icon_gem', ICON.gem)}${t('cosmetics')}${hasFreeDraw ? '<i class="dot"></i>' : ''}</button>
+      </div>
     </div>`);
-  mount(el, 1);
+  mount(el, needTutorial ? 1 : cur.world);
+  el.querySelector('[data-a=stages]')!.addEventListener('click', showSelect);
+  el.querySelector('[data-a=cosmetics]')!.addEventListener('click', showCosmetics);
   // 처음이면 스테이지 선택보다 튜토리얼을 먼저 한다
   el.querySelector('[data-a=start]')!.addEventListener('click', () => {
     // 이미 진행 기록이 있는 사람에게는 튜토리얼을 강요하지 않는다
-    if (!DEV_MODE && save.tutorial < TUTORIALS.length && Object.keys(save.stars).length === 0) showTutorial(save.tutorial);
-    else showSelect();
+    if (needTutorial) showTutorial(save.tutorial);
+    else {
+      playOrigin = 'home';
+      showPlay(cur);
+    }
   });
   el.querySelector('[data-a=settings]')!.addEventListener('click', () => showSettings(showTitle));
-  if (getSprite('ui_title_art')) return; // 타이틀 그림이 있으면 움직이는 도형 그림은 쓰지 않는다
+  // 홈의 캐릭터: 평소에는 숨쉬고, 누르면 폴짝 뛴다
+  const mascot = el.querySelector<HTMLCanvasElement>('.mascot');
+  if (mascot) {
+    getSheet(save.skin);
+    let jumpAt = -9;
+    let last = 0;
+    mascot.addEventListener('pointerdown', () => {
+      jumpAt = last;
+      sfx.star(1);
+    });
+    startMascot(mascot, (time) => {
+      last = time;
+      return time - jumpAt < 1 ? { name: 'win', t: time - jumpAt } : { name: 'idle', t: time };
+    });
+  }
+  if (homeBg || getSprite('ui_title_art')) return; // 그림이 있으면 움직이는 도형 그림은 쓰지 않는다
 
   // 블록을 미는 캐릭터를 보여주는 움직이는 그림
   const canvas = el.querySelector('canvas')!;
@@ -241,6 +311,19 @@ export function showTitle(): void {
 
 // ───────── 스테이지 선택 ─────────
 
+// 던전 테마 그림을 그 구역의 CSS 변수로 넘긴다
+function themeVars(world: number): string {
+  const vars: string[] = [];
+  const add = (name: string, key: string) => {
+    const img = getSprite(key);
+    if (img) vars.push(`--${name}:url('${img.src}')`);
+  };
+  add('stage-open', 'ui_stage_open_' + world);
+  add('stage-cleared', 'ui_stage_cleared_' + world);
+  add('banner', 'ui_banner_' + world);
+  return vars.join(';');
+}
+
 export function showSelect(): void {
   const lastWorld = Number(save.lastLevel.split('-')[0]) || 1;
   const totalStars = LEVELS.reduce((n, l) => n + (save.stars[l.id] ?? 0), 0);
@@ -256,12 +339,12 @@ export function showSelect(): void {
       })
       .join('');
     list += `
-      <section class="world ${unlocked ? '' : 'locked'}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark}">
+      <section class="world ${unlocked ? '' : 'locked'} ${getSprite('ui_banner_' + w) ? 'themed' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark};${themeVars(w)}">
         <div class="world-head">
           ${art('emblem_' + w, '', 'emblem')}
           <span class="world-no">${t('world')} ${w}</span>
           <h2>${worldName(w)}</h2>
-          <span class="world-stars">${ICON.star}${worldStars(w)}/18</span>
+          <span class="world-stars">${ICON.star}${worldStars(w)}/${LEVELS_PER_WORLD * 3}</span>
         </div>
         <div class="stage-grid">${cells}</div>
       </section>`;
@@ -276,7 +359,7 @@ export function showSelect(): void {
         <button class="icon-btn" data-a="settings">${art('icon_settings', ICON.settings)}</button>
       </header>
       <div class="world-list">
-        ${DEV_MODE ? '<div class="dev-banner">DEV · 모든 스테이지 열림 · 광고 없음 · 별도 저장</div>' : ''}
+        ${DEV_MODE ? '<div class="dev-banner">DEV · 스테이지와 치장 전부 열림 · 광고 없음 · 별도 저장</div>' : ''}
         <div class="select-summary">
           <span class="total-stars">${starsHtml(1)}<b>${totalStars}</b>/${LEVELS.length * 3}</span>
           <button class="link-btn" data-a="tutorial">${t('tutReplay')}</button>
@@ -298,6 +381,7 @@ export function showSelect(): void {
       toast(t('locked', { n: lv.world - 1 }));
       return;
     }
+    playOrigin = 'select';
     showPlay(lv);
   });
   if (lastWorld > 1) el.querySelector(`[data-world="${lastWorld}"]`)?.scrollIntoView({ block: 'start' });
@@ -371,8 +455,17 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     movesEl.classList.add('bump');
     const stars = starsFor(moves, level.minMoves);
     if (stars !== shownStars) {
+      const lost = shownStars > stars;
       shownStars = stars;
       targetEl.innerHTML = starsHtml(stars) + (stars === 3 ? `<em>≤${level.minMoves}</em>` : stars === 2 ? `<em>≤${twoStarLimit}</em>` : '');
+      if (lost) {
+        // 받을 수 있는 별이 하나 줄었다
+        targetEl.classList.remove('lost');
+        void targetEl.offsetWidth;
+        targetEl.classList.add('lost');
+        sfx.starLost();
+        vibrate(20);
+      }
     }
   };
   refresh();
@@ -407,7 +500,9 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     if (!res.ok) {
       view.bump(res, dir);
       sfx.bump();
-      vibrate(15);
+      if (res.bumpBlock >= 0) vibrate(15);
+      clearTimeout(holdTimer);
+      holdDir = null;
       if (tutData && !tutBumped && res.bumpBlock >= 0) {
         tutBumped = true;
         tip(tutData.bumped);
@@ -415,8 +510,11 @@ export function showPlay(level: LevelInfo, tut?: number): void {
       return;
     }
     handEl?.remove();
+    const doorWasOpen = doorsOpen(def, state);
     history.push(state);
     state = res.state;
+    if (doorsOpen(def, state) !== doorWasOpen) sfx.door();
+    if (res.crumbled >= 0) sfx.crack();
     view.applyStep(res, dir);
     if (tutData && res.pushed >= 0 && !tutPushed) {
       tutPushed = true;
@@ -445,12 +543,14 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     if (isTut) {
       save.tutorial = Math.max(save.tutorial, tut + 1);
       persist();
-      setTimeout(() => showTutorialClear(tut), 750);
+      setTimeout(() => showTutorialClear(tut), 1120);
       return;
     }
     const moves = history.length;
+    const wasCleared = isWorldCleared(level.world);
     const reward = recordClear(level, moves);
-    setTimeout(() => showClear(level, moves, reward.stars, reward.gold), 750);
+    const worldDone = !wasCleared && isWorldCleared(level.world);
+    setTimeout(() => showClear(level, moves, reward, worldDone), 1120);
   };
 
   const undo = () => {
@@ -560,7 +660,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   const repeat = () => {
     if (holdDir === null) return;
     move(holdDir);
-    holdTimer = window.setTimeout(repeat, 135);
+    holdTimer = window.setTimeout(repeat, 170);
   };
   const board = el.querySelector<HTMLElement>('.board-wrap')!;
   board.addEventListener('pointerdown', (e) => {
@@ -600,7 +700,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   el.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest<HTMLElement>('[data-a]')?.dataset.a;
     if (a === 'back') {
-      if (isTut && save.tutorial < TUTORIALS.length) showTitle();
+      if (isTut || playOrigin === 'home') showTitle();
       else showSelect();
     } else if (a === 'undo') undo();
     else if (a === 'restart') restart();
@@ -626,14 +726,19 @@ function showTutorialClear(index: number): void {
   const last = index + 1 >= TUTORIALS.length;
   const m = modal(
     `<h2 class="clear-title">${t(last ? 'tutDone' : 'tutGreat')}</h2>
+     <canvas class="mascot small" width="260" height="260"></canvas>
      ${last ? `<p class="modal-text pre">${t('tutDoneText')}</p>${starsHtml(3, 'big')}` : ''}
      <button class="btn big" data-a="go">${t(last ? 'tutStart' : 'tutNext')}</button>`,
     false,
   );
   burst(innerWidth / 2, innerHeight * 0.4, ['#ffd24d', '#ffffff', WORLDS[0].accent], last ? 80 : 30, last ? 620 : 380);
+  startMascot(m.el.querySelector<HTMLCanvasElement>('.mascot')!, jumpOnce());
   m.el.querySelector('[data-a=go]')!.addEventListener('click', () => {
     m.close();
-    if (last) showPlay(LEVELS[0]);
+    if (last) {
+      playOrigin = 'home';
+      showPlay(LEVELS[0]);
+    }
     else showTutorial(index + 1);
   });
 }
@@ -651,12 +756,15 @@ const BLOCK_RULES: Partial<Record<BlockKind, Rule>> = {
   railV: { key: 'rail', sprite: 'block_railH', symbol: '↔', title: 'ruleRail', text: 'ruleRailText' },
   ice: { key: 'ice', sprite: 'block_ice', symbol: '❄', title: 'ruleIce', text: 'ruleIceText' },
   count: { key: 'count', sprite: 'block_count', symbol: '3', title: 'ruleCount', text: 'ruleCountText' },
+  link: { key: 'link', sprite: 'block_link', symbol: '∞', title: 'ruleLink', text: 'ruleLinkText' },
 };
 const TILE_RULES: Rule[] = [
   { key: 'pit', sprite: 'tile_pit', symbol: '●', title: 'rulePit', text: 'rulePitText' },
   { key: 'oneway', sprite: 'tile_oneway', symbol: '↑', title: 'ruleOneway', text: 'ruleOnewayText' },
   { key: 'slip', sprite: 'tile_ice', symbol: '~', title: 'ruleSlip', text: 'ruleSlipText' },
   { key: 'portal', sprite: 'tile_portal', symbol: '◎', title: 'rulePortal', text: 'rulePortalText' },
+  { key: 'door', sprite: 'tile_door', symbol: '▥', title: 'ruleDoor', text: 'ruleDoorText' },
+  { key: 'crumble', sprite: 'tile_crumble', symbol: '▦', title: 'ruleCrumble', text: 'ruleCrumbleText' },
 ];
 
 function showRuleCard(def: BoardDef): void {
@@ -668,6 +776,8 @@ function showRuleCard(def: BoardDef): void {
     else if (tile >= TILE_ONEWAY && tile < TILE_ONEWAY + 4) add(TILE_RULES[1]);
     else if (tile === TILE_SLIP) add(TILE_RULES[2]);
     else if (tile === TILE_PORTAL) add(TILE_RULES[3]);
+    else if (tile === TILE_SWITCH || tile === TILE_DOOR) add(TILE_RULES[4]);
+    else if (tile === TILE_CRUMBLE) add(TILE_RULES[5]);
   });
   if (!rules.length) return;
   rules.forEach((r) => save.tips.push(r.key));
@@ -685,24 +795,43 @@ function showRuleCard(def: BoardDef): void {
 }
 // ───────── 클리어 ─────────
 
-function showClear(level: LevelInfo, moves: number, stars: number, gold: number): void {
+// 결과 창의 캐릭터: 한 번 뛰고 나서는 숨쉬기로 돌아간다
+function jumpOnce(): (time: number) => { name: AnimName; t: number } {
+  let t0 = -1;
+  return (time) => {
+    if (t0 < 0) t0 = time;
+    const t = time - t0;
+    return t < 1 ? { name: 'win', t } : { name: 'idle', t };
+  };
+}
+
+// worldDone: 이번 클리어로 그 던전을 처음 모두 지났다. 이때만 가장 큰 축하를 한다.
+function showClear(level: LevelInfo, moves: number, reward: ClearReward, worldDone: boolean): void {
+  const { stars, gold } = reward;
   const next = nextLevel(level.id);
+  const nextWorld = worldDone && level.world < WORLD_COUNT ? level.world + 1 : 0;
   const m = modal(
     `
-    <h2 class="clear-title">${t('cleared')}</h2>
+    <h2 class="clear-title">${t(worldDone ? 'worldCleared' : 'cleared')}</h2>
+    <canvas class="mascot small" width="260" height="260"></canvas>
     ${starsHtml(0, 'big')}
     <div class="stats">
       <div><small>${t('yourMoves')}</small><b>${moves}</b></div>
       <div><small>${t('minMoves')}</small><b>${level.minMoves}</b></div>
       <div class="gold"><small>${t('earned')}</small><b><span class="coin"></span>+<span data-gold>0</span></b></div>
     </div>
+    ${worldDone ? `<p class="world-done">${nextWorld ? `${art('emblem_' + nextWorld, '', 'emblem')}<span>${t('worldNext')}<b>${worldName(nextWorld)}</b></span>` : `<span><b>${t('allCleared')}</b></span>`}</p>` : ''}
+    ${gold > 0 ? `<button class="btn ghost bonus" data-a="bonus"><span class="ad-chip">AD</span>${t('bonusAd', { n: gold })}</button>` : ''}
     ${next ? `<button class="btn big" data-a="next">${t('next')}</button>` : ''}
     <div class="row">
       <button class="btn ghost" data-a="retry">${t('retry')}</button>
-      <button class="btn ghost" data-a="stages">${t('toStages')}</button>
+      <button class="btn ghost" data-a="stages">${t('stages')}</button>
+      <button class="btn ghost" data-a="home">${t('home')}</button>
     </div>`,
     false,
   );
+  startMascot(m.el.querySelector<HTMLCanvasElement>('.mascot')!, worldDone ? (time) => ({ name: 'win', t: time % 1.5 }) : jumpOnce());
+  if (worldDone) sfx.fanfare();
   const starEls = m.el.querySelectorAll<HTMLElement>('.stars.big i');
   for (let i = 0; i < stars; i++) {
     setTimeout(() => {
@@ -715,9 +844,11 @@ function showClear(level: LevelInfo, moves: number, stars: number, gold: number)
   }
   setTimeout(() => {
     if (!m.el.isConnected) return;
-    if (stars === 3) {
+    // 색종이는 던전을 다 깼을 때와 별 3개를 처음 받았을 때만 쓴다
+    if (worldDone || (stars === 3 && reward.newStars > 0)) {
       const th = WORLDS[level.world - 1];
-      burst(innerWidth / 2, innerHeight * 0.35, [th.accent, '#ffd24d', '#ffffff', '#ff7d6b', '#7fd4ff'], 90);
+      burst(innerWidth / 2, innerHeight * 0.35, [th.accent, '#ffd24d', '#ffffff', '#ff7d6b', '#7fd4ff'], worldDone ? 170 : 60, worldDone ? 760 : 560);
+      if (worldDone) vibrate([40, 60, 40, 60, 90]);
     }
     const goldEl = m.el.querySelector<HTMLElement>('[data-gold]')!;
     if (gold > 0) sfx.coin();
@@ -733,13 +864,24 @@ function showClear(level: LevelInfo, moves: number, stars: number, gold: number)
   m.el.addEventListener('click', async (e) => {
     const a = (e.target as HTMLElement).closest<HTMLElement>('[data-a]')?.dataset.a;
     if (!a) return;
+    if (a === 'bonus') {
+      // 보상 2배: 광고를 본 뒤 같은 양을 한 번 더 준다. 한 번만 받을 수 있다.
+      const btn = m.el.querySelector<HTMLElement>('[data-a=bonus]')!;
+      btn.remove();
+      await ads.rewarded();
+      addBonusGold(gold);
+      sfx.coin();
+      m.el.querySelector<HTMLElement>('[data-gold]')!.textContent = String(gold * 2);
+      return;
+    }
     m.close();
     if (a === 'retry') showPlay(level);
     else if (a === 'stages') showSelect();
+    else if (a === 'home') showTitle();
     else if (a === 'next' && next) {
       // 전면 광고는 레벨 사이에만, 3개 클리어마다 한 번, 월드 1에서는 띄우지 않는다
       if (level.world === 1) save.clearsSinceAd = 0;
-      else if (save.clearsSinceAd >= 3) {
+      else if (save.clearsSinceAd >= 3 && Date.now() - save.lastAdAt > AD_MIN_GAP_MS) {
         save.clearsSinceAd = 0;
         persist();
         await ads.interstitial();
@@ -828,6 +970,7 @@ export function showCosmetics(): void {
           ${!done && multi >= 2 ? `<button class="btn big multi" data-a="multi">${t('drawMulti', { n: multi })} <span class="coin"></span>${multi * GACHA_COST}</button>` : ''}
         </div>
         ${done ? '' : `<p class="pity">${t('guarantee', { n: drawsUntilGuarantee() })}</p>`}
+        ${!done && adDrawsLeft() > 0 ? `<button class="ad-draw" data-a="addraw"><span class="ad-chip">AD</span>${t('adDraw', { n: adDrawsLeft() })}</button>` : ''}
         <div class="rates" title="${t('rates')}">${rates}</div>
       </section>
       <nav class="tabs">
@@ -848,14 +991,14 @@ export function showCosmetics(): void {
     const equipped = cosmeticsTab === 'skin' ? save.skin : save.trail;
     inv.innerHTML = entries
       .map((e) => {
-        const owned = e.rarity === null || save.owned.includes(e.id);
+        const owned = e.rarity === null || owns(e.id);
         return `<button class="item ${owned ? '' : 'missing'} ${equipped === e.id ? 'equipped' : ''}" data-id="${e.id}" style="--c:${e.rarity ? RARITY_COLOR[e.rarity] : '#6d6785'}">
           <canvas width="144" height="144"></canvas><span>${owned ? e.name : '???'}</span>${equipped === e.id ? `<em>${t('equipped')}</em>` : ''}</button>`;
       })
       .join('');
     inv.querySelectorAll<HTMLElement>('.item').forEach((b, i) => {
       const e = entries[i];
-      drawItemPreview(b.querySelector('canvas')!, e.id, cosmeticsTab, e.rarity === null || save.owned.includes(e.id));
+      drawItemPreview(b.querySelector('canvas')!, e.id, cosmeticsTab, e.rarity === null || owns(e.id));
     });
   };
   fill();
@@ -873,59 +1016,127 @@ export function showCosmetics(): void {
 
   const chest = el.querySelector<HTMLElement>('.chest')!;
   let drawing = false;
-  const draw = () => {
-    if (drawing) return;
-    if (save.gold < GACHA_COST) {
-      sfx.deny();
-      toast(t('needGold'));
-      return;
-    }
-    const result = drawGacha();
-    if (!result) return;
+
+  // Rev2D로 만든 상자 동작: 평소에는 들썩이고, 뽑을 때는 흔들린다. 시트가 없으면 CSS 흔들림을 그대로 쓴다.
+  if (chestImages) {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'chest-anim';
+    canvas.width = canvas.height = CHEST_FRAME * 2;
+    chest.querySelector('.art')!.appendChild(canvas);
+    const ctx = canvas.getContext('2d')!;
+    let state = '';
+    let stateAt = 0;
+    const frame = (ms: number) => {
+      if (!canvas.isConnected) return;
+      requestAnimationFrame(frame);
+      const sheet = getSheet('chest');
+      if (!sheet) return;
+      chest.classList.add('has-anim');
+      const time = ms / 1000;
+      if (chest.dataset.state !== state) {
+        state = chest.dataset.state ?? 'idle';
+        stateAt = time;
+      }
+      if (state === 'open') return;
+      const [start, count, fps] = CHEST_ANIMS[state === 'shake' ? 'shake' : 'idle'];
+      const n = Math.floor((time - (state === 'shake' ? stateAt : 0)) * fps);
+      const f = start + (state === 'shake' ? Math.min(count - 1, n) : n % count);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(sheet, (f % CHEST_COLS) * CHEST_FRAME, Math.floor(f / CHEST_COLS) * CHEST_FRAME, CHEST_FRAME, CHEST_FRAME, 0, 0, canvas.width, canvas.height);
+    };
+    requestAnimationFrame(frame);
+  }
+  // 상자 연출: 1초 흔들리다 열리고 결과를 보여준다. 흔드는 동안 상자나 버튼을 누르면 바로 넘어간다.
+  let skipDraw: (() => void) | null = null;
+  const chestSequence = (color: string, onOpen: () => void, onReveal: () => void) => {
     drawing = true;
     el.querySelector('.gold-pill b')!.textContent = save.gold.toLocaleString();
-    const color = RARITY_COLOR[result.item.rarity];
-    const tier = RARITY_ORDER.indexOf(result.item.rarity);
     chest.style.setProperty('--ray', color);
     chest.dataset.state = 'shake';
     sfx.chestShake();
     vibrate([20, 60, 20, 60, 20, 60, 40]);
-    // 상자가 1초 흔들리다 열리고, 빛의 색이 등급을 알려준다
-    setTimeout(() => {
-      if (!chest.isConnected) return;
+    let opened = false;
+    const open = () => {
+      if (opened || !chest.isConnected) return;
+      opened = true;
       chest.dataset.state = 'open';
-      if (result.isNew) sfx.reveal(tier);
-      else sfx.dud();
-      const r = chest.getBoundingClientRect();
-      burst(r.left + r.width / 2, r.top + r.height * 0.45, [color, '#ffffff', color], result.isNew ? 30 + tier * 30 : 12, 380 + tier * 120);
-    }, 1000);
-    setTimeout(() => {
+      onOpen();
+    };
+    const reveal = () => {
+      skipDraw = null;
       if (!chest.isConnected) return;
-      const m = modal(`
-        <div class="reveal ${result.isNew ? 'new' : 'dup'}" style="--c:${color}">
-          <div class="reveal-rays"></div>
-          <canvas width="240" height="240"></canvas>
-          <span class="rarity">${t(result.item.rarity as StringKey)}</span>
-          <h2>${itemName(result.item)}</h2>
-          <p>${result.isNew ? t('newItem') : t('duplicate')}</p>
-        </div>
-        <button class="btn" data-a="ok">${t('ok')}</button>`);
-      drawItemPreview(m.el.querySelector('canvas')!, result.item.id, result.item.type, true);
-      const finish = () => {
-        cosmeticsTab = result.isNew ? result.item.type : cosmeticsTab;
-        showCosmetics();
-      };
-      m.el.querySelector('[data-a=ok]')!.addEventListener('click', m.close);
-      new MutationObserver((_, obs) => {
-        if (!m.el.isConnected) {
-          obs.disconnect();
-          finish();
-        }
-      }).observe(document.body, { childList: true });
-    }, 1750);
+      open();
+      onReveal();
+    };
+    const openTimer = window.setTimeout(open, 1000);
+    const revealTimer = window.setTimeout(reveal, 1750);
+    skipDraw = () => {
+      skipDraw = null;
+      clearTimeout(openTimer);
+      clearTimeout(revealTimer);
+      open();
+      window.setTimeout(reveal, 260);
+    };
+  };
+  // 결과 창이 닫히면 화면을 다시 그린다
+  const afterClose = (m: { el: HTMLElement; close: () => void }, done: () => void) => {
+    m.el.querySelector('[data-a=ok]')!.addEventListener('click', m.close);
+    new MutationObserver((_, obs) => {
+      if (!m.el.isConnected) {
+        obs.disconnect();
+        done();
+      }
+    }).observe(document.body, { childList: true });
   };
 
-  // 가진 골드만큼 한 번에 여러 번 뽑는다. 최대 10회이고, 360~399골드면 9회가 된다.
+  const draw = (free = false) => {
+    if (drawing) return;
+    if (!free && save.gold < GACHA_COST) {
+      sfx.deny();
+      toast(t('needGold'));
+      return;
+    }
+    const result = drawGacha(Math.random, free);
+    if (!result) return;
+    const color = RARITY_COLOR[result.item.rarity];
+    const tier = RARITY_ORDER.indexOf(result.item.rarity);
+    chestSequence(
+      color,
+      () => {
+        // 빛의 색이 등급을 알려준다
+        if (result.isNew) sfx.reveal(tier);
+        else sfx.dud();
+        const r = chest.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top + r.height * 0.45, [color, '#ffffff', color], result.isNew ? 30 + tier * 30 : 12, 380 + tier * 120);
+      },
+      () => {
+        const m = modal(`
+          <div class="reveal ${result.isNew ? 'new' : 'dup'}" style="--c:${color}">
+            <div class="reveal-rays"></div>
+            <canvas width="240" height="240"></canvas>
+            <span class="rarity">${t(result.item.rarity as StringKey)}</span>
+            <h2>${itemName(result.item)}</h2>
+            <p>${result.isNew ? t('newItem') : t('duplicate')}</p>
+          </div>
+          <button class="btn" data-a="ok">${t('ok')}</button>`);
+        drawItemPreview(m.el.querySelector('canvas')!, result.item.id, result.item.type, true);
+        afterClose(m, () => {
+          cosmeticsTab = result.isNew ? result.item.type : cosmeticsTab;
+          showCosmetics();
+        });
+      },
+    );
+  };
+
+  // 광고를 보고 골드 없이 한 번 뽑는다. 하루 횟수 제한이 있다.
+  const adDraw = async () => {
+    if (drawing || adDrawsLeft() <= 0) return;
+    await ads.rewarded();
+    useAdDraw();
+    draw(true);
+  };
+
+  // 가진 골드만큼 한 번에 여러 번 뽑는다. 최대 10회이고, 9회분 골드만 있으면 9회가 된다.
   const drawMulti = () => {
     if (drawing) return;
     const count = Math.min(MULTI_MAX, Math.floor(save.gold / GACHA_COST));
@@ -940,50 +1151,42 @@ export function showCosmetics(): void {
       toast(t('needGold'));
       return;
     }
-    drawing = true;
-    el.querySelector('.gold-pill b')!.textContent = save.gold.toLocaleString();
     const tierOf = (r: GachaResult) => RARITY_ORDER.indexOf(r.item.rarity);
     const best = results.reduce((a, b) => (tierOf(b) > tierOf(a) ? b : a));
     const color = RARITY_COLOR[best.item.rarity];
     const newCount = results.filter((r) => r.isNew).length;
-    chest.style.setProperty('--ray', color);
-    chest.dataset.state = 'shake';
-    sfx.chestShake();
-    vibrate([20, 60, 20, 60, 20, 60, 40]);
-    setTimeout(() => {
-      if (!chest.isConnected) return;
-      chest.dataset.state = 'open';
-      if (newCount) sfx.reveal(tierOf(best));
-      else sfx.dud();
-      const r = chest.getBoundingClientRect();
-      burst(r.left + r.width / 2, r.top + r.height * 0.45, [color, '#ffffff', '#ffd24d'], 40 + results.length * 8, 520);
-    }, 1000);
-    setTimeout(() => {
-      if (!chest.isConnected) return;
-      const cards = results
-        .map(
-          (r, i) => `<div class="multi-card ${r.isNew ? 'new' : 'dup'}" style="--c:${RARITY_COLOR[r.item.rarity]};animation-delay:${i * 70}ms">
-            <canvas width="120" height="120"></canvas><span>${itemName(r.item)}</span>${r.isNew ? '<em>NEW</em>' : ''}</div>`,
-        )
-        .join('');
-      const m = modal(`
-        <h2 class="clear-title">${t('multiResult')}</h2>
-        <div class="multi-grid">${cards}</div>
-        <p class="multi-sum">${t('multiSum', { n: results.length, k: newCount })}</p>
-        <button class="btn" data-a="ok">${t('ok')}</button>`);
-      m.el.querySelectorAll('canvas').forEach((c, i) => drawItemPreview(c, results[i].item.id, results[i].item.type, true));
-      m.el.querySelector('[data-a=ok]')!.addEventListener('click', m.close);
-      new MutationObserver((_, obs) => {
-        if (!m.el.isConnected) {
-          obs.disconnect();
-          showCosmetics();
-        }
-      }).observe(document.body, { childList: true });
-    }, 1750);
+    chestSequence(
+      color,
+      () => {
+        if (newCount) sfx.reveal(tierOf(best));
+        else sfx.dud();
+        const r = chest.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top + r.height * 0.45, [color, '#ffffff', '#ffd24d'], 40 + results.length * 8, 520);
+      },
+      () => {
+        const cards = results
+          .map(
+            (r, i) => `<div class="multi-card ${r.isNew ? 'new' : 'dup'}" style="--c:${RARITY_COLOR[r.item.rarity]};animation-delay:${i * 70}ms">
+              <canvas width="120" height="120"></canvas><span>${itemName(r.item)}</span>${r.isNew ? '<em>NEW</em>' : ''}</div>`,
+          )
+          .join('');
+        const m = modal(`
+          <h2 class="clear-title">${t('multiResult')}</h2>
+          <div class="multi-grid">${cards}</div>
+          <p class="multi-sum">${t('multiSum', { n: results.length, k: newCount })}</p>
+          <button class="btn" data-a="ok">${t('ok')}</button>`);
+        m.el.querySelectorAll('canvas').forEach((c, i) => drawItemPreview(c, results[i].item.id, results[i].item.type, true));
+        afterClose(m, showCosmetics);
+      },
+    );
   };
 
   el.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+    if (skipDraw && target.closest('.gacha')) {
+      skipDraw();
+      return;
+    }
     const tab = target.closest<HTMLElement>('[data-tab]')?.dataset.tab as ItemType | undefined;
     if (tab) {
       cosmeticsTab = tab;
@@ -992,8 +1195,9 @@ export function showCosmetics(): void {
       return;
     }
     const a = target.closest<HTMLElement>('[data-a]')?.dataset.a;
-    if (a === 'back' && !drawing) showSelect();
+    if (a === 'back' && !drawing) showTitle();
     else if (a === 'draw') draw();
+    else if (a === 'addraw') void adDraw();
     else if (a === 'multi') drawMulti();
   });
 }

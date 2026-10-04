@@ -99,10 +99,39 @@ describe('던전 기믹', () => {
   });
 });
 
-describe('출시 레벨 30개', () => {
-  it('월드당 6개씩 있다', () => {
-    expect(levels.length).toBe(30);
-    for (let w = 1; w <= 5; w++) expect(levels.filter((l) => l.world === w).length).toBe(6);
+describe('새 던전의 기믹', () => {
+  it('문은 블록이 스위치에 올라가 있을 때만 지나갈 수 있다', () => {
+    const closed = parseLevel(['P.D.E', '.Bs..']);
+    const a = step(closed, initialState(closed), R);
+    expect(step(closed, a.state, R).ok).toBe(false);
+    const open = parseLevel(['PBs.#', '..D.E']);
+    const pushed = step(open, initialState(open), R);
+    expect(pushed.state.b[0]).toBe(2);
+    expect(solve(open, initialState(open)).status).toBe('solved');
+  });
+
+  it('무너지는 바닥은 캐릭터가 떠나면 구덩이가 되어 다시 밟을 수 없다', () => {
+    const def = parseLevel(['Pc..E']);
+    const a = step(def, initialState(def), R);
+    expect(a.crumbled).toBe(-1);
+    const b = step(def, a.state, R);
+    expect(b.crumbled).toBe(1);
+    expect(step(def, b.state, L).ok).toBe(false);
+  });
+
+  it('쌍둥이 블록은 하나를 밀면 함께 움직이고, 하나라도 막히면 움직이지 않는다', () => {
+    const def = parseLevel(['PL..E', '.L...']);
+    const a = step(def, initialState(def), R);
+    expect(a.state.b).toEqual([2, 7]);
+    const blocked = parseLevel(['PL..E', '.L#..']);
+    expect(step(blocked, initialState(blocked), R).ok).toBe(false);
+  });
+});
+
+describe('출시 레벨 96개', () => {
+  it('월드당 12개씩 있다', () => {
+    expect(levels.length).toBe(96);
+    for (let w = 1; w <= 8; w++) expect(levels.filter((l) => l.world === w).length).toBe(12);
   });
 
   it('저장된 해답이 실제로 풀리고 최소 이동 수와 같다', () => {

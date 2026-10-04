@@ -1,7 +1,9 @@
 // 레벨 후보를 무작위로 만들고 솔버로 걸러 월드당 6개를 고른다.
-// 사용: npm run levels -- [월드당 초] [시드]
-import { writeFileSync } from 'node:fs';
-import { BlockKind, DIR_CHARS, TILE_ONEWAY, initialState, parseLevel, step, Dir, BoardDef } from '../src/core/board';
+// 사용: npm run levels -- [월드당 초] [시드] [월드 번호 쉼표 목록]
+// 월드별 결과를 tools/level-cache에 따로 저장하므로, 모자란 월드만 다시 돌리거나 여러 월드를 동시에 돌릴 수 있다.
+// 여덟 월드의 결과가 모두 있으면 src/data/levels.json으로 합친다.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { BlockKind, DIR_CHARS, TILE_DOOR, TILE_ONEWAY, initialState, parseLevel, step, Dir, BoardDef } from '../src/core/board';
 import { solve } from '../src/core/solver';
 
 interface WorldSpec {
@@ -10,21 +12,34 @@ interface WorldSpec {
   range: [number, number];
   symbols: string[]; // 이 월드에서 쓸 수 있는 움직이는 블록
   fresh: string[]; // 이 월드에서 처음 나오는 블록
+  finale?: boolean; // 마지막 던전: 블록 종류와 기믹을 여러 가지 섞어 써야 한다
   gimmicks: Gimmick[]; // 이 던전의 바닥 기믹
 }
 
-type Gimmick = 'pit' | 'oneway' | 'slip' | 'portal';
+type Gimmick = 'pit' | 'oneway' | 'slip' | 'portal' | 'door' | 'crumble';
 
 const WORLDS: WorldSpec[] = [
   { world: 1, size: 6, range: [8, 20], symbols: ['B'], fresh: ['B'], gimmicks: ['pit'] },
   { world: 2, size: 6, range: [12, 25], symbols: ['B', 'H', 'V'], fresh: ['H', 'V'], gimmicks: ['oneway'] },
   { world: 3, size: 7, range: [15, 30], symbols: ['B', 'H', 'V', 'I'], fresh: ['I'], gimmicks: ['slip'] },
   { world: 4, size: 7, range: [20, 35], symbols: ['B', 'H', 'V', 'I', 'N'], fresh: ['N'], gimmicks: ['portal'] },
-  { world: 5, size: 8, range: [25, 45], symbols: ['B', 'H', 'V', 'I', 'N'], fresh: [], gimmicks: ['pit', 'oneway', 'slip', 'portal'] },
+  { world: 5, size: 7, range: [18, 34], symbols: ['B', 'H', 'V', 'I', 'N'], fresh: [], gimmicks: ['door'] },
+  { world: 6, size: 7, range: [18, 34], symbols: ['B', 'H', 'V', 'I', 'N'], fresh: [], gimmicks: ['crumble'] },
+  { world: 7, size: 7, range: [18, 34], symbols: ['B', 'H', 'V', 'I', 'N', 'L'], fresh: ['L'], gimmicks: [] },
+  {
+    world: 8,
+    size: 8,
+    range: [25, 45],
+    symbols: ['B', 'H', 'V', 'I', 'N', 'L'],
+    fresh: [],
+    finale: true,
+    gimmicks: ['pit', 'oneway', 'slip', 'portal', 'door', 'crumble'],
+  },
 ];
 
 const INTRO_RANGE: [number, number] = [4, 8];
 const MAX_MOVABLE = 6;
+const PER_WORLD = 12; // 던전당 스테이지 수. src/game/store.ts의 LEVELS_PER_WORLD와 같아야 한다
 const SOLVE_CAP = 200000;
 const REACH_CAP = 250000; // 기기에서 힌트 탐색이 0.5초 안에 끝나도록 상태 수를 제한한다
 
@@ -52,18 +67,27 @@ function kindGroup(k: BlockKind): string {
 }
 
 function isFresh(spec: WorldSpec, k: BlockKind): boolean {
-  const sym = k === 'normal' ? 'B' : k === 'railH' ? 'H' : k === 'railV' ? 'V' : k === 'ice' ? 'I' : 'N';
+  const sym = k === 'normal' ? 'B' : k === 'railH' ? 'H' : k === 'railV' ? 'V' : k === 'ice' ? 'I' : k === 'link' ? 'L' : 'N';
   return spec.fresh.includes(sym);
 }
+
+// 마지막으로 살펴본 해답에서 무너진 바닥의 수
+let lastCrumbles = 0;
 
 // 해답을 따라가며 실제로 쓰인 기믹을 모은다
 function gimmicksUsed(def: BoardDef, path: Dir[]): Set<Gimmick> {
   const used = new Set<Gimmick>();
+  lastCrumbles = 0;
   let s = initialState(def);
   for (const d of path) {
     const r = step(def, s, d);
     if (r.sunk) used.add('pit');
     if (r.teleported) used.add('portal');
+    if (r.crumbled >= 0) {
+      used.add('crumble');
+      lastCrumbles++;
+    }
+    if (def.tile[r.walkTo] === TILE_DOOR || (r.pushed >= 0 && def.tile[r.to] === TILE_DOOR)) used.add('door');
     const t = def.tile[r.walkTo];
     if (t >= TILE_ONEWAY && t < TILE_ONEWAY + 4) used.add('oneway');
     const pushDist = r.pushed >= 0 ? Math.abs(r.to - r.from) / (d % 2 === 0 ? def.w : 1) : 0;
@@ -75,7 +99,7 @@ function gimmicksUsed(def: BoardDef, path: Dir[]): Set<Gimmick> {
 
 // 움직이는 블록을 전부 고정 블록으로 바꾼 판. 이 판이 풀리면 밀 필요가 없는 레벨이다.
 function freezeAll(rows: string[]): string[] {
-  return rows.map((r) => r.replace(/[BHVI123]/g, 'X'));
+  return rows.map((r) => r.replace(/[BHVI123L]/g, 'X'));
 }
 // 새 블록을 고정 블록으로 바꾼 판. 이 판이 풀리면 새 블록 없이도 풀리는 레벨이다.
 function freezeFresh(rows: string[], spec: WorldSpec): string[] {
@@ -107,6 +131,11 @@ function randomRows(spec: WorldSpec, rnd: () => number): string[] {
       cells[free()] = '@';
       cells[free()] = '@';
     }
+    if (g === 'door') {
+      for (let i = 1 + ((rnd() * 2) | 0); i > 0; i--) cells[free()] = 's';
+      for (let i = 1 + ((rnd() * 2) | 0); i > 0; i--) cells[free()] = 'D';
+    }
+    if (g === 'crumble') for (let i = 4 + ((rnd() * 7) | 0); i > 0; i--) cells[free()] = 'c';
   }
 
   const movable = 2 + ((rnd() * (MAX_MOVABLE - 1)) | 0);
@@ -139,14 +168,18 @@ function evaluate(rows: string[], spec: WorldSpec): Candidate | null {
   const groups = new Set(res.pushedBlocks.map((i) => kindGroup(def.kinds[i])));
   const used = gimmicksUsed(def, res.path);
   // 본편 레벨은 해답에서 그 던전의 기믹을 실제로 써야 한다
-  if (!intro && !spec.gimmicks.some((g) => used.has(g))) return null;
+  if (!intro && spec.gimmicks.length && !spec.gimmicks.some((g) => used.has(g))) return null;
+  // 무너지는 바닥 던전은 바닥이 두 칸 이상 무너져야 그 규칙이 드러난다
+  if (!intro && !spec.finale && spec.gimmicks[0] === 'crumble' && lastCrumbles < 2) return null;
+  // 쌍둥이 블록은 둘 이상이어야 의미가 있다
+  if (def.kinds.filter((k) => k === 'link').length === 1) return null;
   if (spec.fresh.length) {
     if (!res.pushedBlocks.some((i) => isFresh(spec, def.kinds[i]))) return null;
     const frozen = parseLevel(freezeFresh(rows, spec));
     if (solve(frozen, initialState(frozen), { maxStates: SOLVE_CAP }).status !== 'unsolvable') return null;
-  } else if (!intro && (groups.size < 2 || groups.size + used.size < 4)) {
-    return null; // 조합 월드는 블록 종류와 기믹을 합쳐 4가지 이상 써야 한다
-  } else if (intro && groups.size < 2) {
+  } else if (spec.finale && !intro && (groups.size < 2 || groups.size + used.size < 4)) {
+    return null; // 마지막 던전은 블록 종류와 기믹을 합쳐 4가지 이상 써야 한다
+  } else if (spec.finale && intro && groups.size < 2) {
     return null;
   }
 
@@ -177,7 +210,7 @@ function pick(cands: Candidate[]): Candidate[] {
   const mains = cands.filter((c) => !c.intro).sort((a, b) => a.score - b.score);
   const out: Candidate[] = [];
   if (intros.length) out.push(intros[Math.floor(intros.length / 2)]);
-  const need = 6 - out.length;
+  const need = PER_WORLD - out.length;
   const used = new Set<number>();
   for (let i = 0; i < need && mains.length; i++) {
     let idx = Math.round(((i + 0.5) / need) * (mains.length - 1));
@@ -194,7 +227,7 @@ function pick(cands: Candidate[]): Candidate[] {
 function mutate(rows: string[], spec: WorldSpec, rnd: () => number): string[] {
   const n = spec.size;
   const cells = rows.join('').split('');
-  const movable = cells.filter((ch) => 'BHVI123'.includes(ch)).length;
+  const movable = cells.filter((ch) => 'BHVI123L'.includes(ch)).length;
   if (rnd() < 0.12) {
     // 캐릭터나 출구를 빈 칸으로 옮긴다
     const who = rnd() < 0.5 ? 'P' : 'E';
@@ -207,7 +240,7 @@ function mutate(rows: string[], spec: WorldSpec, rnd: () => number): string[] {
   for (let guard = 0; guard < 50; guard++) {
     const i = (rnd() * cells.length) | 0;
     if (cells[i] === 'P' || cells[i] === 'E') continue;
-    const wasMovable = 'BHVI123'.includes(cells[i]);
+    const wasMovable = 'BHVI123L'.includes(cells[i]);
     const roll = rnd();
     let sym: string;
     if (roll < 0.26) sym = '.';
@@ -215,7 +248,9 @@ function mutate(rows: string[], spec: WorldSpec, rnd: () => number): string[] {
     else if (roll < 0.52) sym = 'X';
     else if (roll < 0.68) {
       const g = spec.gimmicks[(rnd() * spec.gimmicks.length) | 0];
-      sym = g === 'pit' ? 'O' : g === 'slip' ? '~' : g === 'portal' ? '@' : '^>v<'[(rnd() * 4) | 0];
+      if (!g) continue;
+      sym =
+        g === 'pit' ? 'O' : g === 'slip' ? '~' : g === 'portal' ? '@' : g === 'crumble' ? 'c' : g === 'door' ? (rnd() < 0.5 ? 's' : 'D') : '^>v<'[(rnd() * 4) | 0];
     } else {
       if (!wasMovable && movable >= MAX_MOVABLE) continue;
       sym = spec.symbols[(rnd() * spec.symbols.length) | 0];
@@ -292,10 +327,11 @@ function climb(spec: WorldSpec, rnd: () => number): Candidate | null {
 
 const seconds = Number(process.argv[2] ?? 40);
 const seed = Number(process.argv[3] ?? 20261003);
-const levels: object[] = [];
-let failed = false;
+const onlyWorlds = process.argv[4]?.split(',').map(Number);
+const CACHE = new URL('./level-cache/', import.meta.url);
+mkdirSync(CACHE, { recursive: true });
 
-for (const spec of WORLDS) {
+for (const spec of WORLDS.filter((w) => !onlyWorlds || onlyWorlds.includes(w.world))) {
   const rnd = mulberry32(seed + spec.world * 7919);
   const seenLayouts = new Set<string>();
   const passed: Candidate[] = [];
@@ -326,23 +362,28 @@ for (const spec of WORLDS) {
     `월드 ${spec.world}: 후보 ${tried}개 중 통과 ${passed.length}개 (소개용 ${passed.length - mains}, 본편 ${mains}) -> ` +
       chosen.map((c) => `${c.minMoves}수/${c.pushes}밀기`).join(', '),
   );
-  if (chosen.length < 6) {
-    failed = true;
-    console.error(`월드 ${spec.world}: 6개를 채우지 못했습니다 (${chosen.length}개)`);
+  if (chosen.length < PER_WORLD) {
+    console.error(`월드 ${spec.world}: ${PER_WORLD}개를 채우지 못했습니다 (${chosen.length}개)`);
+    continue;
   }
-  chosen.forEach((c, i) =>
-    levels.push({
-      id: `${spec.world}-${i + 1}`,
-      world: spec.world,
-      index: i + 1,
-      rows: c.rows,
-      minMoves: c.minMoves,
-      pushes: c.pushes,
-      solution: c.solution,
-    }),
-  );
+  const out = chosen.map((c, i) => ({
+    id: `${spec.world}-${i + 1}`,
+    world: spec.world,
+    index: i + 1,
+    rows: c.rows,
+    minMoves: c.minMoves,
+    pushes: c.pushes,
+    solution: c.solution,
+  }));
+  writeFileSync(new URL(`world-${spec.world}.json`, CACHE), JSON.stringify(out));
 }
 
-if (failed) process.exit(1);
-writeFileSync(new URL('../src/data/levels.json', import.meta.url), JSON.stringify(levels, null, 1) + '\n');
-console.log(`levels.json에 ${levels.length}개 저장`);
+// 모든 월드의 결과가 있으면 합친다
+const missing = WORLDS.filter((w) => !existsSync(new URL(`world-${w.world}.json`, CACHE))).map((w) => w.world);
+if (missing.length) {
+  console.log(`아직 결과가 없는 월드: ${missing.join(', ')}`);
+} else {
+  const levels = WORLDS.flatMap((w) => JSON.parse(readFileSync(new URL(`world-${w.world}.json`, CACHE), 'utf8')));
+  writeFileSync(new URL('../src/data/levels.json', import.meta.url), JSON.stringify(levels, null, 1) + '\n');
+  console.log(`levels.json에 ${levels.length}개 저장`);
+}

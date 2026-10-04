@@ -13,7 +13,7 @@ addEventListener('pointerdown', unlockAudio, { capture: true });
 addEventListener('keydown', unlockAudio, { capture: true });
 
 // 자체 소리가 없는 버튼의 공통 클릭음
-const OWN_SOUND = new Set(['undo', 'restart', 'hint', 'draw', 'multi']);
+const OWN_SOUND = new Set(['undo', 'restart', 'hint', 'draw', 'multi', 'addraw']);
 addEventListener('click', (e) => {
   const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (btn && !btn.disabled && !OWN_SOUND.has(btn.dataset.a ?? '')) sfx.button();

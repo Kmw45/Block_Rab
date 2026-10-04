@@ -5,7 +5,7 @@ export const DIR_CHARS = 'URDL';
 export const DX = [0, 1, 0, -1];
 export const DY = [-1, 0, 1, 0];
 
-export type BlockKind = 'normal' | 'railH' | 'railV' | 'ice' | 'count';
+export type BlockKind = 'normal' | 'railH' | 'railV' | 'ice' | 'count' | 'link';
 
 export const SOLID_WALL = 1;
 export const SOLID_FIXED = 2;
@@ -16,6 +16,9 @@ export const TILE_PIT = 1; // 구덩이: 블록을 밀어 넣어 메워야 지�
 export const TILE_ONEWAY = 2; // 2~5: 화살표 방향으로 움직일 때만 들어갈 수 있다
 export const TILE_SLIP = 6; // 빙판: 올라서면 막힐 때까지 미끄러진다
 export const TILE_PORTAL = 7; // 마법진: 밟으면 짝이 되는 마법진으로 옮겨진다
+export const TILE_SWITCH = 8; // 스위치: 블록이 올라가 있으면 모든 문이 열린다
+export const TILE_DOOR = 9; // 문: 열려 있을 때만 들어갈 수 있다
+export const TILE_CRUMBLE = 10; // 무너지는 바닥: 캐릭터가 밟고 떠나면 구덩이가 된다
 
 export const SUNK = -2; // 구덩이에 빠져 바닥이 된 블록의 횟수 값
 
@@ -25,6 +28,7 @@ export interface BoardDef {
   solid: Uint8Array; // 0 = 바닥, 1 = 벽, 2 = 고정 블록
   tile: Uint8Array;
   portals: number[]; // 없거나 두 칸
+  switches: number[];
   exit: number;
   start: number;
   kinds: BlockKind[];
@@ -36,6 +40,7 @@ export interface State {
   p: number;
   b: number[];
   c: number[];
+  k: number[]; // 무너진 바닥 칸(오름차순)
 }
 
 export interface StepResult {
@@ -52,9 +57,10 @@ export interface StepResult {
   walkTo: number; // 캐릭터가 걸어서(미끄러져서) 도착한 칸. 마법진을 탔다면 순간이동 전 칸
   slid: number; // 캐릭터가 빙판에서 더 미끄러진 칸 수
   teleported: boolean;
+  crumbled: number; // 이번 이동으로 무너진 칸, 없으면 -1
 }
 
-const KIND_BY_SYMBOL: Record<string, BlockKind> = { B: 'normal', H: 'railH', V: 'railV', I: 'ice' };
+const KIND_BY_SYMBOL: Record<string, BlockKind> = { B: 'normal', H: 'railH', V: 'railV', I: 'ice', L: 'link' };
 const ONEWAY_SYMBOLS = '^>v<';
 
 export function parseLevel(rows: string[]): BoardDef {
@@ -63,6 +69,7 @@ export function parseLevel(rows: string[]): BoardDef {
   const solid = new Uint8Array(w * h);
   const tile = new Uint8Array(w * h);
   const portals: number[] = [];
+  const switches: number[] = [];
   const kinds: BlockKind[] = [];
   const startPos: number[] = [];
   const startCount: number[] = [];
@@ -78,6 +85,12 @@ export function parseLevel(rows: string[]): BoardDef {
       else if (ch === 'X') solid[i] = SOLID_FIXED;
       else if (ch === 'O') tile[i] = TILE_PIT;
       else if (ch === '~') tile[i] = TILE_SLIP;
+      else if (ch === 'D') tile[i] = TILE_DOOR;
+      else if (ch === 'c') tile[i] = TILE_CRUMBLE;
+      else if (ch === 's') {
+        tile[i] = TILE_SWITCH;
+        switches.push(i);
+      }
       else if (ch === '@') {
         tile[i] = TILE_PORTAL;
         portals.push(i);
@@ -102,11 +115,11 @@ export function parseLevel(rows: string[]): BoardDef {
   if (start < 0) throw new Error('캐릭터가 없습니다');
   if (exit < 0) throw new Error('출구가 없습니다');
   if (portals.length !== 0 && portals.length !== 2) throw new Error('마법진은 두 개가 짝이어야 합니다');
-  return { w, h, solid, tile, portals, exit, start, kinds, startPos, startCount };
+  return { w, h, solid, tile, portals, switches, exit, start, kinds, startPos, startCount };
 }
 
 export function initialState(def: BoardDef): State {
-  return { p: def.start, b: def.startPos.slice(), c: def.startCount.slice() };
+  return { p: def.start, b: def.startPos.slice(), c: def.startCount.slice(), k: [] };
 }
 
 export function neighbor(def: BoardDef, cell: number, dir: Dir): number {
@@ -122,8 +135,19 @@ export function blockAt(s: State, cell: number): number {
   return -1;
 }
 
-function isOpenPit(def: BoardDef, s: State, cell: number): boolean {
-  if (def.tile[cell] !== TILE_PIT) return false;
+// 문은 블록이 스위치 위에 있을 때만 열린다. 캐릭터가 밟는 것으로는 열리지 않는다.
+export function doorsOpen(def: BoardDef, s: State): boolean {
+  for (const sw of def.switches) if (blockAt(s, sw) >= 0) return true;
+  return false;
+}
+
+function doorAllows(def: BoardDef, s: State, cell: number): boolean {
+  return def.tile[cell] !== TILE_DOOR || doorsOpen(def, s);
+}
+
+// 메워지지 않은 구덩이인가. 무너진 바닥도 구덩이로 본다.
+export function isOpenPit(def: BoardDef, s: State, cell: number): boolean {
+  if (def.tile[cell] !== TILE_PIT && !s.k.includes(cell)) return false;
   for (let i = 0; i < s.b.length; i++) if (s.b[i] === cell && s.c[i] === SUNK) return false;
   return true;
 }
@@ -148,13 +172,14 @@ function blockCanEnter(def: BoardDef, s: State, cell: number, dir: Dir): boolean
     cell !== def.exit &&
     def.tile[cell] !== TILE_PORTAL &&
     onewayAllows(def, cell, dir) &&
+    doorAllows(def, s, cell) &&
     blockAt(s, cell) < 0
   );
 }
 
 // 캐릭터가 밀지 않고 그냥 들어갈 수 있는 칸인가
 function playerCanEnter(def: BoardDef, s: State, cell: number, dir: Dir): boolean {
-  return cell >= 0 && def.solid[cell] === 0 && onewayAllows(def, cell, dir) && !isOpenPit(def, s, cell) && blockAt(s, cell) < 0;
+  return cell >= 0 && def.solid[cell] === 0 && onewayAllows(def, cell, dir) && doorAllows(def, s, cell) && !isOpenPit(def, s, cell) && blockAt(s, cell) < 0;
 }
 
 export function step(def: BoardDef, s: State, dir: Dir): StepResult {
@@ -172,11 +197,12 @@ export function step(def: BoardDef, s: State, dir: Dir): StepResult {
     walkTo: -1,
     slid: 0,
     teleported: false,
+    crumbled: -1,
   };
   const target = neighbor(def, s.p, dir);
   if (target < 0) return res;
   res.bumpCell = target;
-  if (def.solid[target] !== 0 || !onewayAllows(def, target, dir)) return res;
+  if (def.solid[target] !== 0 || !onewayAllows(def, target, dir) || !doorAllows(def, s, target)) return res;
 
   let b = s.b;
   let c = s.c;
@@ -187,6 +213,31 @@ export function step(def: BoardDef, s: State, dir: Dir): StepResult {
     res.bumpBlock = bi;
     const kind = def.kinds[bi];
     if (!canPush(kind, s.c[bi], dir)) return res;
+    if (kind === 'link') {
+      // 쌍둥이 블록: 하나를 밀면 모두 같은 방향으로 한 칸 움직인다. 하나라도 막히면 아무것도 움직이지 않는다.
+      const group = def.kinds.map((_, i) => i).filter((i) => def.kinds[i] === 'link' && s.c[i] !== SUNK);
+      const dests = group.map((i) => neighbor(def, s.b[i], dir));
+      const free = dests.every((d) => {
+        if (d < 0 || def.solid[d] !== 0 || d === def.exit || def.tile[d] === TILE_PORTAL) return false;
+        if (!onewayAllows(def, d, dir) || !doorAllows(def, s, d)) return false;
+        const other = blockAt(s, d);
+        return other < 0 || group.includes(other);
+      });
+      if (!free) return res;
+      b = s.b.slice();
+      group.forEach((i, n) => {
+        b[i] = dests[n];
+        if (isOpenPit(def, s, dests[n])) {
+          if (c === s.c) c = s.c.slice();
+          c[i] = SUNK;
+          res.sunk = true;
+        }
+      });
+      res.pushed = bi;
+      res.from = target;
+      res.to = b[bi];
+      return finish(def, s, res, { p: target, b, c, k: s.k }, dir);
+    }
     let dest = neighbor(def, target, dir);
     if (!blockCanEnter(def, s, dest, dir)) return res;
     // 얼음 블록이거나 빙판 위라면 계속 미끄러지고, 구덩이를 만나면 빠진다
@@ -213,7 +264,11 @@ export function step(def: BoardDef, s: State, dir: Dir): StepResult {
     res.to = dest;
   }
 
-  const next: State = { p: target, b, c };
+  return finish(def, s, res, { p: target, b, c, k: s.k }, dir);
+}
+
+// 캐릭터가 목표 칸에 들어선 뒤의 처리: 빙판 미끄러짐, 마법진, 무너지는 바닥
+function finish(def: BoardDef, s: State, res: StepResult, next: State, dir: Dir): StepResult {
   // 빙판에서는 막힐 때까지 미끄러진다. 미끄러지는 동안에는 블록을 밀지 못한다.
   while (def.tile[next.p] === TILE_SLIP && next.p !== def.exit) {
     const ahead = neighbor(def, next.p, dir);
@@ -229,6 +284,11 @@ export function step(def: BoardDef, s: State, dir: Dir): StepResult {
       res.teleported = true;
     }
   }
+  // 무너지는 바닥은 캐릭터가 떠나는 순간 꺼진다
+  if (def.tile[s.p] === TILE_CRUMBLE && !s.k.includes(s.p)) {
+    next.k = [...s.k, s.p].sort((a, b) => a - b);
+    res.crumbled = s.p;
+  }
   res.ok = true;
   res.state = next;
   res.won = next.p === def.exit;
@@ -236,5 +296,5 @@ export function step(def: BoardDef, s: State, dir: Dir): StepResult {
 }
 
 export function stateKey(s: State): string {
-  return s.p + '|' + s.b.join(',') + '|' + s.c.join(',');
+  return s.p + '|' + s.b.join(',') + '|' + s.c.join(',') + '|' + s.k.join(',');
 }

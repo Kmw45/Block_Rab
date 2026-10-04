@@ -4,503 +4,1619 @@
   "world": 1,
   "index": 1,
   "rows": [
-   "..E#.B",
-   "..B.#.",
-   ".B#.#B",
-   "#O...#",
-   "...##.",
-   "OBP..B"
+   "#XE#..",
+   "..B.#O",
+   "B.....",
+   "#...##",
+   "..P.BO",
+   "...B#."
   ],
-  "minMoves": 7,
+  "minMoves": 6,
   "pushes": 1,
-  "solution": "UURUULU"
+  "solution": "UURULU"
  },
  {
   "id": "1-2",
   "world": 1,
   "index": 2,
   "rows": [
-   "B.E#..",
-   "#.###X",
-   "OO.OPO",
-   ".B#B..",
-   "#.#.B#",
-   ".B..OB"
+   "BOB.#.",
+   "..OBE.",
+   "#.O#.O",
+   "P..O.O",
+   "..B#..",
+   "...#B#"
   ],
   "minMoves": 12,
-  "pushes": 3,
-  "solution": "DDDLLLUUUUUR"
+  "pushes": 2,
+  "solution": "RDDRULURRRUU"
  },
  {
   "id": "1-3",
   "world": 1,
   "index": 3,
   "rows": [
-   ".BOOB.",
-   "..BPB.",
-   "##..O#",
-   ".#.#..",
-   "O#.#BE",
-   "B#..##"
+   "P.OE#B",
+   "#B.#.B",
+   "O.B.##",
+   "#...##",
+   "OO###B",
+   "##.OXX"
   ],
-  "minMoves": 15,
+  "minMoves": 9,
   "pushes": 5,
-  "solution": "DLULLURRRRDDDRD"
+  "solution": "RDDDRUUUR"
  },
  {
   "id": "1-4",
   "world": 1,
   "index": 4,
   "rows": [
-   ".#OB#X",
-   "OO.#.B",
-   ".P.B.X",
-   "#.BB..",
-   "..XOOO",
-   "BX.#.E"
+   "OBOO#O",
+   "..BOB.",
+   "XB#.P.",
+   "X.#.BO",
+   "E..O..",
+   "#OO.OO"
   ],
-  "minMoves": 17,
+  "minMoves": 10,
   "pushes": 6,
-  "solution": "RRDRULLLDRRURDDDR"
+  "solution": "RULLLLDDDL"
  },
  {
   "id": "1-5",
   "world": 1,
   "index": 5,
   "rows": [
-   "O...O.",
-   "X..###",
-   "#.B..E",
-   ".BB#.#",
-   "B.BOO.",
-   ".....P"
+   "OXP.OE",
+   "B.B.##",
+   "...B.#",
+   "#O#OB.",
+   "OOB...",
+   ".#X#.O"
   ],
-  "minMoves": 19,
-  "pushes": 7,
-  "solution": "LLLLURLUURDLDRRRUUR"
+  "minMoves": 15,
+  "pushes": 4,
+  "solution": "RDDLLURDRULURRR"
  },
  {
   "id": "1-6",
   "world": 1,
   "index": 6,
   "rows": [
-   ".B#O#.",
-   "..B..#",
-   "..B.BE",
-   "B#..#.",
-   "...B.O",
-   "OOOP.#"
+   "BOXB#O",
+   "OXO..#",
+   "#X..O#",
+   "OPB..O",
+   "O#BBOO",
+   "....#E"
   ],
-  "minMoves": 19,
-  "pushes": 12,
-  "solution": "UUUULDDULLDDRRRRRUU"
+  "minMoves": 14,
+  "pushes": 6,
+  "solution": "RDRLUURDLDRRRD"
+ },
+ {
+  "id": "1-7",
+  "world": 1,
+  "index": 7,
+  "rows": [
+   "#.#.XO",
+   "OOX..B",
+   ".OB.O.",
+   "BBOO..",
+   ".#BBP.",
+   "#OOEXO"
+  ],
+  "minMoves": 16,
+  "pushes": 6,
+  "solution": "URUULLDLLLDRRDRD"
+ },
+ {
+  "id": "1-8",
+  "world": 1,
+  "index": 8,
+  "rows": [
+   "BE.O..",
+   ".B#OB.",
+   "....O.",
+   "POOB..",
+   "#.BOB.",
+   ".X#O.."
+  ],
+  "minMoves": 20,
+  "pushes": 5,
+  "solution": "URRRDRRDDLUUUURULLLL"
+ },
+ {
+  "id": "1-9",
+  "world": 1,
+  "index": 9,
+  "rows": [
+   "OOBOOO",
+   ".B.OXO",
+   ".#BBO.",
+   ".#B.OB",
+   ".O..PO",
+   "....OE"
+  ],
+  "minMoves": 20,
+  "pushes": 6,
+  "solution": "LDLLLUUUURRRDDDLDRRR"
+ },
+ {
+  "id": "1-10",
+  "world": 1,
+  "index": 10,
+  "rows": [
+   "#OB.OX",
+   "O.B..X",
+   ".B.###",
+   ".B.OEX",
+   "#.B.XP",
+   "###..."
+  ],
+  "minMoves": 18,
+  "pushes": 8,
+  "solution": "DLLULULUUURDDLDRRR"
+ },
+ {
+  "id": "1-11",
+  "world": 1,
+  "index": 11,
+  "rows": [
+   ".#O##B",
+   "OB.OOO",
+   "#B.B..",
+   "E.#BOB",
+   "#.#P..",
+   "##.##O"
+  ],
+  "minMoves": 20,
+  "pushes": 8,
+  "solution": "RRUULLRRDDLLUUULLDDL"
+ },
+ {
+  "id": "1-12",
+  "world": 1,
+  "index": 12,
+  "rows": [
+   "#OPB..",
+   ".B#.BO",
+   "B.OOX#",
+   ".##B.#",
+   ".B...O",
+   ".#X.OE"
+  ],
+  "minMoves": 20,
+  "pushes": 13,
+  "solution": "RDRRULLLLDLDDDRRRRRD"
  },
  {
   "id": "2-1",
   "world": 2,
   "index": 1,
   "rows": [
-   ".H.#..",
-   "#.....",
-   "..#HE.",
-   ".HP#..",
-   ">..#.#",
+   "X..>..",
+   "P..#..",
+   "..#...",
+   "^...#H",
+   "...VE#",
    "..#..."
   ],
   "minMoves": 7,
   "pushes": 1,
-  "solution": "LUURRRD"
+  "solution": "RDDRRDR"
  },
  {
   "id": "2-2",
   "world": 2,
   "index": 2,
   "rows": [
-   "^B.#^B",
-   ".B.X..",
-   "<PV^>.",
-   ">>.B.v",
-   "#>.#..",
-   "..H#.E"
+   ">E.##.",
+   "XX....",
+   "H.vV..",
+   "..PV^>",
+   "#.B^V.",
+   "#v.>B."
   ],
-  "minMoves": 15,
-  "pushes": 5,
-  "solution": "LUURDRDDRURRDDD"
+  "minMoves": 16,
+  "pushes": 3,
+  "solution": "LDDRRRUURUULLLUL"
  },
  {
   "id": "2-3",
   "world": 2,
   "index": 3,
   "rows": [
-   ".#<###",
-   "^...v.",
-   "V<.B>#",
-   "..HBB.",
-   ".v<PV.",
-   "<<.#.E"
+   "H.^#.E",
+   "<..H..",
+   ".#V#V#",
+   "..>X^#",
+   ".B.<V#",
+   "#<...P"
   ],
-  "minMoves": 17,
+  "minMoves": 13,
   "pushes": 6,
-  "solution": "LDLLUUUURRDRDRDRD"
+  "solution": "LULLLURUURRUR"
  },
  {
   "id": "2-4",
   "world": 2,
   "index": 4,
   "rows": [
-   ">v.B.^",
-   "<H.v..",
-   "#EX>X.",
-   "V>.X.B",
-   "P.#V..",
-   "<.B..."
+   "^#<.BP",
+   "###.H>",
+   ".#^<B>",
+   "..BV.>",
+   "..#.<X",
+   "...EX#"
   ],
-  "minMoves": 17,
-  "pushes": 8,
-  "solution": "RDRRRURUUULULDLLD"
+  "minMoves": 13,
+  "pushes": 7,
+  "solution": "LLDRDLDLLDDRR"
  },
  {
   "id": "2-5",
   "world": 2,
   "index": 5,
   "rows": [
-   "...B.<",
-   "..>V..",
-   ".XB^vv",
-   "B<..H.",
-   "PH..#.",
-   "..#.#E"
+   ".#.HP.",
+   "...XB.",
+   ".#vE#V",
+   "..#.X.",
+   "...#<v",
+   "#..B.."
   ],
-  "minMoves": 22,
-  "pushes": 7,
-  "solution": "UUURURRLLDRDDRUURRDDDD"
+  "minMoves": 19,
+  "pushes": 5,
+  "solution": "RDDDDLDLLULULUURRDR"
  },
  {
   "id": "2-6",
   "world": 2,
   "index": 6,
   "rows": [
-   ".^>X.#",
-   "...B.v",
-   ".<#XBP",
-   ".HB^>.",
-   ".H>..B",
-   ".XE#>."
+   "#.<...",
+   ".V..#.",
+   ">..<BV",
+   "P>VV^.",
+   "#H..vX",
+   "E<..X."
   ],
-  "minMoves": 20,
-  "pushes": 12,
-  "solution": "DDLLURUULLLULDDDDRRD"
+  "minMoves": 18,
+  "pushes": 6,
+  "solution": "RUURRURRDDLLDDLDLL"
+ },
+ {
+  "id": "2-7",
+  "world": 2,
+  "index": 7,
+  "rows": [
+   "#E<..^",
+   ">X>#..",
+   ".#<#..",
+   "..B.B.",
+   "VH.^H.",
+   "P.vB.X"
+  ],
+  "minMoves": 18,
+  "pushes": 7,
+  "solution": "UURRDDRURUURUULLLL"
+ },
+ {
+  "id": "2-8",
+  "world": 2,
+  "index": 8,
+  "rows": [
+   "#^H>.v",
+   "P.V#.E",
+   "<#..^H",
+   "#..<BX",
+   ".#.B..",
+   "##.>#."
+  ],
+  "minMoves": 13,
+  "pushes": 10,
+  "solution": "RURDDDDRRUUUR"
+ },
+ {
+  "id": "2-9",
+  "world": 2,
+  "index": 9,
+  "rows": [
+   "...H.#",
+   "^.XB#X",
+   ".<X.H#",
+   "B#<.B.",
+   "..vvBE",
+   "<.P^.v"
+  ],
+  "minMoves": 16,
+  "pushes": 9,
+  "solution": "LULUUURURRDDDRDR"
+ },
+ {
+  "id": "2-10",
+  "world": 2,
+  "index": 10,
+  "rows": [
+   ".B>...",
+   "P^X.VH",
+   "<#.X.>",
+   "^.<Hv#",
+   "...H.#",
+   "Evv.vV"
+  ],
+  "minMoves": 14,
+  "pushes": 11,
+  "solution": "URRRRDDDDLLLDL"
+ },
+ {
+  "id": "2-11",
+  "world": 2,
+  "index": 11,
+  "rows": [
+   "^<..H^",
+   "##.B..",
+   "..VB#P",
+   ".#^.>.",
+   "E<..v^",
+   ".B<X.v"
+  ],
+  "minMoves": 19,
+  "pushes": 9,
+  "solution": "UULLLDRDDRDLLUULLDD"
+ },
+ {
+  "id": "2-12",
+  "world": 2,
+  "index": 12,
+  "rows": [
+   "......",
+   "..VHV.",
+   "..vv.#",
+   "<^Xv#E",
+   "<B#B.^",
+   ".B.Pv."
+  ],
+  "minMoves": 24,
+  "pushes": 13,
+  "solution": "LLUUUULURRDURRDLDDDRDRUU"
  },
  {
   "id": "3-1",
   "world": 3,
   "index": 1,
   "rows": [
-   "I.E##X.",
-   "#.#..~.",
-   "..###~~",
-   "~I.~P..",
-   "#.I#...",
-   "....#.~",
-   "...##~I"
+   "##~#~..",
+   "B#~.I.P",
+   ".~~EI.#",
+   "#..#.##",
+   ".#.##..",
+   "I.~..##",
+   ".I.~..#"
   ],
-  "minMoves": 6,
-  "pushes": 1,
-  "solution": "LLUUUR"
+  "minMoves": 4,
+  "pushes": 2,
+  "solution": "LLDL"
  },
  {
   "id": "3-2",
   "world": 3,
   "index": 2,
   "rows": [
-   "~###.E#",
-   "IX~##..",
-   ".B.##.#",
-   ".#~.~I.",
-   "..H.###",
-   "~H.~..~",
-   ".~#XIP."
+   "#EV.~~~",
+   "..~#~#.",
+   "~.#H#.P",
+   ".#..#V.",
+   "I~.~#~.",
+   ".....H~",
+   "#IX#.##"
   ],
-  "minMoves": 21,
+  "minMoves": 18,
   "pushes": 4,
-  "solution": "ULLLULUURLDDRRURRRUUU"
+  "solution": "DDDLLLULDLDLUUURUU"
  },
  {
   "id": "3-3",
   "world": 3,
   "index": 3,
   "rows": [
-   "V...X##",
-   ".~.V#I.",
-   "#.#PI..",
-   "..#.~#X",
-   "#~~.X.~",
-   ".HI..~~",
-   "E~.X#X#"
+   "X.~#.E.",
+   "....I.#",
+   "H.~X.VP",
+   "#V#.#~.",
+   ".H..H.X",
+   "...#~#~",
+   "~#....."
   ],
-  "minMoves": 24,
-  "pushes": 5,
-  "solution": "DDLUUURRDDDUUULLDDDRDLDL"
+  "minMoves": 18,
+  "pushes": 6,
+  "solution": "DLDLDLLUULUUURRRUR"
  },
  {
   "id": "3-4",
   "world": 3,
   "index": 4,
   "rows": [
-   "#~.~##H",
-   "B~.~.##",
-   "#~.I.##",
-   "##.~.~.",
-   "X#V~X.#",
-   ".B.~H.~",
-   "P###XE#"
+   "~~#B.IX",
+   "~~....E",
+   "..##~#V",
+   ".IB.#~#",
+   "~~P.~.~",
+   "#.#.#~.",
+   "X~.I..."
   ],
-  "minMoves": 20,
-  "pushes": 9,
-  "solution": "URRUUURLURDLLDRRRDDD"
+  "minMoves": 23,
+  "pushes": 5,
+  "solution": "LUURDLDRRULLRDLUUURRRRR"
  },
  {
   "id": "3-5",
   "world": 3,
   "index": 5,
   "rows": [
-   "P.#~.I.",
-   "...~XB.",
-   "I.XX..I",
-   "XX~#.~.",
-   "~.I.XB.",
-   "E#~#~.~",
-   "#~~~..."
+   ".##E...",
+   "~.P#.#.",
+   ".B.~X.~",
+   "..#~.B.",
+   ".#~~#.#",
+   "I.B..X.",
+   "~#V.#B."
   ],
-  "minMoves": 24,
-  "pushes": 9,
-  "solution": "RDRRURRDDLDRDDRDLLLUULLD"
+  "minMoves": 23,
+  "pushes": 6,
+  "solution": "LLDRRLDLDDRRRURRURUULLL"
  },
  {
   "id": "3-6",
   "world": 3,
   "index": 6,
   "rows": [
-   "E..~.##",
-   ".B..#.#",
-   "#X.#~.#",
-   "P#.X.I.",
-   ".#VX..B",
-   "~.~.BB.",
-   "..#~.#."
+   "P#..EX.",
+   "..#V~~~",
+   "#.#.~~~",
+   "~.##.V~",
+   ".X#~I#.",
+   "V.#~...",
+   "...~H~X"
+  ],
+  "minMoves": 28,
+  "pushes": 5,
+  "solution": "DRDDLDDRDRRRUUUULURDRDDLLUUU"
+ },
+ {
+  "id": "3-7",
+  "world": 3,
+  "index": 7,
+  "rows": [
+   "P#~~.X#",
+   ".##~~~.",
+   ".#~#~E~",
+   "~.#.~~.",
+   "#I.BI.#",
+   "~...V..",
+   ".#X..H#"
   ],
   "minMoves": 25,
-  "pushes": 13,
-  "solution": "DDRURDRUURURDDLLLLUUUULUL"
+  "pushes": 7,
+  "solution": "DDDRDRDRURLDDRUUDRULURDLU"
+ },
+ {
+  "id": "3-8",
+  "world": 3,
+  "index": 8,
+  "rows": [
+   "~.H..~~",
+   "..~XV.#",
+   "BH.#~.#",
+   ".~.II##",
+   "......#",
+   "#..##~E",
+   "~#...PX"
+  ],
+  "minMoves": 29,
+  "pushes": 6,
+  "solution": "ULLLUUULURRRRDDLDLDRLLDDRRRUR"
+ },
+ {
+  "id": "3-9",
+  "world": 3,
+  "index": 9,
+  "rows": [
+   ".~~.~#.",
+   "~..B~.V",
+   "~.....P",
+   ".VX####",
+   ".I.#~..",
+   "X~.~B..",
+   "X~##.XE"
+  ],
+  "minMoves": 26,
+  "pushes": 8,
+  "solution": "ULLLLLDLDDRLUURDDDRRRURRDD"
+ },
+ {
+  "id": "3-10",
+  "world": 3,
+  "index": 10,
+  "rows": [
+   "..~#.XX",
+   "E~#~...",
+   "..B~XI~",
+   "~##~.~.",
+   "XX.#I#I",
+   "~###..~",
+   "P.~B..."
+  ],
+  "minMoves": 30,
+  "pushes": 7,
+  "solution": "RRRRURRUULLURRDRDLRULULLDLLULD"
+ },
+ {
+  "id": "3-11",
+  "world": 3,
+  "index": 11,
+  "rows": [
+   "#...#..",
+   "~..B~.X",
+   ".VX~...",
+   "B~.#.V~",
+   "PX.##..",
+   "~B.~#~E",
+   ".I.#~.~"
+  ],
+  "minMoves": 30,
+  "pushes": 8,
+  "solution": "DRLUURDDLDLUUDRURUULUURRRDRRDD"
+ },
+ {
+  "id": "3-12",
+  "world": 3,
+  "index": 12,
+  "rows": [
+   "....E#P",
+   "..###..",
+   ".#..~B#",
+   ".~#B#.#",
+   "B~.I~~~",
+   "~.~~#..",
+   "I#.~~~I"
+  ],
+  "minMoves": 28,
+  "pushes": 12,
+  "solution": "DLDDDLLDRUUUULDDDLLUUUURURRR"
  },
  {
   "id": "4-1",
   "world": 4,
   "index": 1,
   "rows": [
-   ".#@..BB",
-   "..1...#",
-   ".#P3...",
-   "..#.#..",
-   "#..@...",
-   ".#..#..",
-   "..E..3."
+   "..P....",
+   "......#",
+   "..#....",
+   "#.###.@",
+   "#1.E.2#",
+   "#....X.",
+   "@#.##.."
   ],
   "minMoves": 7,
   "pushes": 1,
-  "solution": "RUULDDL"
+  "solution": "DLDDDRR"
  },
  {
   "id": "4-2",
   "world": 4,
   "index": 2,
   "rows": [
-   "#.##.#X",
-   "..X#B.@",
-   "#B.3..@",
-   "P..##.H",
-   "XXH.#..",
-   "E.#B.#.",
-   "......."
+   "V#.@X@.",
+   "..#IE2.",
+   "#1..#..",
+   "..#.#B.",
+   "..#.I..",
+   ".#X#.##",
+   "...P##."
   ],
-  "minMoves": 21,
-  "pushes": 5,
-  "solution": "RURRRURRLDDRDDLLLLLUL"
+  "minMoves": 22,
+  "pushes": 4,
+  "solution": "LLLUUURURRDDRRURUUULDR"
  },
  {
   "id": "4-3",
   "world": 4,
   "index": 3,
   "rows": [
-   "###.@EX",
-   "#@..##P",
-   "#I..#X.",
-   "..B#.#.",
-   "...##.3",
-   "..#.2..",
-   "..B..B."
+   ".....H@",
+   "@VP.#.#",
+   "#.#X#..",
+   "E1#..H2",
+   ".#.#.X.",
+   "..B....",
+   "#...##."
   ],
-  "minMoves": 22,
-  "pushes": 8,
-  "solution": "DDDDLLDLLLUURUURUURRLR"
+  "minMoves": 21,
+  "pushes": 6,
+  "solution": "ULDLLDDRDLLDDLDLULLUU"
  },
  {
   "id": "4-4",
   "world": 4,
   "index": 4,
   "rows": [
-   "@..X#.#",
-   "@.I...#",
-   "..#.#.#",
-   "X3.V#.#",
-   "I.2#..#",
-   "X...XBP",
-   "..E##.."
+   ".@.#@..",
+   "#V...XE",
+   "#....#X",
+   ".#.##.P",
+   "##V..VB",
+   "...#...",
+   "#.1..V."
   ],
   "minMoves": 20,
-  "pushes": 10,
-  "solution": "DLUUUUULLLULLRDDDDRD"
+  "pushes": 8,
+  "solution": "DDLLDLLUUUUURRUDURRD"
  },
  {
   "id": "4-5",
   "world": 4,
   "index": 5,
   "rows": [
-   "@H..B..",
-   "#..#.@.",
-   "..###.#",
-   "X.#X...",
-   "...BI.E",
-   "..XPI1#",
-   "##....X"
+   ".@H....",
+   "#X.#.B#",
+   "XX#.X..",
+   "@VX.#..",
+   ".#..#XE",
+   "....3.#",
+   "BX.##.P"
   ],
-  "minMoves": 24,
+  "minMoves": 20,
   "pushes": 9,
-  "solution": "DRRULULLLUUURURRRDRLDDRD"
+  "solution": "LULLULDLLUURRRRDDRDD"
  },
  {
   "id": "4-6",
   "world": 4,
   "index": 6,
   "rows": [
-   ".#@...#",
-   ".3..2@.",
-   ".V#..X#",
-   "...#...",
-   "..#.#X.",
-   "V#...BV",
-   "PX.E##."
+   "..E#P.2",
+   ".3..#.X",
+   "V.#.#..",
+   "...#.#.",
+   "..#X@2V",
+   ".B#.@..",
+   "....X.."
+  ],
+  "minMoves": 24,
+  "pushes": 8,
+  "solution": "RDDRDDDLLUDLDLLUUULUURUR"
+ },
+ {
+  "id": "4-7",
+  "world": 4,
+  "index": 7,
+  "rows": [
+   "...@#@.",
+   "I.#..#X",
+   "P#E#..#",
+   "X..V11.",
+   "#.X..B.",
+   "....H..",
+   "......#"
+  ],
+  "minMoves": 22,
+  "pushes": 9,
+  "solution": "URURRRLDRDDRDDLLLLUURU"
+ },
+ {
+  "id": "4-8",
+  "world": 4,
+  "index": 8,
+  "rows": [
+   ".X#E#.#",
+   ".@H.@..",
+   ".####B.",
+   "2..H..1",
+   "...X.#.",
+   ".X#..X.",
+   "..PV..."
+  ],
+  "minMoves": 25,
+  "pushes": 9,
+  "solution": "LLUUURRRRDDDRRUUULUULRLLU"
+ },
+ {
+  "id": "4-9",
+  "world": 4,
+  "index": 9,
+  "rows": [
+   "##..@##",
+   "@#E#..X",
+   ".XI.HV#",
+   ".H.....",
+   "V##.###",
+   "...1#..",
+   "..#...P"
+  ],
+  "minMoves": 23,
+  "pushes": 11,
+  "solution": "LLLULLLUURRRRRULUUDULLD"
+ },
+ {
+  "id": "4-10",
+  "world": 4,
+  "index": 10,
+  "rows": [
+   "X...X..",
+   "#.X#..B",
+   "#@X#.#.",
+   "EVX#.#.",
+   "X..#P#.",
+   "@...B..",
+   ".3.#B#."
+  ],
+  "minMoves": 25,
+  "pushes": 11,
+  "solution": "UUURURDDDDDLLLLDLRUULDLDL"
+ },
+ {
+  "id": "4-11",
+  "world": 4,
+  "index": 11,
+  "rows": [
+   ".#...#P",
+   "@#.#E#.",
+   "@...V..",
+   "..X#..3",
+   "#.####.",
+   "#B.X.H.",
+   "....B.."
   ],
   "minMoves": 25,
   "pushes": 13,
-  "solution": "UUUUURRUUDRDULLDDRRDDLLLD"
+  "solution": "DDDDDLDLLLLUUULUUDRRUURRD"
+ },
+ {
+  "id": "4-12",
+  "world": 4,
+  "index": 12,
+  "rows": [
+   ".@X.XP.",
+   "H@..#..",
+   ".BX..B3",
+   "..#..#.",
+   "...##.E",
+   "..#.2I.",
+   "......."
+  ],
+  "minMoves": 27,
+  "pushes": 15,
+  "solution": "RDDLLDLUULLLRDDDDLDRRRRRURU"
  },
  {
   "id": "5-1",
   "world": 5,
   "index": 1,
   "rows": [
-   "#.....#.",
-   "#P....V.",
-   "...<....",
-   "B.X.#..O",
-   ".2.#.X#.",
-   "..V.EHI#",
-   "#.....##",
-   "...#...."
+   ".......",
+   "#..##..",
+   "..#s#P.",
+   ".#.E1BD",
+   "V.....#",
+   "...#...",
+   ".....#."
   ],
-  "minMoves": 7,
+  "minMoves": 5,
   "pushes": 2,
-  "solution": "DDDRDRR"
+  "solution": "DDLLU"
  },
  {
   "id": "5-2",
   "world": 5,
   "index": 2,
   "rows": [
-   "I..<X#@#",
-   "#X.^3O>.",
-   "O<#~..X#",
-   "<E#O..H.",
-   "O<.H@##.",
-   "..XX.X~.",
-   ".....#.#",
-   "P#X<.B.."
+   ".#s.sIs",
+   "X...#s#",
+   "#..H...",
+   "##D#.HI",
+   "..2DI#P",
+   ".s..D.#",
+   "Ds#s.E#"
   ],
-  "minMoves": 26,
-  "pushes": 9,
-  "solution": "URRRRDRRUURUULLLLURRRULLLU"
+  "minMoves": 21,
+  "pushes": 6,
+  "solution": "ULULLUURRDDLLLDDRDRRD"
  },
  {
   "id": "5-3",
   "world": 5,
   "index": 3,
   "rows": [
-   "#@B.XOO.",
-   ".OX.3.@.",
-   "..B~~#>.",
-   "O.#.~IX.",
-   "#.#X.3.V",
-   "..##O.#~",
-   "E#......",
-   "XP.#~#~O"
+   "....HP.",
+   ".#21#s.",
+   "#D.BsDs",
+   "VD.##s.",
+   "E#.D..X",
+   "D...#H#",
+   "#X.s..s"
   ],
-  "minMoves": 31,
-  "pushes": 9,
-  "solution": "RURRRRRUULLRRUUULRLLLDLULLDDDLD"
+  "minMoves": 23,
+  "pushes": 6,
+  "solution": "LLLDDRLUURRRDDDDLLDLLLU"
  },
  {
   "id": "5-4",
   "world": 5,
   "index": 4,
   "rows": [
-   "..~##.#~",
-   "E#O....3",
-   "I.X..##@",
-   "O....H..",
-   "XPOX.>..",
-   "##~~.#2.",
-   ".#.HB#@.",
-   "......#X"
+   ".ss#EDD",
+   "sX1#D1P",
+   "..s.#s.",
+   "Bs.#XDB",
+   "..Bs#s.",
+   "XsX..I.",
+   "#..#s.#"
   ],
-  "minMoves": 34,
-  "pushes": 10,
-  "solution": "URRRDDLDDRRUUUUUDRRDRDDLULLLLLULLD"
+  "minMoves": 23,
+  "pushes": 6,
+  "solution": "DDDLDLLULULDRRDRRUUUULU"
  },
  {
   "id": "5-5",
   "world": 5,
   "index": 5,
   "rows": [
-   ".@X>P..@",
-   "#.#.OX..",
-   ".O3.~I.V",
-   ".H..#.X.",
-   "B.X.E##.",
-   ".B##O.X.",
-   ".~<.#...",
-   "##....#."
+   "P.#E.#.",
+   ".s#D#.D",
+   "IH.s...",
+   ".#.#XD#",
+   "H1.B..#",
+   ".Xs#DI.",
+   "#..Ds.#"
   ],
-  "minMoves": 35,
-  "pushes": 13,
-  "solution": "RRDRDDDDDLLDLLULLUUURDLDDRUUUURRDDR"
+  "minMoves": 27,
+  "pushes": 7,
+  "solution": "DDRRDDDDRRUULRRUULLLDDUURUU"
  },
  {
   "id": "5-6",
   "world": 5,
   "index": 6,
   "rows": [
-   "~#@P.~#.",
-   "H.OXOBB.",
-   ".OV...~.",
-   ".B2..#.O",
-   "#..#..~.",
-   "#...X.~X",
-   "#...~OXX",
-   "O@..#..E"
+   "..##.X#",
+   "..#Ds..",
+   ".3B.E.D",
+   "#sI.D##",
+   "D.#X.sP",
+   "..#..Vs",
+   "..H.#DV"
+  ],
+  "minMoves": 24,
+  "pushes": 9,
+  "solution": "LLDLDLLUUURLULUURDDRDRUR"
+ },
+ {
+  "id": "5-7",
+  "world": 5,
+  "index": 7,
+  "rows": [
+   ".#.#...",
+   "..X#.#.",
+   "..#DH.D",
+   "B..BD#D",
+   ".#.#VDs",
+   "s##D.DI",
+   "P#.EH#D"
+  ],
+  "minMoves": 29,
+  "pushes": 7,
+  "solution": "UUURUULDDDURRRURUURRDDDDDLLLD"
+ },
+ {
+  "id": "5-8",
+  "world": 5,
+  "index": 8,
+  "rows": [
+   "s.s....",
+   "X.V#E..",
+   "#I.#XXD",
+   "...##.3",
+   "#.#V#..",
+   "..H..BX",
+   "..#P.D."
+  ],
+  "minMoves": 26,
+  "pushes": 9,
+  "solution": "ULLUUURUDDLDDRRRDRUURUUULL"
+ },
+ {
+  "id": "5-9",
+  "world": 5,
+  "index": 9,
+  "rows": [
+   "#X.2.s#",
+   "#DD....",
+   "D##DI#s",
+   ".##I...",
+   "##..3..",
+   ".D3V.P.",
+   "ED#D##."
+  ],
+  "minMoves": 32,
+  "pushes": 7,
+  "solution": "UURUULULLRRDRDDLLUULURDDDDLDLLDL"
+ },
+ {
+  "id": "5-10",
+  "world": 5,
+  "index": 10,
+  "rows": [
+   "..D.s..",
+   "..#.PX.",
+   ".#..#.B",
+   "IXHBXD.",
+   "D..1s..",
+   "..E#3D.",
+   "DX#.s.D"
+  ],
+  "minMoves": 28,
+  "pushes": 12,
+  "solution": "URRDDDDLLDULUUURULLLDLDDDRDR"
+ },
+ {
+  "id": "5-11",
+  "world": 5,
+  "index": 11,
+  "rows": [
+   "..D..sD",
+   "E.XsVX#",
+   ".##...s",
+   ".Bs#..#",
+   "2#.#.#X",
+   "s..2sBP",
+   "XDs.ID#"
+  ],
+  "minMoves": 32,
+  "pushes": 12,
+  "solution": "LDLUDLLULLUURLDDRRRRUURULULULLDL"
+ },
+ {
+  "id": "5-12",
+  "world": 5,
+  "index": 12,
+  "rows": [
+   "..##EXs",
+   "D...DD#",
+   ".I.#.DP",
+   "#BVI.I.",
+   "..3sss#",
+   "##D.s##",
+   ".D#s.#."
+  ],
+  "minMoves": 34,
+  "pushes": 14,
+  "solution": "DLDLLLUULRDDRRULDLLUURDLDRURRURULU"
+ },
+ {
+  "id": "6-1",
+  "world": 6,
+  "index": 1,
+  "rows": [
+   "I#cX.c.",
+   ".#.#..#",
+   "X#.E.##",
+   ".cV###c",
+   "#...#c.",
+   "#P..#I.",
+   "cX#...#"
+  ],
+  "minMoves": 5,
+  "pushes": 2,
+  "solution": "URUUR"
+ },
+ {
+  "id": "6-2",
+  "world": 6,
+  "index": 2,
+  "rows": [
+   "c.c..#.",
+   ".c##c.#",
+   "#Pc##1c",
+   "c#Xc..c",
+   "..BV.#.",
+   "E3.B.#.",
+   "c.##..."
+  ],
+  "minMoves": 22,
+  "pushes": 6,
+  "solution": "UURRRDRDRDDDDLLULULLDL"
+ },
+ {
+  "id": "6-3",
+  "world": 6,
+  "index": 3,
+  "rows": [
+   "#..c.cX",
+   "c.ccBc.",
+   "X.#ccIc",
+   ".c#2#XV",
+   ".BV#c.c",
+   "...#c..",
+   "EcXPc.."
+  ],
+  "minMoves": 19,
+  "pushes": 9,
+  "solution": "RUURRUULULLLLDDDDLD"
+ },
+ {
+  "id": "6-4",
+  "world": 6,
+  "index": 4,
+  "rows": [
+   "c#..#cP",
+   "V.BcE#.",
+   ".ccc.#V",
+   "#.I##..",
+   "#..##3c",
+   "...#..c",
+   "...B.cc"
+  ],
+  "minMoves": 19,
+  "pushes": 9,
+  "solution": "DDDDDLDLLLUUULURURR"
+ },
+ {
+  "id": "6-5",
+  "world": 6,
+  "index": 5,
+  "rows": [
+   "c.P#.E.",
+   "c.c##c.",
+   "cX##.1.",
+   ".cX#.H.",
+   "I3c.3..",
+   ".#.Xc##",
+   "..ccBc."
+  ],
+  "minMoves": 21,
+  "pushes": 8,
+  "solution": "DLLDDDRRDDRRUUURURUUL"
+ },
+ {
+  "id": "6-6",
+  "world": 6,
+  "index": 6,
+  "rows": [
+   ".E#P.H.",
+   "c3.#..c",
+   "#.c.#..",
+   ".c...21",
+   ".cB#.#c",
+   "#c.#c..",
+   "#.3c.X#"
+  ],
+  "minMoves": 22,
+  "pushes": 9,
+  "solution": "RRDRDDLLDDDLLUUULURULU"
+ },
+ {
+  "id": "6-7",
+  "world": 6,
+  "index": 7,
+  "rows": [
+   "c#.#c..",
+   "cc...B.",
+   ".V#..#3",
+   "#c.X#c.",
+   "#cHc#c1",
+   "#..#cHP",
+   "c..cE#."
+  ],
+  "minMoves": 19,
+  "pushes": 12,
+  "solution": "LUURUULLLLLDDDRDDRR"
+ },
+ {
+  "id": "6-8",
+  "world": 6,
+  "index": 8,
+  "rows": [
+   "cc#c#cE",
+   "..I.Hc.",
+   "BXc.#..",
+   "..###..",
+   "cc...#X",
+   "##XBc.#",
+   "P..I.X."
+  ],
+  "minMoves": 22,
+  "pushes": 11,
+  "solution": "RRRURULLLULUURRDRURRUR"
+ },
+ {
+  "id": "6-9",
+  "world": 6,
+  "index": 9,
+  "rows": [
+   "..c#.c.",
+   "c#...H.",
+   "B.cB.#.",
+   "c.##cHc",
+   ".#c.#XI",
+   "ccBcc#.",
+   "c.cEXPc"
+  ],
+  "minMoves": 24,
+  "pushes": 11,
+  "solution": "RUUUUULLDLLUULLDDDDDRRRD"
+ },
+ {
+  "id": "6-10",
+  "world": 6,
+  "index": 10,
+  "rows": [
+   "Ec.#...",
+   ".IcXP#B",
+   "#c.X##.",
+   "c#..X..",
+   "V.V#...",
+   "#.B.#c.",
+   ".c..B.."
+  ],
+  "minMoves": 21,
+  "pushes": 13,
+  "solution": "URRDDDDDLDLLULUUUULUL"
+ },
+ {
+  "id": "6-11",
+  "world": 6,
+  "index": 11,
+  "rows": [
+   "..c..Hc",
+   "..###..",
+   "X3.#.I.",
+   "c.#.#c#",
+   "c.cc#..",
+   "VH.c##c",
+   ".XXEXP."
+  ],
+  "minMoves": 26,
+  "pushes": 11,
+  "solution": "RUULUURUULLLLLDDDLDDRURRDD"
+ },
+ {
+  "id": "6-12",
+  "world": 6,
+  "index": 12,
+  "rows": [
+   ".c..c#c",
+   "E.XBB..",
+   "2Xcc2.c",
+   "..X##..",
+   "#..P.3#",
+   ".c###.c",
+   "cHc..c."
+  ],
+  "minMoves": 28,
+  "pushes": 15,
+  "solution": "LLDLDRRRRRUUURUULDLLURULLLDL"
+ },
+ {
+  "id": "7-1",
+  "world": 7,
+  "index": 1,
+  "rows": [
+   "X...##.",
+   ".X.##.#",
+   "..#.#..",
+   ".#X....",
+   "..L.#..",
+   ".#E#.P.",
+   "....L.."
+  ],
+  "minMoves": 7,
+  "pushes": 1,
+  "solution": "UULLDLD"
+ },
+ {
+  "id": "7-2",
+  "world": 7,
+  "index": 2,
+  "rows": [
+   ".#....#",
+   "....L.P",
+   "XXV.HX#",
+   "...##E#",
+   "#..L..#",
+   "##.#B..",
+   "......#"
+  ],
+  "minMoves": 21,
+  "pushes": 5,
+  "solution": "LLULLDDUURRDLDLDDRRRU"
+ },
+ {
+  "id": "7-3",
+  "world": 7,
+  "index": 3,
+  "rows": [
+   "#P..X.X",
+   "...L...",
+   ".##.#..",
+   ".H...#.",
+   "..B##.E",
+   "X..B.##",
+   "#I#LX##"
+  ],
+  "minMoves": 23,
+  "pushes": 5,
+  "solution": "DLDDRDDRRLLUURRUURRRDDD"
+ },
+ {
+  "id": "7-4",
+  "world": 7,
+  "index": 4,
+  "rows": [
+   "#BE.L.X",
+   ".L.#.#X",
+   "..X#...",
+   "..I.#..",
+   ".#XX.#.",
+   ".P3.I..",
+   "X...X.."
+  ],
+  "minMoves": 30,
+  "pushes": 3,
+  "solution": "LUUUURDDLDDRDRRURRDRUUULULUULL"
+ },
+ {
+  "id": "7-5",
+  "world": 7,
+  "index": 5,
+  "rows": [
+   "X#.3..P",
+   "X#X..#X",
+   "....##X",
+   ".#LV.##",
+   "...1..E",
+   "##XL...",
+   "..B#..X"
+  ],
+  "minMoves": 28,
+  "pushes": 5,
+  "solution": "LLDLDLLLDDRRRUDLURULRDDDRRUR"
+ },
+ {
+  "id": "7-6",
+  "world": 7,
+  "index": 6,
+  "rows": [
+   "...##.P",
+   "..L....",
+   "#.B...#",
+   "X...##.",
+   ".X.2#LE",
+   "#VX.2..",
+   "X#....X"
+  ],
+  "minMoves": 24,
+  "pushes": 8,
+  "solution": "DLDLLDLLURLUURDDRDDDRRUR"
+ },
+ {
+  "id": "7-7",
+  "world": 7,
+  "index": 7,
+  "rows": [
+   "..H..X#",
+   "..#B.#.",
+   ".X...#.",
+   ".P#3.#.",
+   "X.#.2..",
+   "X##.L.#",
+   "..#..LE"
+  ],
+  "minMoves": 22,
+  "pushes": 10,
+  "solution": "LUUURRRDRDLDDDURRDLRDR"
+ },
+ {
+  "id": "7-8",
+  "world": 7,
+  "index": 8,
+  "rows": [
+   "##.#...",
+   "##.LVX.",
+   "##E#...",
+   "..##.#.",
+   ".....LB",
+   "#.XV.H.",
+   "#P#..#."
+  ],
+  "minMoves": 29,
+  "pushes": 7,
+  "solution": "UURRRUURRDDUUUULLDDDDRLUUULLD"
+ },
+ {
+  "id": "7-9",
+  "world": 7,
+  "index": 9,
+  "rows": [
+   "X..X..X",
+   "...L...",
+   "#..#.V.",
+   "#BXXX..",
+   "L.XE...",
+   "...#BXX",
+   "....HPX"
+  ],
+  "minMoves": 30,
+  "pushes": 8,
+  "solution": "LLLULUUUURRLDLDDUUURRRRRDDDLLL"
+ },
+ {
+  "id": "7-10",
+  "world": 7,
+  "index": 10,
+  "rows": [
+   ".#.....",
+   ".X.L#..",
+   ".#.L#.#",
+   "I.B.X.#",
+   "X..#..X",
+   "#2..XBP",
+   "..E.#.."
+  ],
+  "minMoves": 21,
+  "pushes": 13,
+  "solution": "DLUUUUURULLLDLDDDLDRD"
+ },
+ {
+  "id": "7-11",
+  "world": 7,
+  "index": 11,
+  "rows": [
+   ".#.#E.#",
+   "#..X...",
+   "L..#..X",
+   "B.H.#.#",
+   "P#X##B.",
+   "IL....#",
+   ".##..#."
+  ],
+  "minMoves": 30,
+  "pushes": 10,
+  "solution": "DRRLLUURRLUURDLDLDDRRRRRUUUULU"
+ },
+ {
+  "id": "7-12",
+  "world": 7,
+  "index": 12,
+  "rows": [
+   "....L..",
+   "#B#.#..",
+   "E.X###.",
+   "..##.#B",
+   ".X#....",
+   "3.H...L",
+   "P.#.##."
+  ],
+  "minMoves": 28,
+  "pushes": 15,
+  "solution": "URRRURRDLLLRURRRUUULULLLLDDL"
+ },
+ {
+  "id": "8-1",
+  "world": 8,
+  "index": 1,
+  "rows": [
+   ".#.@#.L.",
+   "........",
+   "..#.##@.",
+   "..#2#.P.",
+   ".#.#..V#",
+   "#E..L..#",
+   ".....#..",
+   "#V.##H.."
+  ],
+  "minMoves": 7,
+  "pushes": 2,
+  "solution": "DLLDLLL"
+ },
+ {
+  "id": "8-2",
+  "world": 8,
+  "index": 2,
+  "rows": [
+   ">...Xcs#",
+   "cc.DD@c.",
+   "@BOssI##",
+   "#..#.#V.",
+   "~.#.L..X",
+   "P.X2~~..",
+   "X#^..#LX",
+   "#.#c#..E"
+  ],
+  "minMoves": 28,
+  "pushes": 6,
+  "solution": "URUULUDURURDDRRDDLDURRDLRDDR"
+ },
+ {
+  "id": "8-3",
+  "world": 8,
+  "index": 3,
+  "rows": [
+   ".s...P.X",
+   ".XI#^...",
+   ".@###L.X",
+   "c.sO@BD#",
+   "2XL.c#..",
+   "..~..#.#",
+   "O#..^#.E",
+   "c##.I#.D"
+  ],
+  "minMoves": 29,
+  "pushes": 8,
+  "solution": "LLLLLDDDDDRRDLUURRUDURURDDDDR"
+ },
+ {
+  "id": "8-4",
+  "world": 8,
+  "index": 4,
+  "rows": [
+   "s##..@D.",
+   "#2.###..",
+   "V..#X.@.",
+   ".Lc#L~#.",
+   "..B.LO^.",
+   "O##^~#..",
+   ".X.~#<.X",
+   "P..##<E#"
+  ],
+  "minMoves": 40,
+  "pushes": 5,
+  "solution": "RRURUURLLLUURDLLDDDDRRURUURURURLRRDDDLDD"
+ },
+ {
+  "id": "8-5",
+  "world": 8,
+  "index": 5,
+  "rows": [
+   ".cB.2.@.",
+   ".I#.O~#~",
+   "1.c#.B#.",
+   "cE#.....",
+   "###...##",
+   "@#>...#.",
+   ".#X.O3Ps",
+   "#......X"
+  ],
+  "minMoves": 37,
+  "pushes": 10,
+  "solution": "LUUURRUULDULDDURDURDDLLDLUUULULLDLDRD"
+ },
+ {
+  "id": "8-6",
+  "world": 8,
+  "index": 6,
+  "rows": [
+   "L..#@..c",
+   "c.I.#O^L",
+   "#.O#sE.s",
+   "#<..O.X.",
+   "s##.@.#.",
+   "..c#.V.H",
+   ".#.P#s#.",
+   "..B>...#"
+  ],
+  "minMoves": 40,
+  "pushes": 9,
+  "solution": "LULLDDRRRRRUUULRLLULLUULRURDDDRDRRRRDDLL"
+ },
+ {
+  "id": "8-7",
+  "world": 8,
+  "index": 7,
+  "rows": [
+   ".#@.c##.",
+   ".###I1.#",
+   ".s<..~>c",
+   "#OX.#..#",
+   "..^.B.IP",
+   "XB.@~.#.",
+   "E.H#~#.#",
+   "#D..##X."
   ],
   "minMoves": 45,
-  "pushes": 15,
-  "solution": "RRDULLLUUUURURRDDRDRUULLLLULDLDRURDDDLDRRRDRR"
+  "pushes": 11,
+  "solution": "LULULURLDLDDDRLRULRDLRLUUDRRUULLLRDDDRLLULDDL"
+ },
+ {
+  "id": "8-8",
+  "world": 8,
+  "index": 8,
+  "rows": [
+   "OP..O.@#",
+   "#.s.XXX.",
+   "c.#...@#",
+   "...X>#IE",
+   "..H~XcH.",
+   ".cB..c1#",
+   ".B.sD...",
+   "#X.#~~<."
+  ],
+  "minMoves": 45,
+  "pushes": 11,
+  "solution": "DDDDLDDRRRURRLLULLDRRRRURDLLLULULUURRDRRRLRDR"
+ },
+ {
+  "id": "8-9",
+  "world": 8,
+  "index": 9,
+  "rows": [
+   "c..c@D..",
+   "P.BVX.@.",
+   ".OXD....",
+   "D..<#v..",
+   "#.B.#D#.",
+   "##.#s.c.",
+   "~#.#1B1.",
+   ".E.#.c.."
+  ],
+  "minMoves": 44,
+  "pushes": 13,
+  "solution": "URRRRRDDDDDDLUDLLURRDRUUUUULLLLULULDDDDRDDDL"
+ },
+ {
+  "id": "8-10",
+  "world": 8,
+  "index": 10,
+  "rows": [
+   "@#cv#.P#",
+   "c.H...#O",
+   "~#.#..O#",
+   "c##.@BsV",
+   "^.#.~BI.",
+   "##.#D2..",
+   "#XEXOX..",
+   "~.O.cD.."
+  ],
+  "minMoves": 44,
+  "pushes": 14,
+  "solution": "LDDLDDURUULLLLLUDRRLLUDURDULDUDRURDDRDLLLLLU"
+ },
+ {
+  "id": "8-11",
+  "world": 8,
+  "index": 11,
+  "rows": [
+   ".#..#...",
+   "O....Is.",
+   "O..##..~",
+   ".OOB.B.c",
+   "@@~..3##",
+   "v#..#.X.",
+   "1.#.<.#P",
+   "E..DV..."
+  ],
+  "minMoves": 45,
+  "pushes": 16,
+  "solution": "DLLULLUURULRRUURRDLLLLDDLUUULURRRRDDDDDLLDLLL"
+ },
+ {
+  "id": "8-12",
+  "world": 8,
+  "index": 12,
+  "rows": [
+   "..P.c..s",
+   "X..~#..I",
+   ">O..B.v.",
+   ".OV.sO.#",
+   "@#D#.X#X",
+   "#..#2.OE",
+   "...L..^#",
+   "@L.~~#~."
+  ],
+  "minMoves": 45,
+  "pushes": 16,
+  "solution": "RRRRDDRULDLLLLDDDLDLDUDRRURRUDDLRUDLLURRRURRR"
  }
 ]

@@ -1,6 +1,6 @@
 // 블록, 캐릭터, 자국을 캔버스에 그린다. sprites에 같은 키의 그림이 있으면 그 그림을 쓴다.
 import { BlockKind, DX, DY } from '../core/board';
-import { getSprite } from './sprites';
+import { getSheet, getSprite } from './sprites';
 
 type Ctx = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
@@ -159,6 +159,16 @@ export function drawBlock(ctx: Ctx, kind: BlockKind, cx: number, cy: number, s: 
       ctx.beginPath();
       ctx.moveTo(cx - Math.cos(a) * s * 0.17, top - Math.sin(a) * s * 0.17);
       ctx.lineTo(cx + Math.cos(a) * s * 0.17, top + Math.sin(a) * s * 0.17);
+      ctx.stroke();
+    }
+  } else if (kind === 'link') {
+    // 쌍둥이 블록: 맞물린 고리 두 개
+    slab(ctx, cx, cy, s, '#e86aa6', '#ffb3d6', '#9c3a6b');
+    ctx.strokeStyle = '#fff5fa';
+    ctx.lineWidth = s * 0.06;
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(cx + side * s * 0.09, top, s * 0.14, 0, TAU);
       ctx.stroke();
     }
   } else {
@@ -489,8 +499,61 @@ function accessoryFront(ctx: Ctx, id: string, r: number, time: number, d: SkinDe
   }
 }
 
-// look: 바라보는 방향(0~3), squash: 이동 중 찌그러짐(1 = 없음)
-export function drawCharacter(ctx: Ctx, id: string, cx: number, cy: number, s: number, look: number, time: number, squash = 1): void {
+// 동작 시트의 구성: [시작 프레임, 프레임 수, 초당 프레임, 반복]. tools/make-anim.mjs의 CLIPS와 같아야 한다.
+const ANIMS = {
+  idle: [0, 24, 15, true],
+  walkS: [24, 12, 36, true], // 한 칸 이동에 한 걸음(반 주기)
+  walkF: [36, 12, 36, true],
+  pushS: [48, 12, 26, true],
+  pushF: [60, 12, 26, true],
+  win: [72, 20, 20, false],
+} as const;
+export type AnimName = keyof typeof ANIMS;
+const SHEET_COLS = 10;
+const SHEET_FRAME = 240;
+// 시트 한 칸은 400px 캔버스이고 발바닥이 위에서 352px에 있다. 캐릭터 키(약 232px)가 칸의 0.78배가 되게 그린다.
+const SHEET_SCALE = (0.78 * 400) / 232;
+const SHEET_GROUND = 352 / 400;
+
+// look: 바라보는 방향(0~3), squash: 이동 중 찌그러짐(1 = 없음), anim: 재생할 동작과 그 동작이 시작된 뒤의 시간
+export function drawCharacter(
+  ctx: Ctx,
+  id: string,
+  cx: number,
+  cy: number,
+  s: number,
+  look: number,
+  time: number,
+  squash = 1,
+  anim?: { name: AnimName; t: number },
+): void {
+  const sheet = anim ? getSheet(id) : undefined;
+  if (sheet && anim) {
+    const [start, count, fps, loop] = ANIMS[anim.name];
+    const n = Math.floor(Math.max(0, anim.t) * fps);
+    const frame = start + (loop ? n % count : Math.min(count - 1, n));
+    const size = s * SHEET_SCALE;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, s * 0.335, s * 0.29, s * 0.08, 0, 0, TAU);
+    ctx.fill();
+    if (look === 3) ctx.scale(-1, 1);
+    ctx.drawImage(
+      sheet,
+      (frame % SHEET_COLS) * SHEET_FRAME,
+      Math.floor(frame / SHEET_COLS) * SHEET_FRAME,
+      SHEET_FRAME,
+      SHEET_FRAME,
+      -size / 2,
+      s * 0.36 - size * SHEET_GROUND,
+      size,
+      size,
+    );
+    ctx.restore();
+    return;
+  }
   const d = SKINS[id] ?? SKINS.default;
   const r = s * 0.31;
   const bob = Math.sin(time * 3.2) * s * 0.012;

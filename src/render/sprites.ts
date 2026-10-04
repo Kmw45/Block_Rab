@@ -30,6 +30,19 @@ export function getTinted(key: string, color: string): HTMLCanvasElement | undef
   return canvas;
 }
 
+// Rev2D로 뽑은 캐릭터 동작 시트. 처음 요청할 때 불러오고, 없거나 아직 불러오는 중이면 undefined를 돌려준다.
+const sheets = new Map<string, HTMLImageElement | null>();
+
+export function getSheet(id: string): HTMLImageElement | undefined {
+  const cached = sheets.get(id);
+  if (cached !== undefined) return cached ?? undefined;
+  sheets.set(id, null);
+  const img = new Image();
+  img.onload = () => sheets.set(id, img);
+  img.src = import.meta.env.BASE_URL + 'assets/anim/' + id + '.webp';
+  return undefined;
+}
+
 export async function loadSprites(): Promise<void> {
   const base = import.meta.env.BASE_URL + 'assets/sprites/';
   let manifest: Record<string, string>;

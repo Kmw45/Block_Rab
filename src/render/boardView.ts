@@ -1,11 +1,30 @@
 // 보드 화면. 상태 변화를 받아 움직임과 효과만 재생한다. 규칙은 core에 있다.
-import { BoardDef, DX, DY, Dir, SOLID_FIXED, SOLID_WALL, SUNK, State, StepResult, TILE_ONEWAY, TILE_PIT, TILE_PORTAL, TILE_SLIP } from '../core/board';
+import {
+  BoardDef,
+  DX,
+  DY,
+  Dir,
+  SOLID_FIXED,
+  SOLID_WALL,
+  SUNK,
+  State,
+  StepResult,
+  TILE_CRUMBLE,
+  TILE_DOOR,
+  TILE_ONEWAY,
+  TILE_PIT,
+  TILE_PORTAL,
+  TILE_SLIP,
+  TILE_SWITCH,
+  blockAt,
+  doorsOpen,
+} from '../core/board';
 import { WorldTheme } from '../data/worlds';
-import { TRAIL_LIFE, TrailMark, drawBlock, drawCharacter, drawFixed, drawStarShape, drawTrail, rr } from './draw';
-import { getSprite, getTinted } from './sprites';
+import { AnimName, TRAIL_LIFE, TrailMark, drawBlock, drawCharacter, drawFixed, drawStarShape, drawTrail, rr } from './draw';
+import { getSheet, getSprite, getTinted } from './sprites';
 
 const TAU = Math.PI * 2;
-const MOVE_TIME = 0.11;
+const MOVE_TIME = 0.16;
 const SLIDE_TIME_PER_CELL = 0.055;
 
 interface Tween {
@@ -68,9 +87,14 @@ export class BoardView {
   private hint: Dir[] = [];
   private winT0 = -1;
   private introT0 = -9;
+  private warpT0 = -9; // 순간이동으로 나타난 시각. 캐릭터만 다시 튀어나온다
   private camShake = 0; // 화면 흔들림 세기(칸 단위)
   private pulseT0: number[] = [];
-  private sink: number[] = []; // 구덩이에 가라앉은 정도(0~1)
+  private sink: number[] = [];
+  // 캐릭터 동작: 움직이거나 밀 때 잠깐 걷기·밀기를 재생하고, 끝나면 숨쉬기로 돌아간다
+  private animName: AnimName = 'idle';
+  private animT0 = 0;
+  private animUntil = 0; // 구덩이에 가라앉은 정도(0~1)
   private pending: { at: number; run: () => void }[] = [];
   private last = now();
   private raf = 0;
@@ -154,11 +178,31 @@ export class BoardView {
 
   applyStep(res: StepResult, dir: Dir): void {
     const time = now();
+    const before = this.state;
     this.state = res.state;
     this.look = dir;
+    // 쌍둥이 블록처럼 민 블록 말고도 함께 움직인 블록이 있으면 같이 옮긴다
+    res.state.b.forEach((cell, i) => {
+      if (i !== res.pushed && cell !== before.b[i]) {
+        this.retarget(this.blocks[i], cell, MOVE_TIME, false);
+        this.pending.push({ at: time + MOVE_TIME, run: () => (this.pulseT0[i] = now()) });
+      }
+    });
+    if (res.crumbled >= 0) {
+      // 밟고 떠난 바닥이 무너진다
+      const [kx, ky] = this.xy(res.crumbled);
+      this.camShake = Math.max(this.camShake, 0.03);
+      for (let i = 0; i < 9; i++) {
+        this.spawn(kx + 0.5, ky + 0.55, { color: 'rgba(120,90,80,0.8)', speed: 1.3, life: 0.5, size: 0.22, tex: 'fx_dust', grow: 1 });
+      }
+    }
     this.moveT0 = time;
     // 빙판에서는 미끄러진 칸 수만큼 길게 움직이고, 마법진을 탔다면 도착한 뒤 순간이동한다
     const walkDur = MOVE_TIME + res.slid * SLIDE_TIME_PER_CELL;
+    // 옆으로 갈 때와 위아래로 갈 때 다른 동작을 쓴다
+    const side = dir === 1 || dir === 3;
+    const clip: AnimName = res.pushed >= 0 ? (side ? 'pushS' : 'pushF') : side ? 'walkS' : 'walkF';
+    this.playAnim(clip, (res.pushed >= 0 ? 0.3 : MOVE_TIME + 0.04) + res.slid * SLIDE_TIME_PER_CELL);
     this.retarget(this.player, res.walkTo, walkDur, false);
     if (res.slid > 0) this.moveT0 = time + walkDur - MOVE_TIME;
     if (res.teleported) {
@@ -168,7 +212,7 @@ export class BoardView {
         at: time + walkDur,
         run: () => {
           this.retarget(this.player, dest, MOVE_TIME, true);
-          this.introT0 = now() - 0.1;
+          this.warpT0 = now();
           for (const cell of [from, dest]) {
             const [wx, wy] = this.xy(cell);
             this.spawn(wx + 0.5, wy + 0.5, { color: '#c9a6ff', speed: 0, life: 0.5, size: 0.5, tex: 'fx_ring', grow: 2.6 });
@@ -258,12 +302,7 @@ export class BoardView {
     this.shakeT0 = now();
     this.shakeDir = dir;
     this.look = dir;
-    this.camShake = Math.max(this.camShake, 0.025);
-    // 부딪힌 자리에 불꽃
-    const [px, py] = this.xy(this.state.p);
-    for (let i = 0; i < 4; i++) {
-      this.spawn(px + 0.5 + DX[dir] * 0.5, py + 0.5 + DY[dir] * 0.5, { color: '#ffe9b0', speed: 1.6, life: 0.25, size: 0.12, tex: 'fx_spark' });
-    }
+    this.playAnim(dir === 1 || dir === 3 ? 'pushS' : 'pushF', 0.3);
   }
 
   setHint(dirs: Dir[]): void {
@@ -402,7 +441,7 @@ export class BoardView {
     rr(ctx, ox - pad * 0.45, oy - pad * 0.45, def.w * s + pad * 0.9, def.h * s + pad * 0.9, s * 0.18);
     ctx.fill();
 
-    const floorImg = getTinted('floor', lighten(theme.floorA, 0.38));
+    const floorImg = getTinted('floor', lighten(theme.floorA, 0.3));
     for (let y = 0; y < def.h; y++) {
       for (let x = 0; x < def.w; x++) {
         if (floorImg) {
@@ -431,7 +470,7 @@ export class BoardView {
     this.drawExit(time);
     drawTrail(ctx, this.trail, this.marks, time, ox, oy, s);
 
-    const wallImg = getTinted('wall', lighten(theme.wallTop, 0.3));
+    const wallImg = getTinted('wall', lighten(theme.wallTop, 0.55));
     for (let y = 0; y < def.h; y++) {
       for (let x = 0; x < def.w; x++) {
         const kind = def.solid[y * def.w + x];
@@ -526,7 +565,59 @@ export class BoardView {
       ctx.save();
       rr(ctx, x + 1, y + 1, s - 2, s - 2, s * 0.1);
       ctx.clip();
-      if (t === TILE_PIT) {
+      if (t === TILE_SWITCH) {
+        const img = getSprite('tile_switch');
+        if (img) ctx.drawImage(img, x, y, s, s);
+        else {
+          ctx.fillStyle = '#b8892e';
+          ctx.beginPath();
+          ctx.arc(cx, cy, s * 0.3, 0, TAU);
+          ctx.fill();
+        }
+        if (blockAt(this.state, i) >= 0) {
+          // 눌린 스위치는 빛난다
+          const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * 0.6);
+          glow.addColorStop(0, 'rgba(255,220,120,0.75)');
+          glow.addColorStop(1, 'rgba(255,220,120,0)');
+          ctx.fillStyle = glow;
+          ctx.fillRect(x, y, s, s);
+        }
+      } else if (t === TILE_DOOR) {
+        // 닫힌 문은 그대로, 열린 문은 흐릿하게 남겨 자리를 알려준다
+        const open = doorsOpen(def, this.state);
+        const img = getSprite('tile_door');
+        ctx.globalAlpha = open ? 0.2 : 1;
+        if (img) ctx.drawImage(img, x, y, s, s);
+        else {
+          ctx.fillStyle = '#2a2d38';
+          ctx.fillRect(x, y, s, s);
+          ctx.fillStyle = '#8a8f9e';
+          for (let k = 0; k < 4; k++) ctx.fillRect(x + s * (0.14 + k * 0.22), y + s * 0.08, s * 0.08, s * 0.84);
+        }
+        ctx.globalAlpha = 1;
+        if (!open) {
+          ctx.strokeStyle = 'rgba(255,90,70,0.55)';
+          ctx.lineWidth = s * 0.05;
+          rr(ctx, x + s * 0.06, y + s * 0.06, s * 0.88, s * 0.88, s * 0.1);
+          ctx.stroke();
+        }
+      } else if (t === TILE_CRUMBLE && !this.state.k.includes(i)) {
+        const img = getSprite('tile_crumble');
+        if (img) ctx.drawImage(img, x, y, s, s);
+        else {
+          ctx.fillStyle = '#5a3a30';
+          ctx.fillRect(x, y, s, s);
+          ctx.strokeStyle = '#ff8a3d';
+          ctx.lineWidth = s * 0.04;
+          ctx.beginPath();
+          ctx.moveTo(x + s * 0.15, y + s * 0.3);
+          ctx.lineTo(x + s * 0.5, y + s * 0.5);
+          ctx.lineTo(x + s * 0.4, y + s * 0.85);
+          ctx.moveTo(x + s * 0.5, y + s * 0.5);
+          ctx.lineTo(x + s * 0.88, y + s * 0.4);
+          ctx.stroke();
+        }
+      } else if (t === TILE_PIT || t === TILE_CRUMBLE) {
         const img = getSprite('tile_pit');
         if (img) ctx.drawImage(img, x, y, s, s);
         else {
@@ -626,6 +717,14 @@ export class BoardView {
     if (k <= 0) return 0;
     const c = 1.70158;
     return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
+  }
+
+  // 같은 동작이 이어지면 처음부터 다시 틀지 않고 시간만 늘린다
+  private playAnim(name: AnimName, seconds: number): void {
+    const time = now();
+    if (this.animName !== name || time > this.animUntil) this.animT0 = time;
+    this.animName = name;
+    this.animUntil = time + seconds;
   }
 
   private isShaking(time: number): boolean {
@@ -765,6 +864,21 @@ export class BoardView {
     const cx = this.ox + (px + 0.5) * s;
     const cy = this.oy + (py + 0.5) * s;
 
+    if (this.winT0 >= 0 && getSheet(this.skin)) {
+      // 클리어: 팔을 들고 뛰어오른 뒤 출구로 빨려 들어간다
+      const t = time - this.winT0;
+      const k = Math.min(1, Math.max(0, (t - 0.8) / 0.28));
+      if (k >= 1) return;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(k * Math.PI * 2);
+      ctx.scale(1 - k, 1 - k);
+      ctx.globalAlpha = 1 - k * 0.6;
+      drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, 1, { name: 'win', t });
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      return;
+    }
     if (this.winT0 >= 0) {
       const k = Math.min(1, (time - this.winT0) / 0.5);
       if (k >= 1) return;
@@ -779,12 +893,14 @@ export class BoardView {
       return;
     }
     const hop = Math.sin(mk * Math.PI) * s * 0.07;
-    const intro = this.introScale(time, 0);
+    const warp = Math.min(1, (time - this.warpT0) / 0.22);
+    const intro = this.introScale(time, 0) * (0.35 + 0.65 * (1 - Math.pow(1 - warp, 3)));
     if (intro <= 0) return;
     ctx.save();
     ctx.translate(cx, cy - hop);
     ctx.scale(intro, intro);
-    drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, squash);
+    const moving = time < this.animUntil;
+    drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, squash, { name: moving ? this.animName : 'idle', t: moving ? time - this.animT0 : time });
     ctx.restore();
   }
 }

@@ -9,6 +9,13 @@ await page.goto((process.env.E2E_URL ?? 'http://localhost:5183/') + query);
 const t0 = Date.now();
 await page.waitForSelector('#app .screen', { timeout: 20000 });
 console.log(`첫 화면까지 ${Date.now() - t0}ms`);
+// 규칙 카드가 떠 있으면 닫고 찍는다
+if (await page.locator('.rule-tag').count()) {
+  await page.click('.modal [data-a=ok]');
+  await page.waitForSelector('.backdrop', { state: 'detached' });
+}
+// 세 번째 인자로 bottom을 주면 스테이지 목록을 끝까지 내린 뒤 찍는다
+if (process.argv[4] === 'bottom') await page.evaluate(() => document.querySelector('.world-list')?.scrollTo(0, 1e6));
 await page.waitForTimeout(1000);
 await page.screenshot({ path: out });
 await browser.close();

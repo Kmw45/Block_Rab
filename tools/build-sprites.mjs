@@ -24,10 +24,13 @@ const UI_BOX = {
 };
 
 function spec(key) {
+  if (/^ui_stage_(open|cleared)_\d$/.test(key)) return { size: 192, box: [192, 192] };
+  if (/^ui_banner_\d$/.test(key)) return { size: 720, height: 240, fill: 1, opaque: true };
   if (UI_BOX[key]) return { size: UI_BOX[key][0], box: UI_BOX[key] };
-  if (key === 'floor' || ['tile_pit', 'tile_oneway', 'tile_ice'].includes(key)) return { size: 256, fill: 1, opaque: true };
+  if (key === 'floor' || ['tile_pit', 'tile_oneway', 'tile_ice', 'tile_switch', 'tile_door', 'tile_crumble'].includes(key)) return { size: 256, fill: 1, opaque: true };
   if (key === 'tile_portal') return { size: 256, fill: 0.96 };
   if (key === 'ui_bg') return { size: 540, height: 810, fill: 1, opaque: true };
+  if (key === 'ui_home_bg') return { size: 720, height: 1080, fill: 1, opaque: true };
   if (key === 'ui_title_art') return { size: 640, fill: 1, opaque: true };
   if (['fx_spark', 'fx_ring', 'fx_burst'].includes(key)) return { size: 256, fill: 1, opaque: true }; // 검은 배경, 더하기 합성용
   if (key === 'ui_hand') return { size: 192, fill: 0.94 };
@@ -43,6 +46,11 @@ function spec(key) {
 const manifest = {};
 for (const file of readdirSync(SRC).filter((f) => f.endsWith('.png')).sort()) {
   const key = file.replace(/\.png$/, '');
+  if (key.startsWith('skin_')) {
+    // 스킨의 정지 그림은 tools/make-anim.mjs가 동작 리그의 기본 자세로 만든다. 여기서는 목록에만 올린다.
+    manifest[key] = file;
+    continue;
+  }
   const { size, fill, opaque, height, box } = spec(key);
   const src = sharp(`${SRC}/${file}`).ensureAlpha();
   const { data, info } = await src.raw().toBuffer({ resolveWithObject: true });

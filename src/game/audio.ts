@@ -118,6 +118,28 @@ export const sfx = {
     tone({ type: 'triangle', freq: 1400, to: 500, dur: 0.3, vol: 0.14, at: 0.16 });
     noise(0.35, 0.08, 3000, 8000, 2);
   },
+  // 별 하나를 놓쳤을 때: 짧게 떨어지는 음
+  starLost() {
+    tone({ type: 'triangle', freq: 740, to: 370, dur: 0.22, vol: 0.2 });
+  },
+  // 던전 하나를 모두 깼을 때
+  fanfare() {
+    [523.3, 659.3, 784, 1046.5, 1318.5, 1568].forEach((f, i) => {
+      tone({ type: 'triangle', freq: f, dur: 0.6, vol: 0.2, at: i * 0.1 });
+      tone({ type: 'sine', freq: f / 2, dur: 0.5, vol: 0.12, at: i * 0.1 });
+    });
+    [1046.5, 1318.5, 1568, 2093].forEach((f) => tone({ type: 'sine', freq: f, dur: 1.4, vol: 0.1, at: 0.7 }));
+  },
+  // 문이 열리거나 닫힐 때: 쇠가 끌리는 소리
+  door() {
+    noise(0.28, 0.2, 400, 1400, 4);
+    tone({ type: 'square', freq: 90, to: 140, dur: 0.25, vol: 0.14 });
+  },
+  // 바닥이 무너질 때
+  crack() {
+    noise(0.22, 0.26, 1800, 200, 0.8);
+    tone({ type: 'sine', freq: 160, to: 50, dur: 0.3, vol: 0.4, at: 0.05 });
+  },
   button() {
     tone({ type: 'triangle', freq: 680, to: 880, dur: 0.07, vol: 0.16 });
   },

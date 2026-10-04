@@ -1,4 +1,4 @@
-import { DEV_MODE } from './store';
+import { DEV_MODE, persist, save } from './store';
 
 // 광고 계층. 웹 빌드에는 실제 광고 SDK가 없어 자리 표시 화면을 보여준다.
 // Android 빌드에서는 setAdProvider로 AdMob 구현을 넣는다.
@@ -47,9 +47,16 @@ export function setAdProvider(p: AdProvider): void {
   provider = p;
 }
 
+// 어떤 광고든 본 시각을 남겨, 보상형 광고 직후에 전면 광고가 겹치지 않게 한다
+function markAdShown(): void {
+  save.lastAdAt = Date.now();
+  persist();
+}
+
 export const ads = {
   async rewarded(): Promise<boolean> {
     try {
+      markAdShown();
       return await provider.showRewarded();
     } catch {
       return true;
@@ -57,6 +64,7 @@ export const ads = {
   },
   async interstitial(): Promise<void> {
     try {
+      markAdShown();
       await provider.showInterstitial();
     } catch {
       // 광고가 없어도 게임은 계속된다

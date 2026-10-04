@@ -6,3 +6,9 @@ shot.png
 gen-logs
 # 팔다리를 넣기 전의 이전 캐릭터 원본. 더는 쓰지 않는다.
 art/source-old-skins
+art/source-old
+art/rig
+art/rig
+art/parts-old
+art/rig-chest
+tools/level-cache

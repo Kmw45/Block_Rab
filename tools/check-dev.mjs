@@ -20,8 +20,22 @@ await page.goto(base + '?dev&go=play:3-4');
 await page.waitForSelector('.play-screen');
 console.log('?dev&go=play:3-4 진입:', await page.textContent('.stage-title b'));
 
+// 개발자 모드에서는 치장 아이템이 전부 열려 있고, 눌러서 장착할 수 있다
+await page.goto(base + '?dev&go=cosmetics');
+await page.waitForSelector('.cosmetics-screen');
+const skins = await page.locator('.item').count();
+const lockedSkins = await page.locator('.item.missing').count();
+await page.locator('.item').last().click();
+const equippedSkin = await page.evaluate(() => JSON.parse(localStorage.getItem('block-labyrinth-save-dev')).skin);
+await page.click('[data-tab=trail]');
+const trails = await page.locator('.item').count();
+const lockedTrails = await page.locator('.item.missing').count();
+console.log(`치장: 스킨 ${skins}칸 중 잠김 ${lockedSkins}, 자국 ${trails}칸 중 잠김 ${lockedTrails}, 마지막 스킨 장착 -> ${equippedSkin}`);
+console.log('뽑기 버튼 사용 가능:', await page.locator('[data-a=addraw], [data-a=draw]:not([disabled])').count() > 0);
+
 // 일반 주소는 그대로 잠겨 있어야 한다
 await page.goto(base);
 await page.waitForSelector('.title-screen');
+await page.goto(base + '?go=cosmetics');
 console.log('일반 주소: 타이틀 화면으로 시작, 일반 저장 기록', await page.evaluate(() => localStorage.getItem('block-labyrinth-save') === null ? '없음(건드리지 않음)' : '있음'));
 await browser.close();
