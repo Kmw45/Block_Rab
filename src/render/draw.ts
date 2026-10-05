@@ -501,18 +501,20 @@ function accessoryFront(ctx: Ctx, id: string, r: number, time: number, d: SkinDe
 
 // 동작 시트의 구성: [시작 프레임, 프레임 수, 초당 프레임, 반복]. tools/make-anim.mjs의 CLIPS와 같아야 한다.
 const ANIMS = {
-  idle: [0, 24, 15, true],
-  walkS: [24, 12, 36, true], // 한 칸 이동에 한 걸음(반 주기)
-  walkF: [36, 12, 36, true],
-  pushS: [48, 12, 26, true],
-  pushF: [60, 12, 26, true],
-  win: [72, 20, 20, false],
+  idle: [0, 48, 30, true],
+  walkS: [48, 12, 36, true], // 한 칸 이동에 한 걸음(반 주기)
+  walkF: [60, 12, 36, true],
+  pushS: [72, 14, 28, true],
+  pushF: [86, 14, 28, true],
+  win: [100, 30, 30, false],
+  bump: [130, 12, 30, false], // 막혔을 때: 놀랐다가 귀가 처진다
+  sleep: [142, 40, 20, true], // 오래 가만히 두면 존다
 } as const;
 export type AnimName = keyof typeof ANIMS;
 const SHEET_COLS = 10;
 const SHEET_FRAME = 240;
 // 시트 한 칸은 400px 캔버스이고 발바닥이 위에서 352px에 있다. 캐릭터 키(약 232px)가 칸의 0.78배가 되게 그린다.
-const SHEET_SCALE = (0.78 * 400) / 232;
+export const SHEET_SCALE = (0.94 * 400) / 232;
 const SHEET_GROUND = 352 / 400;
 
 // look: 바라보는 방향(0~3), squash: 이동 중 찌그러짐(1 = 없음), anim: 재생할 동작과 그 동작이 시작된 뒤의 시간

@@ -24,8 +24,10 @@ import { AnimName, TRAIL_LIFE, TrailMark, drawBlock, drawCharacter, drawFixed, d
 import { getSheet, getSprite, getTinted } from './sprites';
 
 const TAU = Math.PI * 2;
-// 캐릭터 칸 가운데에서 머리 위 결정까지의 높이(칸 단위)
-const CRYSTAL_Y = 0.62;
+// 캐릭터 칸 가운데에서 꼬리 끝의 결정까지의 거리(칸 단위). 왼쪽을 볼 때는 좌우가 뒤집힌다.
+const SLEEP_AFTER = 14; // 이만큼(초) 조작이 없으면 존다
+const CRYSTAL_X = -0.48;
+const CRYSTAL_Y = 0.18;
 const MOVE_TIME = 0.16;
 const SLIDE_TIME_PER_CELL = 0.055;
 
@@ -88,6 +90,7 @@ export class BoardView {
   private marks: TrailMark[] = [];
   private hint: Dir[] = [];
   private hintT0 = -9;
+  private lastActT = now(); // 마지막으로 조작한 시각. 오래 지나면 캐릭터가 존다
   private winT0 = -1;
   private introT0 = -9;
   private warpT0 = -9; // 순간이동으로 나타난 시각. 캐릭터만 다시 튀어나온다
@@ -200,6 +203,7 @@ export class BoardView {
       }
     }
     this.moveT0 = time;
+    this.lastActT = time;
     // 빙판에서는 미끄러진 칸 수만큼 길게 움직이고, 마법진을 탔다면 도착한 뒤 순간이동한다
     const walkDur = MOVE_TIME + res.slid * SLIDE_TIME_PER_CELL;
     // 옆으로 갈 때와 위아래로 갈 때 다른 동작을 쓴다
@@ -303,20 +307,23 @@ export class BoardView {
   bump(res: StepResult, dir: Dir): void {
     this.shakeBlock = res.bumpBlock;
     this.shakeT0 = now();
+    this.lastActT = this.shakeT0;
     this.shakeDir = dir;
     this.look = dir;
-    this.playAnim(dir === 1 || dir === 3 ? 'pushS' : 'pushF', 0.3);
+    this.playAnim('bump', 0.4);
   }
 
-  // 힌트는 정령의 머리 위 결정이 길을 비춰 주는 것이다. 켜지는 순간 결정에서 빛이 튄다.
+  // 힌트는 여우의 꼬리 끝 결정이 길을 비춰 주는 것이다. 켜지는 순간 결정에서 빛이 튄다.
   setHint(dirs: Dir[]): void {
     if (dirs.length && !this.hint.length) {
       this.hintT0 = now();
       const [x, y] = this.xy(this.state.p);
-      this.spawn(x + 0.5, y + 0.5 - CRYSTAL_Y, { color: '#ffe07a', speed: 0, life: 0.5, size: 0.3, tex: 'fx_ring', grow: 2.4 });
-      for (let i = 0; i < 8; i++) this.spawn(x + 0.5, y + 0.5 - CRYSTAL_Y, { color: '#fff3b0', speed: 1.8, life: 0.5, size: 0.13, tex: 'fx_spark' });
+      const tx = x + 0.5 + (this.look === 3 ? -CRYSTAL_X : CRYSTAL_X);
+      this.spawn(tx, y + 0.5 - CRYSTAL_Y, { color: '#ffe07a', speed: 0, life: 0.5, size: 0.3, tex: 'fx_ring', grow: 2.4 });
+      for (let i = 0; i < 8; i++) this.spawn(tx, y + 0.5 - CRYSTAL_Y, { color: '#fff3b0', speed: 1.8, life: 0.5, size: 0.13, tex: 'fx_spark' });
     }
     this.hint = dirs;
+    this.lastActT = now();
   }
 
   private drawCrystalGlow(time: number, s: number): void {
@@ -325,14 +332,15 @@ export class BoardView {
     const pulse = 0.8 + Math.sin(time * 5) * 0.2;
     const r = s * (0.4 + flash * 0.35);
     const y = -s * CRYSTAL_Y;
-    const g = ctx.createRadialGradient(0, y, 0, 0, y, r);
+    const x = s * (this.look === 3 ? -CRYSTAL_X : CRYSTAL_X);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, `rgba(255,246,200,${Math.min(1, pulse + flash)})`);
     g.addColorStop(0.4, `rgba(255,214,92,${Math.min(1, (pulse + flash) * 0.4)})`);
     g.addColorStop(1, 'rgba(255,214,92,0)');
     ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(0, y, r, 0, Math.PI * 2);
+    ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -928,8 +936,9 @@ export class BoardView {
     ctx.translate(cx, cy - hop);
     ctx.scale(intro, intro);
     const moving = time < this.animUntil;
-    drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, squash, { name: moving ? this.animName : 'idle', t: moving ? time - this.animT0 : time });
-    if (this.hint.length) this.drawCrystalGlow(time, s);
+    drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, squash, { name: moving ? this.animName : time - this.lastActT > SLEEP_AFTER ? 'sleep' : 'idle', t: moving ? time - this.animT0 : time });
+    // 움직이는 동안에는 자세 그림이 바뀌어 꼬리 위치가 달라지므로 빛을 잠깐 끈다
+    if (this.hint.length && !moving) this.drawCrystalGlow(time, s);
     ctx.restore();
   }
 }

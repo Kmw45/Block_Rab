@@ -61,8 +61,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '마법 서고',
     en: 'Arcane Archive',
-    storyKo: "미궁의 기억이 잠든 서고. 마법진은 같은 마법인 정령만 탈 수 있어요.",
-    storyEn: "Where the labyrinth's memory sleeps. Only a spirit, made of the same magic, can ride the circles.",
+    storyKo: "미궁의 기억이 잠든 서고. 마법진은 빛을 지닌 여우만 탈 수 있어요.",
+    storyEn: "Where the labyrinth's memory sleeps. Only the fox, who carries the light, can ride the circles.",
     bgTop: '#40252f',
     bgBottom: '#1f1016',
     accent: '#ff7d6b',
@@ -75,8 +75,8 @@ export const WORLDS: WorldTheme[] = [
   {
     ko: '톱니 성채',
     en: 'Clockwork Keep',
-    storyKo: "기계로 미궁을 다스리려던 성. 빛인 정령은 스위치를 누를 수 없어요.",
-    storyEn: "A keep that tried to rule by machine. A spirit of light cannot press a switch.",
+    storyKo: "기계로 미궁을 다스리려던 성. 여우는 가벼워서 스위치가 눌리지 않아요.",
+    storyEn: "A keep that tried to rule by machine. The fox is too light to press a switch.",
     bgTop: '#3a3320',
     bgBottom: '#1a160c',
     accent: '#e6c15a',

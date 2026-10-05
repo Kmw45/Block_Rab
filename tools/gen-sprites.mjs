@@ -4,32 +4,33 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const DIR = 'art/source'; // 원본. tools/build-sprites.mjs가 게임용 크기로 줄인다
-const REF = `${DIR}/block_normal.png`;
+const REF = 'art/concepts/r2_fox.png'; // 화풍의 기준: 주인공 시안. 모든 그림을 이 그림과 같은 세계로 그린다
 const logDir = process.argv[2] ?? 'gen-logs';
 const parallel = Number(process.argv[3] ?? 2);
 const only = process.argv[4] ? new Set(process.argv[4].split(',')) : null;
 mkdirSync(logDir, { recursive: true });
 
 const STYLE =
-  'Style: match the attached reference image exactly (hand-painted casual mobile puzzle game sprite, warm soft lighting from the top left, clean readable shapes, slightly raised 3D bevel, viewed from directly above). ' +
+  'Style: soft matte 2D storybook game art that belongs in the same world as the attached character sheet: clean rounded shapes, a soft thick warm-brown outline, flat pastel colours with very gentle shading, cozy and cute. NOT glossy, NOT 3D rendered, no specular highlights, no photo texture. Viewed from directly above, with a slightly darker front face along the bottom so blocks look solid. ' +
   'Square 1:1 image. No text, letters, numbers, logo, watermark, frame, cast shadow on the ground, or cropping.';
 const SPRITE = 'Transparent background. The object is centered and fills about 87% of the frame with an even margin on all sides.';
 const BLOB =
   'A cute chunky rounded-square blob character for a puzzle game, standing, viewed from the front, with two big simple white eyes with dark pupils looking forward and no mouth. ' +
   'It has two short stubby little arms at its sides and two short stubby little legs with small rounded feet, clearly visible. ' +
   'Transparent background. The whole character including arms, legs and any hat is centered and fills about 84% of the frame, with nothing cut off.';
-const UI = 'Hand-painted casual mobile puzzle game art matching the attached reference image style. No text, letters, numbers, logo, watermark, or frame.';
+const UI = 'Soft matte 2D storybook game art in the same style as the attached character sheet (rounded shapes, a soft thick warm-brown outline, flat pastel colours, very gentle shading, not glossy, not 3D rendered). No text, letters, numbers, logo, watermark, or frame.';
 const ICON = `Transparent background, centered, fills about 88% of the frame, fully visible with nothing cut off. Square 1:1. ${UI}`;
 
-const KIT = 'Game UI kit element in the style of top casual mobile puzzle games: chunky, glossy, soft bevels, warm lighting, dungeon treasure theme.';
+const KIT = 'Game UI kit element for a cozy storybook puzzle game: soft, rounded and matte, flat pastel colours with a thick warm-brown outline, like felt, paper and painted wood cut-outs. Not glossy, no shiny bevel, no metal reflections.';
 const FLAT = `Flat straight-on front view, perfectly symmetrical, straight not tilted, no perspective. Transparent background, centered, fills about 92% of the frame, nothing cut off. ${UI}`;
 
 const ASSETS = [
   ['floor', `A single plain square dungeon floor slab, viewed from directly above: one smooth flat worn stone slab filling the tile, almost uniform neutral mid-grey, only very faint surface texture, a thin slightly darker recessed seam around the edge. No bricks, no multiple stones, no cracks, no highlights, completely flat with no raised parts. It fills the ENTIRE frame edge to edge, fully opaque, no margin. ${UI}`, true],
   ['wall', `A tall chunky stone wall block for a top-down puzzle game, viewed from above at a slight angle so that BOTH its top and its front side are visible: the top face is a bright light-grey cap made of two rows of large rounded bricks and takes the upper two thirds; below it the front face is clearly darker and in shadow, taking the lower third, which makes the block look tall and solid. Strong contrast between the bright top and the dark front, thick dark outline around the whole block. Neutral grey. Transparent background, centered, fills about 96% of the frame, nothing cut off. ${UI}`, true],
+  ['block_normal', `A square wooden crate for a top-down block-pushing puzzle, like the crate in the attached sheet: warm honey-brown planks with a simple X brace on top and small rounded corner caps. ${SPRITE}`],
   ['block_fixed', `A heavy immovable dark charcoal stone block, plain, with no markings or symbols. ${SPRITE}`],
   ['block_railH', `A teal-green metal block with one bold white double-headed arrow engraved on top, pointing exactly left and right (horizontal). ${SPRITE}`],
-  ['block_ice', `A glossy translucent sky-blue ice cube block with frosty white highlights and a small snowflake facet on top. ${SPRITE}`],
+  ['block_ice', `A soft matte translucent sky-blue ice cube block with frosty white highlights and a small snowflake facet on top. ${SPRITE}`],
   ['block_count', `A coral-red fired-clay block with a smooth, empty, slightly recessed square plate in the center (the plate is blank: no symbol, no number). ${SPRITE}`],
   ['exit', `A glowing magical exit seal on the floor: a circular golden-white ring of light with a bright five-pointed star in the center and soft light rays. No letters or runes. ${SPRITE}`],
   ['skin_default', `${BLOB} Character: plain warm yellow blob, friendly.`],
@@ -49,7 +50,7 @@ const ASSETS = [
   ['skin_mage', `${BLOB} Character: a violet labyrinth mage blob wearing a tall pointed wizard hat with a gold star.`],
   ['skin_knight', `${BLOB} Character: a shining golden armored knight blob with a visor and a red plume.`],
   ['skin_king', `${BLOB} Character: a radiant golden king blob wearing a jeweled crown, glowing with sparkles, the most precious of all.`],
-  ['skin_slime', `${BLOB} Character: a glossy green dungeon slime blob, slightly translucent and jiggly.`],
+  ['skin_slime', `${BLOB} Character: a soft matte green dungeon slime blob, slightly translucent and jiggly.`],
   ['skin_mushroom', `${BLOB} Character: a cave mushroom blob with a red cap with white spots on its head.`],
   ['skin_mummy', `${BLOB} Character: a mummy blob wrapped in pale linen bandages with one loose strip.`],
   ['skin_goblin', `${BLOB} Character: a green goblin blob with long pointed ears and a small leather vest.`],
@@ -58,16 +59,16 @@ const ASSETS = [
   // 던전 기믹 타일
   ['tile_pit', `A square pit trap in a dungeon stone floor, viewed from directly above: a deep dark hole with a chipped stone rim around it. Fills the ENTIRE frame edge to edge, fully opaque, no margin. ${UI}`, true],
   ['tile_oneway', `A square dungeon stone floor tile, viewed from directly above, with one large bold glowing amber chevron arrow carved into it pointing straight UP. Fills the ENTIRE frame edge to edge, fully opaque, no margin. ${UI}`, true],
-  ['tile_ice', `A square slippery frozen floor tile, viewed from directly above: glossy pale blue ice with subtle cracks and white shine streaks, flat. Fills the ENTIRE frame edge to edge, fully opaque, no margin. ${UI}`, true],
+  ['tile_ice', `A square slippery frozen floor tile, viewed from directly above: soft matte pale blue ice with subtle cracks and white shine streaks, flat. Fills the ENTIRE frame edge to edge, fully opaque, no margin. ${UI}`, true],
   ['tile_portal', `A glowing magic teleport circle seen from directly above: a swirling violet-blue vortex inside a bright ring of light. No letters or runes. ${ICON}`, true],
   ['ui_chest_closed', `A closed wooden treasure chest with golden bands and a golden lock, viewed from the front at a slight downward angle. ${SPRITE}`],
   ['ui_chest_open', `The same style wooden treasure chest with golden bands, lid wide open, bright warm white light glowing from inside, viewed from the front at a slight downward angle. ${SPRITE}`],
   // UI와 이펙트. raw는 공통 화풍 문구 대신 UI 문구를 붙인다.
   ['ui_bg', `A dark, moody background for a mobile puzzle game menu: an ancient labyrinth stone wall with large worn blocks, faint carved maze lines, soft vignette, darker toward the bottom. Neutral desaturated grey, low contrast, no focal object, nothing bright. Portrait orientation 2:3, fully opaque, fills the whole frame. ${UI}`, true],
   ['ui_home_bg', `Background scene for the home screen of a mobile puzzle game: the inside of a warm torch-lit stone labyrinth hall seen from the front, with an arched doorway glowing with golden light in the distance, torches on the walls, hanging vines, and an EMPTY round stone platform in the lower center foreground where a character will stand later. Absolutely no characters or creatures. Cozy, adventurous, rich detail, soft depth and light rays. Portrait orientation 2:3, fully opaque, fills the whole frame. ${UI}`, true],
-  ['ui_title_art', `Key art for a mobile puzzle game: inside a torch-lit stone labyrinth, a cute chunky yellow rounded-square blob character with two big white eyes pushes a wooden crate toward a glowing golden star seal on the floor; an ice block and a teal arrow block sit nearby. Warm light, cozy and adventurous, three-quarter top-down view. Square 1:1, fully opaque, fills the whole frame, darker soft edges. ${UI}`, true],
-  ['ui_star', `A single chunky glossy golden five-pointed star game icon with a darker gold rim and a soft highlight, front view. ${ICON}`, true],
-  ['ui_coin', `A single glossy gold coin game icon with a simple embossed star in the middle, front view. ${ICON}`, true],
+  ['ui_title_art', `Key art for a cozy mobile puzzle game: inside an old stone labyrinth in warm evening light, the baby fennec fox from the attached character sheet pushes a wooden crate toward a softly glowing golden star seal on the floor, its fluffy tail tip glowing like a golden crystal flame. Square. ${UI}`, true],
+  ['ui_star', `A single chunky soft matte golden five-pointed star game icon with a darker gold rim and a soft highlight, front view. ${ICON}`, true],
+  ['ui_coin', `A single soft matte gold coin game icon with a simple embossed star in the middle, front view. ${ICON}`, true],
   ['ui_lock', `A single chunky golden padlock game icon, closed, front view. ${ICON}`, true],
   ['icon_undo', `A single chunky cream-white curved arrow game icon pointing back to the left (an undo arrow), thick rounded shape with a soft dark outline. ${ICON}`, true],
   ['icon_restart', `A single chunky cream-white circular arrow game icon (a restart / refresh symbol), thick rounded shape with a soft dark outline. ${ICON}`, true],
@@ -83,10 +84,10 @@ const ASSETS = [
   ['fx_ring', `A single thin glowing shockwave ring, white-gold, soft outer glow, perfectly circular and centered, empty in the middle, game VFX texture for additive blending. Pure black background (#000000), fades to black before the edges. Square 1:1. ${UI}`, true],
   ['fx_burst', `A radial burst of soft light rays from the center, white core fading to warm gold, game VFX texture for additive blending. Pure black background (#000000), rays fade smoothly to black before the edges, centered. Square 1:1. ${UI}`, true],
   // UI 키트. 글자와 아이콘 없이 빈 판으로 만들고, 게임에서 9-슬라이스로 늘려 쓴다.
-  ['ui_btn_gold', `${KIT} A blank wide rounded-rectangle game button: glossy amber-gold face with a bright top highlight, a darker gold rim and a thick darker bottom lip that makes it look raised and pressable. About 3 times wider than tall. Completely empty face. ${FLAT}`, true],
-  ['ui_btn_stone', `${KIT} A blank wide rounded-rectangle game button carved from dark blue-grey stone with a thin gold trim line, a soft top highlight and a thick darker bottom lip that makes it look raised and pressable. About 3 times wider than tall. Completely empty face. ${FLAT}`, true],
-  ['ui_btn_square', `${KIT} A blank square game button with rounded corners carved from dark blue-grey stone with a thin gold trim line, a soft top highlight and a thick darker bottom lip. Completely empty face. ${FLAT}`, true],
-  ['ui_panel', `${KIT} A blank square popup panel for a game dialog: a dark navy-purple stone slab with a smooth empty center, framed by a chunky gold border with ornate rounded corner caps. Completely empty center. ${FLAT}`, true],
+  ['ui_btn_gold', `${KIT} A blank wide rounded-rectangle game button: soft matte honey-yellow face, a warm brown outline and a thick darker bottom lip that makes it look raised and pressable. About 3 times wider than tall. Completely empty face. ${FLAT}`, true],
+  ['ui_btn_stone', `${KIT} A blank wide rounded-rectangle game button made of dusty plum felt with a thin cream stitched trim line and a thick darker bottom lip that makes it look raised and pressable. About 3 times wider than tall. Completely empty face. ${FLAT}`, true],
+  ['ui_btn_square', `${KIT} A blank square game button with rounded corners made of dusty plum felt with a thin cream stitched trim line and a thick darker bottom lip. Completely empty face. ${FLAT}`, true],
+  ['ui_panel', `${KIT} A blank square popup panel for a game dialog: a deep cocoa-plum soft felt panel with a smooth empty center, framed by a thick cream border with a stitched line and rounded corners. Completely empty center. ${FLAT}`, true],
   ['ui_frame', `${KIT} A blank square content frame for a game menu section: a dark, slightly translucent-looking slate panel with a smooth empty center and a simple thin bronze border with small corner rivets. Subtle, low contrast, completely empty center. ${FLAT}`, true],
   ['ui_ribbon', `${KIT} A blank horizontal title ribbon banner for a game popup: a wide crimson-red cloth ribbon with folded swallow-tail ends and a thin gold edge, slightly curved. About 4 times wider than tall. Completely empty, no text. ${FLAT}`, true],
   ['ui_stage_open', `${KIT} A blank square level-select tile: a raised dark stone plaque with rounded corners and a glowing amber-gold frame, empty smooth center for a number. ${FLAT}`, true],
@@ -128,7 +129,7 @@ const ASSETS = [
   // 도입 이야기 그림
   ['story_1', `The heart of a great labyrinth: a huge radiant golden crystal heart floating in the middle of a vast underground stone chamber, warm golden light streaming out along the stone corridors in every direction, peaceful and majestic. Storybook illustration for the opening of a cute mobile puzzle game, hand-painted, warm and gentle, rich detail. Landscape 3:2, fully opaque, fills the whole frame. No characters other than those described, no text, no letters, no logo, no watermark.`, true],
   ['story_2', `The huge golden crystal heart of a labyrinth cracking and shattering, many small shards of golden light flying outward, while the vast stone chamber around it falls into cold dark blue shadow and the torches go out. Dramatic but not scary. Storybook illustration for the opening of a cute mobile puzzle game, hand-painted, warm and gentle, rich detail. Landscape 3:2, fully opaque, fills the whole frame. No characters other than those described, no text, no letters, no logo, no watermark.`, true],
-  ['story_3', `In dark crumbling stone ruins, one tiny shard of golden light has become a small chubby very round glossy golden jelly creature with two very big sparkly eyes, pink blush, no mouth, short stubby round arms and legs, and a small golden crystal floating just above its head. It has just opened its eyes for the first time and looks around curiously, its soft golden glow lighting the mossy stones around it. Storybook illustration for the opening of a cute mobile puzzle game, hand-painted, warm and gentle, rich detail. Landscape 3:2, fully opaque, fills the whole frame. No characters other than those described, no text, no letters, no logo, no watermark.`, true],
+  ['story_3', `In dark crumbling stone ruins, one tiny shard of golden light has landed on the tail of a small baby fennec fox, the same fox as in the attached character sheet (big ears with pink insides, cream-and-honey fur, dot eyes, peach blush). The fox has just woken up and looks back in wonder at the tip of its fluffy tail, which now glows like a warm golden crystal flame and lights the mossy stones around it. Wide storybook illustration, landscape 3:2, the fox slightly left of center. ${UI}`, true],
   ['icon_back', `A single chunky cream-white arrow game icon pointing left (a back arrow), thick rounded shape with a soft dark outline. ${ICON}`, true],
   ['icon_settings', `A single chunky cream-white gear cog game icon (settings), thick rounded shape with a soft dark outline. ${ICON}`, true],
   ['icon_skip', `A single chunky cream-white double-triangle fast-forward game icon pointing right, thick rounded shapes with a soft dark outline. ${ICON}`, true],

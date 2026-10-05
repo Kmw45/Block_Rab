@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>타겟층과 캐릭터 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1100px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      .lead { color: #b9b0cc; margin: 0 0 28px; }
+      section { margin-bottom: 32px; padding: 20px; border-radius: 18px; background: #231d30; }
+      h2 { margin: 0 0 6px; font-size: 1.3rem; color: #ffd24d; }
+      h3 { margin: 18px 0 4px; font-size: 1.05rem; }
+      .tag { color: #b9b0cc; margin: 0 0 12px; }
+      img { width: 100%; border-radius: 12px; display: block; }
+      dl { display: grid; grid-template-columns: 8em 1fr; gap: 4px 14px; margin: 14px 0 0; }
+      dt { color: #b9b0cc; }
+      dd { margin: 0; }
+      ul { margin: 6px 0 0; padding-left: 1.2em; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+      th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #3a3350; vertical-align: top; }
+      th { color: #b9b0cc; font-weight: 600; }
+      .pick { display: inline-block; margin-left: 8px; padding: 1px 9px; border-radius: 9px; background: #ffd24d; color: #2a1c05; font-size: 0.8rem; vertical-align: middle; }
+      a { color: #9fd0ff; }
+      .src { color: #b9b0cc; font-size: 0.85rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>주 타겟층 분석과 캐릭터 시안 (2차)</h1>
+      <p class="lead">누가 이 게임을 할지부터 다시 보고 그린 시안입니다. 게임에는 아직 넣지 않았습니다.</p>
+
+      <section>
+        <h2>누가 이 게임을 하는가</h2>
+        <ul>
+          <li><b>성별과 나이</b>: 퍼즐 장르는 이용자의 약 70%가 여성이고 60%가 35세 이상입니다. 전체 게이머의 중심 연령대는 25~44세(49%)입니다.</li>
+          <li><b>하는 이유</b>: 스트레스 해소와 틈새 시간 보내기입니다. 경쟁이나 성취보다 편안함을 찾습니다.</li>
+          <li><b>이 게임의 위치</b>: 블록 밀기는 캔디크러시류보다 머리를 더 쓰는 쪽이라, 그중에서도 "조용히 생각하는 퍼즐"을 좋아하는 사람이 남습니다. 짧게 한 판씩, 한 손으로 합니다.</li>
+          <li><b>돈을 쓰는 지점</b>: 이 게임의 수집 요소는 치장 뽑기입니다. 캐릭터가 "갖고 싶고 꾸미고 싶은" 대상이 아니면 뽑기가 의미가 없습니다.</li>
+        </ul>
+        <p><b>정리한 주 타겟</b>: 25~44세 여성 중심의 캐주얼 퍼즐 이용자. 메신저 이모티콘과 캐릭터 굿즈에 익숙하고, 쉬는 시간에 조용히 한 판씩 하는 사람.</p>
+        <p class="src">근거: <a href="https://gamedevreports.substack.com/p/esa-global-video-games-report-2025">ESA Global Video Games Report 2025</a>(22개국 24,216명 조사). "이모티콘과 굿즈에 익숙하다"는 부분은 조사 수치가 아니라 한국 시장을 염두에 둔 제 판단입니다.</p>
+      </section>
+
+      <section>
+        <h2>지금 캐릭터가 왜 약한가</h2>
+        <table>
+          <tr><th>문제</th><th>이 타겟에게 어떻게 보이는가</th></tr>
+          <tr><td>정체가 없다</td><td>노란 공에 눈만 붙어 있어 "무엇"인지 말할 수 없습니다. 동물도 사람도 아니라 정을 붙일 실마리가 없습니다.</td></tr>
+          <tr><td>광택 나는 3D 질감</td><td>AI가 만든 흔한 모바일 광고 그림처럼 보입니다. 이 타겟이 좋아하는 이모티콘·인형의 폭신한 느낌과 반대입니다.</td></tr>
+          <tr><td>실루엣이 원 하나</td><td>작게 줄이면 그냥 노란 점입니다. 치장을 입혀도 모자만 다른 공으로 보입니다.</td></tr>
+          <tr><td>표정이 하나</td><td>밀 때 힘들어하거나 막혔을 때 당황하는 모습이 없습니다. Cut the Rope의 옴놈이 사랑받는 이유는 작은 반응들 때문입니다.</td></tr>
+        </table>
+        <h3>그래서 잡은 방향</h3>
+        <ul>
+          <li>광택 3D를 버리고, 외곽선이 부드러운 납작한 2D로 그립니다(이모티콘, 인형 느낌).</li>
+          <li>아이콘 크기로 줄여도 알아볼 수 있는 실루엣 하나를 줍니다.</li>
+          <li>표정 네 가지(기쁨, 힘씀, 놀람, 졸림)를 처음부터 같이 설계합니다.</li>
+          <li>이야기는 그대로 둡니다. 깨진 심장의 빛 조각이라는 설정에 맞게 모든 시안이 금빛 결정을 지닙니다.</li>
+        </ul>
+        <p class="src">참고: <a href="https://www.imore.com/my-om-nom-offers-your-own-pet-cut-rope">옴놈(Cut the Rope)</a>, <a href="https://gamesbeat.com/cut-the-rope-time-travel-review/">GamesBeat의 Cut the Rope 리뷰</a></p>
+      </section>
+
+      <section>
+        <h2>A. 말랑 정령 <span class="pick">추천</span></h2>
+        <p class="tag">소심하지만 뭐든 열심히 하는, 떡처럼 말랑한 빛 조각</p>
+        <img src="r2_mochi.png" alt="말랑 정령 시안" />
+        <dl>
+          <dt>상징</dt><dd>머리에서 새싹처럼 돋은 금빛 결정 하나. 놀라면 결정이 반짝이고 졸면 꺼집니다.</dd>
+          <dt>타겟과의 맞음</dt><dd>가장 단순하고 "하찮게 귀여운" 쪽입니다. 이모티콘으로 바로 쓸 수 있는 형태입니다.</dd>
+          <dt>지금 게임과의 연결</dt><dd>정령 설정과 치장 22종("정령이 다른 모습을 빌려 입는다")을 그대로 쓸 수 있습니다. 몸통·팔·발 구조도 지금 리그와 같아 다시 만드는 양이 가장 적습니다.</dd>
+          <dt>걱정되는 점</dt><dd>흰 몸이라 밝은 바닥 위에서 묻힐 수 있습니다. 외곽선과 그림자로 풀어야 합니다.</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h2>B. 빛꼬리 여우</h2>
+        <p class="tag">호기심 많고 장난스러운 아기 사막여우. 실패하면 귀가 처집니다</p>
+        <img src="r2_fox.png" alt="빛꼬리 여우 시안" />
+        <dl>
+          <dt>상징</dt><dd>큰 귀와, 끝이 금빛 결정처럼 타오르는 꼬리. 꼬리가 길을 비춥니다.</dd>
+          <dt>타겟과의 맞음</dt><dd>동물이라 가장 넓게 통하고, 실루엣이 네 시안 중 가장 뚜렷합니다. 귀와 꼬리로 감정을 보여 줄 수 있습니다.</dd>
+          <dt>지금 게임과의 연결</dt><dd>"심장의 빛을 꼬리에 받은 여우"로 이야기를 조금 고치면 됩니다. 귀와 꼬리 때문에 리그에 뼈대를 더해야 하고, 치장은 "옷을 입은 여우"로 전부 다시 그려야 합니다.</dd>
+          <dt>걱정되는 점</dt><dd>귀가 커서 한 칸 안에 넣으면 몸이 작아집니다. 작업량이 가장 많습니다.</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h2>C. 등불지기 아이</h2>
+        <p class="tag">말수가 적고 용감한, 동화책 속 아이</p>
+        <img src="r2_child.png" alt="등불지기 아이 시안" />
+        <dl>
+          <dt>상징</dt><dd>몸을 다 덮는 큰 노란 두건 망토와, 불꽃 대신 결정 조각이 든 등불.</dd>
+          <dt>타겟과의 맞음</dt><dd>귀여움보다 분위기 쪽입니다. 그림책이나 감성 인디 게임을 좋아하는 성인에게 맞습니다.</dd>
+          <dt>지금 게임과의 연결</dt><dd>"빛 조각을 등불에 담아 심장으로 가져가는 아이"로 이야기가 가장 자연스럽습니다. 힌트 때 등불이 빛나는 연출도 그대로 쓸 수 있습니다. 치장은 망토 색과 무늬 중심이 됩니다.</dd>
+          <dt>걱정되는 점</dt><dd>얼굴이 두건 속에 있어 작은 크기에서 표정이 잘 안 보입니다. 치장 변화의 폭이 좁습니다.</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h2>D. 아기 미노</h2>
+        <p class="tag">미궁에서 태어난 순한 송아지. 몸집에 비해 힘이 셉니다</p>
+        <img src="r2_calf.png" alt="아기 미노 시안" />
+        <dl>
+          <dt>상징</dt><dd>작은 뿔과 한쪽 눈의 얼룩, 금빛 결정 방울이 달린 목걸이.</dd>
+          <dt>타겟과의 맞음</dt><dd>인형으로 만들기 가장 좋은 형태입니다. "힘이 세서 블록을 민다"는 설명이 바로 됩니다.</dd>
+          <dt>지금 게임과의 연결</dt><dd>미궁의 주인인 미노타우로스의 아이라 배경과 가장 잘 맞습니다. 다만 "빛 조각 정령" 이야기는 고쳐 써야 합니다.</dd>
+          <dt>걱정되는 점</dt><dd>소 캐릭터는 흔해서 이 게임만의 얼굴이 되기 어렵습니다. 팔다리가 길어 리그를 새로 잡아야 합니다.</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h2>비교</h2>
+        <table>
+          <tr><th></th><th>A 말랑 정령</th><th>B 빛꼬리 여우</th><th>C 등불지기 아이</th><th>D 아기 미노</th></tr>
+          <tr><td>작은 크기에서 알아보기</td><td>좋음</td><td>가장 좋음</td><td>보통</td><td>좋음</td></tr>
+          <tr><td>치장을 입히기</td><td>쉬움</td><td>가능, 전부 새로</td><td>폭이 좁음</td><td>가능, 전부 새로</td></tr>
+          <tr><td>지금 이야기 유지</td><td>그대로</td><td>조금 수정</td><td>조금 수정</td><td>다시 씀</td></tr>
+          <tr><td>다시 만들 양</td><td>적음</td><td>많음</td><td>중간</td><td>많음</td></tr>
+        </table>
+        <p>추천은 <b>A 말랑 정령</b>입니다. 타겟이 좋아하는 단순하고 폭신한 방향이면서, 지금까지 만든 이야기와 치장 체계를 버리지 않아도 됩니다. 실루엣과 동물의 친근함을 더 중요하게 보신다면 <b>B 빛꼬리 여우</b>가 다음입니다.</p>
+        <p class="src">어느 시안이든 채택하면 게임 전체의 그림체(광택 3D)와 어긋나므로, 타일·블록·UI를 어디까지 맞출지도 함께 정해야 합니다.</p>
+      </section>
+    </main>
+  </body>
+</html>

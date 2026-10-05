@@ -16,7 +16,7 @@ export const TUTORIALS: TutorialLevel[] = [
     id: 'T-1',
     rows: ['P..', '##.', 'E..'],
     solution: 'RRDDLL',
-    start: ['화면을 밀어서 정령을 움직여요.\n빛나는 출구까지 가 보세요!', 'Swipe to move the spirit.\nReach the glowing exit!'],
+    start: ['화면을 밀어서 여우를 움직여요.\n빛나는 출구까지 가 보세요!', 'Swipe to move the fox.\nReach the glowing exit!'],
   },
   {
     id: 'T-2',

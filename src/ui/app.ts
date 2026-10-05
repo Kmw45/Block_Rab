@@ -57,7 +57,7 @@ import {
   worldStars,
 } from '../game/store';
 import { BoardView } from '../render/boardView';
-import { AnimName, drawBlock, drawCharacter, drawTrail } from '../render/draw';
+import { AnimName, SHEET_SCALE, drawBlock, drawCharacter, drawTrail } from '../render/draw';
 import { burst } from '../render/fx';
 import { getSheet, getSprite } from '../render/sprites';
 
@@ -224,7 +224,8 @@ function startMascot(canvas: HTMLCanvasElement, clip: (time: number) => { name: 
     requestAnimationFrame(frame);
     const time = ms / 1000;
     ctx.clearRect(0, 0, size, size);
-    drawCharacter(ctx, save.skin, size / 2, size * 0.56, size * 0.9, 2, time, 1, clip(time));
+    // 동작 시트 한 칸이 캔버스에 꼭 들어가게 그린다(귀와 점프가 잘리지 않게)
+    drawCharacter(ctx, save.skin, size / 2, size * 0.645, (size / SHEET_SCALE) * 0.98, 2, time, 1, clip(time));
   };
   requestAnimationFrame(frame);
 }
@@ -278,19 +279,23 @@ export function showTitle(): void {
     else go();
   });
   el.querySelector('[data-a=settings]')!.addEventListener('click', () => showSettings(showTitle));
-  // 홈의 캐릭터: 평소에는 숨쉬고, 누르면 폴짝 뛴다
+  // 홈의 캐릭터: 평소에는 숨쉬고, 오래 두면 졸고, 누르면 깨어나 폴짝 뛴다
   const mascot = el.querySelector<HTMLCanvasElement>('.mascot');
   if (mascot) {
     getSheet(save.skin);
     let jumpAt = -9;
+    let awakeAt = -1;
     let last = 0;
     mascot.addEventListener('pointerdown', () => {
       jumpAt = last;
+      awakeAt = last;
       sfx.star(1);
     });
     startMascot(mascot, (time) => {
       last = time;
-      return time - jumpAt < 1 ? { name: 'win', t: time - jumpAt } : { name: 'idle', t: time };
+      if (awakeAt < 0) awakeAt = time;
+      if (time - jumpAt < 1) return { name: 'win', t: time - jumpAt };
+      return { name: time - awakeAt > 12 ? 'sleep' : 'idle', t: time };
     });
   }
   if (homeBg || getSprite('ui_title_art')) return; // 그림이 있으면 움직이는 도형 그림은 쓰지 않는다
@@ -383,7 +388,7 @@ export function showSelect(): void {
       .map((lv) => {
         const stars = save.stars[lv.id] ?? 0;
         const state = !unlocked ? 'locked' : stars > 0 ? 'cleared' : save.skipped === lv.id ? 'skipped' : 'open';
-        return `<div class="stage-wrap"><button class="stage ${state} ${lv.role === 'hard' || lv.role === 'boss' ? 'tough' : ''}" data-id="${lv.id}">${unlocked ? lv.index : art('ui_lock', ICON.lock)}</button>${starsHtml(stars)}</div>`;
+        return `<div class="stage-wrap"><button class="stage ${state}" data-id="${lv.id}">${unlocked ? lv.index : art('ui_lock', ICON.lock)}</button>${starsHtml(stars)}</div>`;
       })
       .join('');
     list += `

@@ -2220,21 +2220,39 @@ h2 {
     0 4px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* 고비 스테이지와 보스 스테이지: 칸 모서리에 붉은 불씨를 단다 */
-.stage.tough {
-  position: relative;
+/* ───── 여우에 맞춘 타이틀 ───── */
+
+/* 동작 시트 한 칸이 통째로 들어가게 그리므로(귀가 잘리지 않게) 캔버스를 키운다 */
+.title-screen.home .mascot {
+  width: 330px;
+  height: 330px;
+  transform: translate(-50%, -86%);
 }
 
-.stage.tough:not(.locked)::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffd9c2, #ff6a4d 45%, #b3261a);
-  box-shadow:
-    0 0 0 2px #2a0b08,
-    0 0 8px #ff6a4d;
+.mascot.small {
+  width: 164px;
+  height: 164px;
+  margin: -26px 0 -22px;
+}
+
+/* 로고: 크림색 글자에 굵은 갈색 테두리. 그림책 제목처럼 */
+.title-screen.home .logo {
+  background: none;
+  color: #fff3d6;
+  -webkit-text-fill-color: #fff3d6;
+  -webkit-text-stroke: 9px #6b4226;
+  paint-order: stroke fill;
+  letter-spacing: 0.02em;
+  filter: drop-shadow(0 5px 0 #452a17) drop-shadow(0 12px 14px rgba(0, 0, 0, 0.45));
+}
+
+.title-screen.home .tagline {
+  margin-top: 8px;
+  padding: 4px 16px;
+  border-radius: 999px;
+  color: #fff3d6;
+  background: rgba(69, 42, 23, 0.72);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 243, 214, 0.35);
+  letter-spacing: 0.06em;
+  text-shadow: none;
 }
