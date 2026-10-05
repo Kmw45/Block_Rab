@@ -99,8 +99,12 @@ check(
   '상단 버튼이 화면 안에 있다',
 );
 
-// 잠긴 스테이지를 누르면 안내가 뜬다
-await page.locator('.stage.locked').first().click();
+// 던전은 카드로 넘겨 본다. 잠긴 던전 카드를 가운데로 가져와 스테이지를 누르면 안내가 뜬다
+check((await page.locator('.pager i').count()) === 8 && (await page.locator('.world.front').getAttribute('data-world')) === '1', '던전 카드 8장 중 지금 던전이 가운데에 있다');
+await page.locator('.pager i').nth(1).click();
+await page.waitForSelector('.world.front[data-world="2"]');
+await page.waitForTimeout(500);
+await page.locator('.world.front .stage.locked').first().click();
 check(await page.locator('.toast').isVisible(), '잠긴 월드 안내가 뜬다');
 
 // 모든 레벨을 저장된 해답으로 클리어한다

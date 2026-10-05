@@ -21,6 +21,11 @@
 | `node tools/gen-sprites.mjs` | Codex CLI로 그림 생성. `art/source`에 없는 것만 만든다 |
 | `node tools/build-sprites.mjs` | `art/source` 원본을 게임용 크기로 줄여 `public/assets/sprites`에 넣는다 |
 | `node tools/gen-parts.mjs <로그 폴더> <동시 실행 수> [이름 목록]` | 주인공 여우의 몸통(앉은 자세 한 장), 꼬리, 꼬리 끝 결정과 스킨마다의 몸통 그림을 Codex CLI로 생성해 `art/parts`에 넣는다. 있는 파일은 건너뛴다 |
+| `node tools/shot-screens.mjs` | 지금 게임의 화면 일곱 장을 `art/concepts/screens/current`에 찍는다(화면 시안의 참조용). 개발 서버가 5183 포트에 떠 있어야 한다 |
+| `node tools/gen-screens.mjs <로그 폴더> <동시 실행 수> [이름 목록]` | 화면 시안(타이틀·이야기·스테이지·플레이·클리어·꾸미기에 A·B·C 세 장씩)을 Codex CLI로 그려 `art/concepts/screens`에 넣는다. 있는 파일은 건너뛴다. 비교 페이지는 `art/concepts/screens.html` |
+| `node tools/concept-site.mjs <결과 폴더>` | 시안 페이지(캐릭터, 화면)를 공유용 폴더로 만든다. 그 폴더를 `--branch concepts`로 올리면 https://concepts.block-labyrinth.pages.dev 에 나온다 |
+| `node tools/archive-codex-sessions.mjs move <보관 폴더>` | `codex exec`가 남긴 세션 기록만 보관 폴더로 옮긴다(10분 안에 바뀐 것은 남긴다). 인자 없이 돌리면 종류별 집계만 보여 준다 |
+| `node tools/check-align.mjs [스크린샷 폴더]` | 화면마다 글자와 아이콘이 제 틀의 좌우 가운데에 있는지 잰다(휴대폰 폭 세 가지와 PC 창, 한글·영어). 개발 서버가 5183 포트에 떠 있어야 한다 |
 | `node tools/make-chest.mjs` | Rev2D로 보물 상자 동작 시트를 만든다 |
 | `node tools/make-anim.mjs` | Rev2D로 스킨마다 동작 시트(숨쉬기·걷기·밀기·클리어)를 만들어 `public/assets/anim`에 넣는다. 스킨 그림을 바꾸거나 추가하면 다시 돌린다 |
 
@@ -45,7 +50,14 @@ GDD 문서는 초기 기획 그대로이고 아래 변경은 반영되지 않았
 - 주인공은 "빛꼬리 여우"다(아기 사막여우). 미궁의 심장(결정)이 깨져 미궁이 어두워졌고, 그 빛 조각 하나가 여우의 꼬리 끝에 내려앉았다. 여우는 던전을 하나씩 밝히며 심장으로 돌아간다. 스킨은 여우가 입는 옷이고, 어떤 옷을 입어도 큰 귀와 빛나는 꼬리 끝은 그대로 보인다. GDD에는 이야기가 없다.
 - 캐릭터와 화풍의 변천: 네모 젤리 → 미궁의 정령(공 모양 젤리) → 빛꼬리 여우. "캐릭터가 별로"라는 피드백이 이어져, 주 타겟(캐주얼 퍼즐을 즐기는 25~44세 여성 중심)에 맞춘 시안 4종 중 B안을 골랐다(2026-10-05). 분석과 시안은 `art/concepts/target.html`, 공유 주소는 https://concepts.block-labyrinth.pages.dev.
 - 화풍은 주인공 시안(`art/concepts/r2_fox.png`)에 맞춘 무광 2D다: 둥근 형태, 부드럽고 굵은 갈색 외곽선, 파스텔 색, 광택과 3D 느낌 없음. 블록·타일·UI·배경·이야기 그림을 전부 이 화풍으로 다시 그렸다. 화면 바탕은 어두운 저녁빛으로 둔다(크림색 여우가 밝은 바탕에서는 묻힌다). 광택 3D였던 이전 그림은 `art/source-old/v2`에 있다.
-- 이 설정이 들어간 곳: 처음 플레이를 누르면 나오는 도입 이야기 3장(`showStory`, 저장 필드 `story`, 설정에서 다시 보기), 스테이지 화면의 던전 한 줄 설명(`worlds.ts`의 `storyKo`/`storyEn`), 힌트를 켜면 꼬리 끝 결정이 빛남(`boardView.ts`의 `drawCrystalGlow`, 위치는 `CRYSTAL_X`/`CRYSTAL_Y`), 던전을 다 깨면 그 던전 머리 그림이 밝아짐(`.world.lit`, 안 깬 던전은 어둡고 바램). 규칙도 설정으로 설명한다: 마법진은 빛을 지닌 여우만 타고, 여우는 가벼워서 스위치가 눌리지 않는다.
+- 화면 구성은 화면 시안(`art/concepts/screens.html`, 공유 주소 https://concepts.block-labyrinth.pages.dev/screens)에서 고른 여섯 장을 옮긴 것이다(2026-10-05, 사용자 지시 "시안대로 동일하게"): 타이틀 A(`title_a`), 이야기 B(`story_b`), 스테이지 B(`select_b`), 플레이 B(`play_b`), 클리어 B(`clear_b`), 꾸미기 A(`cosmetics_a`). 화면을 고칠 때는 그 시안 그림과 나란히 놓고 맞춘다. 스타일은 `styles.css` 끝의 "화면 시안을 옮긴 스타일" 절에 모여 있고, 그 앞의 옛 규칙을 덮어쓴다.
+  - 타이틀: 해 질 녘 유적 배경(`ui_home_bg`) 위에 덩굴 간판(`ui_logo_sign`, 제목은 글꼴로 얹음), 여우, 아래에 둥근 버튼 둘과 플레이 버튼. 버튼 글자는 아이콘으로 바꿨다.
+  - 이야기: 펼친 그림책(`story_book`, 9:16) 위에 그림·글·버튼을 비율로 올린다. 그림은 정사각형으로 다시 그렸다.
+  - 스테이지: 던전 하나가 카드 한 장(위는 `ui_scene_N`, 아래는 4x3 칸)이고 옆으로 넘긴다. 칸 그림은 던전과 상관없이 `ui_stage_cleared_1` 하나를 쓴다. 던전 한 줄 이야기는 카드 그림을 누르면 뜬다.
+  - 플레이: 배경은 던전 강조색으로 만든 민무늬, 판은 크림색 틀과 모래 바닥(`boardView.ts`의 `BOARD_FRAME`, 바닥·벽·일방통행·출구 그림은 색을 곱하지 않고 그대로 그린다). 판 아래 막대는 이동 수만큼 차고 별 표시를 지나면 그 별을 잃는다(`MARKS`).
+  - 클리어: 판을 위쪽 절반으로 올리고(`.play-screen.cleared`) 아래에서 결과 창이 올라온다(`.backdrop.sheet`).
+  - 꾸미기: 위는 옷방(`ui_dress_room`)에서 장착한 옷을 입은 여우, 가운데는 옆으로 넘기는 둥근 옷 목록(없는 옷도 어둡게 보여 주고 자물쇠를 단다), 아래는 상자와 뽑기 버튼 셋.
+- 이 설정이 들어간 곳: 처음 플레이를 누르면 나오는 도입 이야기 3장(`showStory`, 저장 필드 `story`, 설정에서 다시 보기), 스테이지 화면에서 던전 카드의 그림을 누르면 뜨는 한 줄 설명(`worlds.ts`의 `storyKo`/`storyEn`), 힌트를 켜면 꼬리 끝 결정이 빛남(`boardView.ts`의 `drawCrystalGlow`, 위치는 `CRYSTAL_X`/`CRYSTAL_Y`), 던전을 다 깨면 스테이지 화면 아래의 그 던전 점이 금색이 됨(`.pager i.lit`), 잠긴 던전의 카드는 어둡고 자물쇠가 걸림. 규칙도 설정으로 설명한다: 마법진은 빛을 지닌 여우만 타고, 여우는 가벼워서 스위치가 눌리지 않는다.
 - 튜토리얼 4단계와 새 규칙 카드가 있다. GDD는 "설명 글은 넣지 않는다"였다.
 - 스테이지는 던전 8개에 12개씩, 총 96개다(GDD는 던전 5개에 6개씩, 30개). 던전 수는 `generate-levels.ts`의 `WORLDS`, `store.ts`의 `WORLD_COUNT`, `worlds.ts`를 같이 바꾼다. 개수는 `generate-levels.ts`의 `PER_WORLD`와 `store.ts`의 `LEVELS_PER_WORLD`를 같이 바꾼다.
 - 뽑기는 30종(스킨 22, 자국 8), 1회 130골드, 최대 10연속. GDD는 24종, 50골드. 가격은 모을 수 있는 골드(96개 x 90 = 8,640)로 평균 67회를 뽑을 수 있게 맞춘 것이다.
@@ -86,8 +98,9 @@ node tools/diagnose.mjs https://block-labyrinth.pages.dev/
 
 Codex CLI(`codex login` 필요)의 이미지 생성을 쓴다. `tools/gen-sprites.mjs`의 목록에 항목을 추가하고 실행한 뒤 `build-sprites.mjs`를 돌린다. 그림을 다시 뽑으려면 `art/source`에서 그 파일을 지우거나 옮긴다. 모든 그림은 주인공 시안(`art/concepts/r2_fox.png`)을 참조로 넘겨 같은 화풍으로 그린다.
 
-- 바닥과 벽은 회색으로 한 장씩 만들고 월드 색을 곱해 쓴다.
-- 스테이지 선택 화면은 던전마다 칸 그림(`ui_stage_open_N`, `ui_stage_cleared_N`)과 머리 그림(`ui_banner_N`)이 다르다. 없으면 공통 그림을 쓴다.
+- 바닥과 벽은 모든 던전이 같은 그림을 쓴다(모래 바닥, 회색 돌벽). 던전의 차이는 화면 배경색과 기믹 타일로 낸다.
+- 화면 시안을 옮긴 그림은 `gen-sprites.mjs` 목록의 네 번째 값으로 그 시안 그림을 참조로 넘겨, 시안에서 배경이나 물건만 떼어 낸 것이다.
+- 던전마다의 칸 그림(`ui_stage_open_N`, `ui_stage_cleared_N`)과 머리 그림(`ui_banner_N`)은 남아 있지만 지금 화면에서는 쓰지 않는다(`ui_stage_cleared_1`만 쓴다).
 - 버튼·패널 같은 UI는 글자 없는 빈 판으로 만들어 CSS `border-image`로 늘려 쓴다(`styles.css`의 `.has-ui`).
 - 빛 효과(`fx_spark`, `fx_ring`, `fx_burst`)는 검은 배경으로 생성하고 변환 때 밝기를 투명도로 바꾼다.
 - 이미지 생성은 한글을 정확히 그리지 못한다. 글자가 들어가는 그림은 만들지 않는다.

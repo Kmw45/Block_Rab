@@ -27,11 +27,18 @@ function spec(key) {
   if (/^ui_stage_(open|cleared)_\d$/.test(key)) return { size: 192, box: [192, 192] };
   if (/^ui_banner_\d$/.test(key)) return { size: 720, height: 240, fill: 1, opaque: true };
   if (UI_BOX[key]) return { size: UI_BOX[key][0], box: UI_BOX[key] };
-  if (key === 'floor' || ['tile_pit', 'tile_oneway', 'tile_ice', 'tile_switch', 'tile_door', 'tile_crumble'].includes(key)) return { size: 256, fill: 1, opaque: true };
+  // 화면 시안을 옮긴 그림들. trim은 여백만 잘라 내고 비율을 그대로 둔 채 그 폭으로 줄인다.
+  if (key === 'ui_logo_sign') return { trim: 640 };
+  if (key === 'ui_fox_peek') return { trim: 160 };
+  if (key === 'ui_sprig') return { trim: 128 };
+  if (key === 'story_book' || key === 'ui_select_bg') return { size: 720, height: 1280, fill: 1, opaque: true };
+  if (/^ui_scene_\d$/.test(key) || key === 'ui_dress_room') return { size: 720, height: 576, fill: 1, opaque: true };
+  if (key === 'tile_oneway' || key === 'exit') return { size: 256, fill: 0.98 };
+  if (key === 'floor' || ['tile_pit', 'tile_ice', 'tile_switch', 'tile_door', 'tile_crumble'].includes(key)) return { size: 256, fill: 1, opaque: true };
   if (key === 'tile_portal') return { size: 256, fill: 0.96 };
   if (key === 'ui_bg') return { size: 540, height: 810, fill: 1, opaque: true };
-  if (key.startsWith('story_')) return { size: 720, height: 480, fill: 1, opaque: true };
-  if (key === 'ui_home_bg') return { size: 720, height: 1080, fill: 1, opaque: true };
+  if (key.startsWith('story_')) return { size: 640, height: 640, fill: 1, opaque: true };
+  if (key === 'ui_home_bg') return { size: 720, height: 1280, fill: 1, opaque: true };
   if (key === 'ui_title_art') return { size: 640, fill: 1, opaque: true };
   if (['fx_spark', 'fx_ring', 'fx_burst'].includes(key)) return { size: 256, fill: 1, opaque: true }; // 검은 배경, 더하기 합성용
   if (key === 'ui_hand') return { size: 192, fill: 0.94 };
@@ -40,7 +47,6 @@ function spec(key) {
   if (key === 'wall') return { size: 256, fill: 0.97 };
   if (key.startsWith('ui_')) return { size: 512, fill: 0.94 };
   if (key.startsWith('skin_')) return { size: 256, fill: 0.9 };
-  if (key === 'exit') return { size: 256, fill: 0.92 };
   return { size: 256, fill: 0.88 };
 }
 
@@ -52,7 +58,7 @@ for (const file of readdirSync(SRC).filter((f) => f.endsWith('.png')).sort()) {
     manifest[key] = file;
     continue;
   }
-  const { size, fill, opaque, height, box } = spec(key);
+  const { size, fill, opaque, height, box, trim } = spec(key);
   const src = sharp(`${SRC}/${file}`).ensureAlpha();
   const { data, info } = await src.raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h } = info;
@@ -91,6 +97,16 @@ for (const file of readdirSync(SRC).filter((f) => f.endsWith('.png')).sort()) {
     const right = last(cols, h * 0.02);
     const top = first(rows, w * 0.02);
     const bottom = last(rows, w * 0.02);
+    if (trim) {
+      const out = await sharp(data, { raw: info })
+        .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
+        .resize({ width: trim })
+        .png({ compressionLevel: 9, palette: true, quality: 92 })
+        .toFile(`${OUT}/${file}`);
+      manifest[key] = file;
+      console.log(`${key.padEnd(18)} ${w}x${h} (그림 ${right - left + 1}x${bottom - top + 1}) -> ${out.width}x${out.height}  ${(out.size / 1024).toFixed(0)}KB`);
+      continue;
+    }
     if (box) {
       image = sharp(data, { raw: info })
         .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })

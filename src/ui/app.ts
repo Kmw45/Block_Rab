@@ -40,6 +40,7 @@ import {
   currentLevel,
   drawGacha,
   drawsUntilGuarantee,
+  PITY_STREAK,
   equip,
   isWorldCleared,
   isWorldUnlocked,
@@ -76,6 +77,24 @@ const ICON = {
   lock: svg('<rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 11V8a4 4 0 018 0v3"/>'),
   star: svg('<path d="M12 2.2l3 6.2 6.8 1-4.9 4.8 1.2 6.8L12 17.8 5.9 21l1.2-6.8-4.9-4.8 6.8-1z"/>', true),
   gem: svg('<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l-2 6 5 12 5-12-2-6" stroke="rgba(0,0,0,.25)" stroke-width="1" fill="none"/>', true),
+  // 시안의 납작한 아이콘들
+  play: svg('<path d="M7 4.5v15a1.2 1.2 0 001.8 1l12.4-7.5a1.2 1.2 0 000-2L8.8 3.5a1.2 1.2 0 00-1.8 1z"/>', true),
+  list: svg('<circle cx="5" cy="6.5" r="1.9"/><circle cx="5" cy="12" r="1.9"/><circle cx="5" cy="17.5" r="1.9"/><rect x="9" y="4.9" width="12" height="3.2" rx="1.6"/><rect x="9" y="10.4" width="12" height="3.2" rx="1.6"/><rect x="9" y="15.9" width="12" height="3.2" rx="1.6"/>', true),
+  chevLeft: svg('<path d="M14.5 5l-7 7 7 7" stroke-width="3.6"/>'),
+  chevSkip: svg('<path d="M5.5 6l6 6-6 6M13 6l6 6-6 6" stroke-width="3.2"/>'),
+  arrow: svg('<path d="M4 12h14M12.5 5.5L19 12l-6.5 6.5" stroke-width="3.6"/>'),
+  undoFlat: svg('<path d="M9.5 4.5L4.5 9.5l5 5M5 9.5h9a5 5 0 010 10H9" stroke-width="3.4"/>'),
+  restartFlat: svg('<path d="M19 12.5a7 7 0 11-2.6-5.4" stroke-width="3.4"/><path d="M18.8 2.6v5.6h-5.6z" fill="currentColor" stroke-width="1.6"/>'),
+  bulb: svg('<path d="M12 3.2a6.3 6.3 0 00-3.7 11.4c.6.5.9 1.1.9 1.9v.5h5.6v-.5c0-.8.3-1.4.9-1.9A6.3 6.3 0 0012 3.2z" fill="#ffc531" stroke="none"/><rect x="9.4" y="18" width="5.2" height="3.4" rx="1.4" fill="#5b3a22" stroke="none"/><path d="M12 .4v1.4M3.4 4.2l1.1 1M20.6 4.2l-1.1 1M1.6 10.4H3M21 10.4h1.4" stroke="#ffc531" stroke-width="1.6"/>'),
+  sprout: svg('<path d="M12 21v-8M12 13c0-4-2.5-6.5-7-6.5 0 4 2.5 6.5 7 6.5zM12 11c0-3.5 2.2-5.8 6.5-5.8 0 3.6-2.2 5.8-6.5 5.8z"/>', true),
+  paw: svg('<ellipse cx="6" cy="9.5" rx="2.1" ry="2.7"/><ellipse cx="10" cy="5.8" rx="2.1" ry="2.8"/><ellipse cx="14.4" cy="5.8" rx="2.1" ry="2.8"/><ellipse cx="18.2" cy="9.5" rx="2.1" ry="2.7"/><path d="M12.1 11c-3.4 0-6 3.3-6 6.2 0 2 1.5 3 3.3 3 1.1 0 1.8-.5 2.7-.5s1.6.5 2.7.5c1.8 0 3.3-1 3.3-3 0-2.9-2.6-6.2-6-6.2z"/>', true),
+  steps: svg('<ellipse cx="8" cy="8" rx="3" ry="4.6" transform="rotate(-12 8 8)"/><ellipse cx="6.6" cy="16.2" rx="2.3" ry="2" transform="rotate(-12 6.6 16.2)"/><ellipse cx="16.4" cy="11.4" rx="3" ry="4.6" transform="rotate(12 16.4 11.4)"/><ellipse cx="17.6" cy="19.6" rx="2.3" ry="2" transform="rotate(12 17.6 19.6)"/>', true),
+  crown: svg('<path d="M3 8.5l4.6 3.6L12 5l4.4 7.1L21 8.5l-1.6 10a1.2 1.2 0 01-1.2 1H5.8a1.2 1.2 0 01-1.2-1z"/>', true),
+  grid: svg('<rect x="3.5" y="3.5" width="7.4" height="7.4" rx="1.8"/><rect x="13.1" y="3.5" width="7.4" height="7.4" rx="1.8"/><rect x="3.5" y="13.1" width="7.4" height="7.4" rx="1.8"/><rect x="13.1" y="13.1" width="7.4" height="7.4" rx="1.8"/>', true),
+  home: svg('<path d="M12 3L2.6 11.2a.8.8 0 00.5 1.4H5v7a1.2 1.2 0 001.2 1.2H10v-5.4h4v5.4h3.8A1.2 1.2 0 0019 19.6v-7h1.9a.8.8 0 00.5-1.4z"/>', true),
+  retry: svg('<path d="M19 12.5a7 7 0 11-2.6-5.4" stroke-width="3.2"/><path d="M18.8 2.6v5.6h-5.6z" fill="currentColor" stroke-width="1.6"/>'),
+  hanger: svg('<path d="M12 9.4c0-1.4 2-1.6 2-3.4a2 2 0 00-4 0M12 9.4L3.4 15.6a1.3 1.3 0 00.8 2.4h15.6a1.3 1.3 0 00.8-2.4z"/>'),
+  film: svg('<rect x="3" y="5" width="18" height="14" rx="2.4"/><path d="M10.2 9.2v5.6l4.8-2.8z" fill="#3f8f8a"/><g fill="#3f8f8a"><rect x="4.4" y="6.6" width="1.8" height="1.8"/><rect x="4.4" y="11.1" width="1.8" height="1.8"/><rect x="4.4" y="15.6" width="1.8" height="1.8"/><rect x="17.8" y="6.6" width="1.8" height="1.8"/><rect x="17.8" y="11.1" width="1.8" height="1.8"/><rect x="17.8" y="15.6" width="1.8" height="1.8"/></g>', true),
 };
 
 function mount(node: HTMLElement, world?: number): void {
@@ -244,21 +263,27 @@ export function showTitle(): void {
   const cur = currentLevel();
   const hasFreeDraw = !allCollected() && adDrawsLeft() > 0;
   const homeBg = getSprite('ui_home_bg');
+  const sign = getSprite('ui_logo_sign');
+  // 제목은 간판 위에 두 줄로 쓴다(낱말 사이에서 줄을 바꾼다)
+  const logo = t('title')
+    .split(' ')
+    .map((w) => `<span>${w}</span>`)
+    .join(' ');
   const el = html(`
     <div class="title-screen ${homeBg ? 'home' : ''}">
       ${homeBg ? `<div class="home-scene" style="background-image:url('${homeBg.src}')"></div>` : ''}
-      <div class="home-top">${goldPill()}<span class="total-stars">${starsHtml(1)}<b>${totalStars()}</b>/${LEVELS.length * 3}</span></div>
-      <button class="icon-btn corner" data-a="settings">${art('icon_settings', ICON.settings)}</button>
+      <div class="home-top">
+        <div class="hud-pill"><span class="coin"></span><b>${save.gold.toLocaleString()}</b></div>
+        <div class="hud-pill">${starsHtml(1)}<b>${totalStars()}</b></div>
+      </div>
+      <button class="icon-btn corner" data-a="settings" aria-label="${t('settings')}">${art('icon_settings', ICON.settings)}</button>
+      <div class="logo-sign ${sign ? '' : 'plain'}" ${sign ? `style="--sign:url('${sign.src}');--ar:${sign.naturalWidth / sign.naturalHeight}"` : ''}>${sign ? `<img src="${sign.src}" alt="" draggable="false" />` : ''}<h1 class="logo ${save.lang}">${logo}</h1></div>
       ${homeBg ? '<canvas class="mascot" width="400" height="400"></canvas>' : art('ui_title_art', '', 'key-art')}
       <canvas class="hero ${homeBg || getSprite('ui_title_art') ? 'over-art' : ''}" width="560" height="400"></canvas>
-      <h1 class="logo">${t('title')}</h1>
-      <p class="tagline">${t('subtitle')}</p>
-      <button class="btn big play" data-a="start">
-        ${needTutorial ? t('start') : `${t('play')}<small>${cur.world}-${cur.index} · ${worldName(cur.world)}</small>`}
-      </button>
-      <div class="home-row">
-        <button class="btn ghost" data-a="stages">${t('stages')}</button>
-        <button class="btn ghost" data-a="cosmetics">${art('icon_gem', ICON.gem)}${t('cosmetics')}${hasFreeDraw ? '<i class="dot"></i>' : ''}</button>
+      <div class="home-dock">
+        <button class="round-btn" data-a="stages" aria-label="${t('stages')}">${ICON.list}</button>
+        <button class="btn big play" data-a="start">${ICON.play}<b>${needTutorial ? t('start') : `${cur.world}-${cur.index}`}</b></button>
+        <button class="round-btn" data-a="cosmetics" aria-label="${t('cosmetics')}">${art('icon_hat', ICON.gem)}${hasFreeDraw ? '<i class="dot"></i>' : ''}</button>
       </div>
     </div>`);
   mount(el, needTutorial ? 1 : cur.world);
@@ -330,13 +355,19 @@ const STORY_PAGES = 3;
 // 그림 한 장에 글 한 줄씩 넘겨 본다. 끝나거나 건너뛰면 done으로 이어진다.
 export function showStory(done: () => void): void {
   let page = 0;
+  // 펼친 그림책 한 쪽. 책 그림(story_book) 위에 그림과 글, 버튼을 비율로 올려놓는다.
+  const book = getSprite('story_book');
   const el = html(`
     <div class="story-screen">
-      <button class="link-btn story-skip" data-a="skip">${t('storySkip')}</button>
-      <div class="story-frame"></div>
-      <div class="story-caption"></div>
-      <div class="story-dots">${'<i></i>'.repeat(STORY_PAGES)}</div>
-      <button class="btn big" data-a="next"></button>
+      <svg class="story-defs" width="0" height="0" aria-hidden="true"><filter id="story-rough" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="9"/></filter></svg>
+      <div class="story-book" ${book ? `style="background-image:url('${book.src}')"` : ''}>
+        <button class="story-skip" data-a="skip" aria-label="${t('storySkip')}">${ICON.skip}</button>
+        <div class="story-frame"></div>
+        <div class="story-caption"></div>
+        <div class="story-dots">${'<i></i>'.repeat(STORY_PAGES)}</div>
+        <button class="story-next" data-a="next">${ICON.arrow}</button>
+      </div>
     </div>`);
   const show = () => {
     const img = getSprite('story_' + (page + 1));
@@ -344,7 +375,7 @@ export function showStory(done: () => void): void {
     el.querySelector('.story-frame')!.innerHTML = img ? `<div class="story-pic" style="background-image:url('${img.src}')"></div>` : '';
     el.querySelector('.story-caption')!.innerHTML = `<p class="story-text pre">${t(('story' + (page + 1)) as StringKey)}</p>`;
     el.querySelectorAll('.story-dots i').forEach((dot, i) => dot.classList.toggle('on', i === page));
-    el.querySelector('[data-a=next]')!.textContent = t(page === STORY_PAGES - 1 ? 'storyStart' : 'storyNext');
+    el.querySelector('[data-a=next]')!.setAttribute('aria-label', t(page === STORY_PAGES - 1 ? 'storyStart' : 'storyNext'));
   };
   const finish = () => {
     save.story = true;
@@ -362,46 +393,42 @@ export function showStory(done: () => void): void {
 
 // ───────── 스테이지 선택 ─────────
 
-// 던전 테마 그림을 그 구역의 CSS 변수로 넘긴다
-function themeVars(world: number): string {
-  const vars: string[] = [];
-  const add = (name: string, key: string) => {
-    const img = getSprite(key);
-    if (img) vars.push(`--${name}:url('${img.src}')`);
-  };
-  add('stage-open', 'ui_stage_open_' + world);
-  add('stage-cleared', 'ui_stage_cleared_' + world);
-  add('banner', 'ui_banner_' + world);
-  return vars.join(';');
-}
-
+// 던전 하나가 카드 한 장이다. 위는 던전 그림, 아래는 4x3 스테이지 칸이고 옆으로 넘겨 본다.
 export function showSelect(): void {
   const lastWorld = Number(save.lastLevel.split('-')[0]) || 1;
+  const cur = currentLevel();
   const totalStars = LEVELS.reduce((n, l) => n + (save.stars[l.id] ?? 0), 0);
+  const peek = getSprite('ui_fox_peek');
   let list = '';
+  let dots = '';
   for (let w = 1; w <= WORLD_COUNT; w++) {
     const th = WORLDS[w - 1];
     const unlocked = isWorldUnlocked(w);
-    // 던전을 모두 지나면 그곳에 빛이 돌아온다. 머리 그림이 밝아진다.
+    // 던전을 모두 지나면 그곳에 빛이 돌아온다. 못 깬 던전의 그림은 조금 어둡다.
     const lit = isWorldCleared(w);
+    const scene = getSprite('ui_scene_' + w) ?? getSprite('ui_banner_' + w);
     const cells = worldLevels(w)
       .map((lv) => {
         const stars = save.stars[lv.id] ?? 0;
         const state = !unlocked ? 'locked' : stars > 0 ? 'cleared' : save.skipped === lv.id ? 'skipped' : 'open';
-        return `<div class="stage-wrap"><button class="stage ${state}" data-id="${lv.id}">${unlocked ? lv.index : art('ui_lock', ICON.lock)}</button>${starsHtml(stars)}</div>`;
+        const here = unlocked && lv.id === cur.id;
+        return `<div class="stage-wrap"><button class="stage ${state} ${here ? 'current' : ''}" data-id="${lv.id}">${unlocked ? lv.index : art('ui_lock', ICON.lock)}${here && peek ? `<img class="peek" src="${peek.src}" alt="" draggable="false" />` : ''}</button>${starsHtml(stars)}</div>`;
       })
       .join('');
     list += `
-      <section class="world ${unlocked ? '' : 'locked'} ${lit ? 'lit' : ''} ${getSprite('ui_banner_' + w) ? 'themed' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark};${themeVars(w)}">
-        <div class="world-head">
-          ${art('emblem_' + w, '', 'emblem')}
-          <span class="world-no">${t('world')} ${w}</span>
-          <h2>${worldName(w)}</h2>
-          <span class="world-stars">${ICON.star}${worldStars(w)}/${LEVELS_PER_WORLD * 3}</span>
-          <p class="world-story">${lit ? `<b class="world-lit">${t('worldLit')}</b>` : ''}${save.lang === 'ko' ? th.storyKo : th.storyEn}</p>
+      <section class="world ${unlocked ? '' : 'locked'} ${lit ? 'lit' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark}">
+        <div class="card-scene" ${scene ? `style="background-image:url('${scene.src}')"` : ''}>
+          <div class="card-plate">
+            <span class="plate-no">${art('emblem_' + w, '', 'emblem')}<b>${w}</b></span>
+            <h2>${worldName(w)}</h2>
+          </div>
+          <span class="world-stars">${ICON.star}<b>${worldStars(w)}</b>/${LEVELS_PER_WORLD * 3}</span>
+          ${unlocked && w === cur.world ? '<canvas class="mascot card-fox" width="300" height="300"></canvas>' : ''}
+          ${unlocked ? '' : `<div class="card-lock">${art('ui_lock', ICON.lock)}</div>`}
         </div>
         <div class="stage-grid">${cells}</div>
       </section>`;
+    dots += `<i class="${lit ? 'lit' : ''}" data-go="${w}"></i>`;
   }
   const el = html(`
     <div class="select-screen">
@@ -409,26 +436,73 @@ export function showSelect(): void {
         <button class="icon-btn" data-a="back">${art('icon_back', ICON.back)}</button>
         ${goldPill()}
         <span class="grow"></span>
-        <button class="pill-btn" data-a="cosmetics">${art('icon_gem', ICON.gem)}${t('cosmetics')}</button>
-        <button class="icon-btn" data-a="settings">${art('icon_settings', ICON.settings)}</button>
+        <button class="pill-btn" data-a="cosmetics" aria-label="${t('cosmetics')}">${art('icon_gem', ICON.gem)}</button>
+        <button class="icon-btn" data-a="settings" aria-label="${t('settings')}">${art('icon_settings', ICON.settings)}</button>
       </header>
-      <div class="world-list">
-        ${DEV_MODE ? '<div class="dev-banner">DEV · 스테이지와 치장 전부 열림 · 광고 없음 · 별도 저장</div>' : ''}
-        <div class="select-summary">
-          <span class="total-stars">${starsHtml(1)}<b>${totalStars}</b>/${LEVELS.length * 3}</span>
-          <button class="link-btn" data-a="tutorial">${t('tutReplay')}</button>
-        </div>
-        ${list}
+      <div class="select-summary">
+        <span class="total-stars">${starsHtml(1)}<b>${totalStars}</b>/${LEVELS.length * 3}</span>
+        <button class="round-btn plum" data-a="tutorial" aria-label="${t('tutReplay')}" title="${t('tutReplay')}">${ICON.retry}</button>
       </div>
+      ${DEV_MODE ? '<div class="dev-banner">DEV · 스테이지와 치장 전부 열림 · 광고 없음 · 별도 저장</div>' : ''}
+      <div class="world-list">${list}</div>
+      <div class="pager">${dots}</div>
     </div>`);
   mount(el, lastWorld);
+  const bg = getSprite('ui_select_bg');
+  if (bg) el.style.backgroundImage = `url('${bg.src}')`;
+  // 스테이지 칸은 던전과 상관없이 같은 그림(덩굴 두른 크림색 칸)을 쓴다
+  const tile = getSprite('ui_stage_cleared_1');
+  if (tile) el.style.setProperty('--tile', `url('${tile.src}')`);
+  const worldList = el.querySelector<HTMLElement>('.world-list')!;
+  const cards = [...worldList.querySelectorAll<HTMLElement>('.world')];
+  const dotEls = [...el.querySelectorAll<HTMLElement>('.pager i')];
+  const center = (card: HTMLElement) => card.offsetLeft - (worldList.clientWidth - card.offsetWidth) / 2;
+  // 화면 가운데에 온 카드의 점을 켠다
+  const mark = () => {
+    const mid = worldList.scrollLeft + worldList.clientWidth / 2;
+    let best = 0;
+    cards.forEach((c, i) => {
+      if (Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid) < Math.abs(cards[best].offsetLeft + cards[best].offsetWidth / 2 - mid)) best = i;
+    });
+    dotEls.forEach((d, i) => d.classList.toggle('on', i === best));
+    cards.forEach((c, i) => c.classList.toggle('front', i === best));
+  };
+  worldList.scrollLeft = center(cards[lastWorld - 1]);
+  mark();
+  worldList.addEventListener('scroll', mark, { passive: true });
+  el.querySelector('.pager')!.addEventListener('click', (e) => {
+    const go = (e.target as HTMLElement).dataset.go;
+    if (go) worldList.scrollTo({ left: center(cards[Number(go) - 1]), behavior: 'smooth' });
+  });
+  const fox = el.querySelector<HTMLCanvasElement>('.card-fox');
+  if (fox) {
+    getSheet(save.skin);
+    startMascot(fox, (time) => ({ name: 'idle', t: time }));
+  }
+
   el.querySelector('[data-a=tutorial]')!.addEventListener('click', () => showTutorial(0));
   el.querySelector('[data-a=back]')!.addEventListener('click', showTitle);
   el.querySelector('[data-a=cosmetics]')!.addEventListener('click', showCosmetics);
   el.querySelector('[data-a=settings]')!.addEventListener('click', () => showSettings(showSelect));
-  el.querySelector('.world-list')!.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('.stage');
-    if (!btn) return;
+  worldList.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const card = target.closest<HTMLElement>('.world')!;
+    if (!card) return;
+    const world = Number(card.dataset.world);
+    // 옆에 비친 카드를 누르면 그 카드를 가운데로 가져온다
+    if (!card.classList.contains('front')) {
+      worldList.scrollTo({ left: center(card), behavior: 'smooth' });
+      return;
+    }
+    const btn = target.closest<HTMLElement>('.stage');
+    if (!btn) {
+      // 던전 그림을 누르면 그 던전의 한 줄 이야기를 보여 준다
+      if (target.closest('.card-scene')) {
+        const th = WORLDS[world - 1];
+        toast((isWorldCleared(world) ? `[${t('worldLit')}] ` : '') + (save.lang === 'ko' ? th.storyKo : th.storyEn));
+      }
+      return;
+    }
     const lv = LEVELS.find((l) => l.id === btn.dataset.id)!;
     if (!isWorldUnlocked(lv.world)) {
       sfx.deny();
@@ -438,8 +512,8 @@ export function showSelect(): void {
     playOrigin = 'select';
     showPlay(lv);
   });
-  if (lastWorld > 1) el.querySelector(`[data-world="${lastWorld}"]`)?.scrollIntoView({ block: 'start' });
 }
+
 
 // ───────── 플레이 ─────────
 
@@ -462,22 +536,29 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   const el = html(`
     <div class="play-screen ${isTut ? 'tutorial' : ''}">
       <header class="topbar">
-        <button class="icon-btn" data-a="back">${art('icon_back', ICON.back)}</button>
-        <div class="stage-title"><small>${isTut ? t('tutorial') : worldName(level.world)}</small><b>${isTut ? `${tut + 1}/${TUTORIALS.length}` : `${level.world}-${level.index}`}</b></div>
-        <span class="grow"></span>
+        <button class="round-btn" data-a="back">${ICON.chevLeft}</button>
+        <div class="hud-chip stage-title" title="${isTut ? t('tutorial') : worldName(level.world)}">${ICON.sprout}<b>${isTut ? `${tut + 1}/${TUTORIALS.length}` : `${level.world}-${level.index}`}</b></div>
         ${
           isTut
-            ? `<button class="pill-btn ghost" data-a="tutskip">${t('tutSkip')}</button>`
-            : `<div class="moves"><small>${t('moves')}</small><b data-moves>0</b><span class="target"></span></div>
-               <button class="icon-btn" data-a="skip" title="${t('skip')}">${art('icon_skip', ICON.skip)}</button>`
+            ? `<button class="hud-chip" data-a="tutskip">${t('tutSkip')}</button>`
+            : `<div class="hud-chip moves" title="${t('moves')}">${ICON.paw}<b data-moves>0</b></div>
+               <button class="round-btn" data-a="skip" title="${t('skip')}">${ICON.chevSkip}</button>`
         }
       </header>
       ${isTut ? `<div class="tip"><p></p></div>` : ''}
       <div class="board-wrap"><canvas></canvas>${isTut ? `<div class="hand">${art('ui_hand', '👆', '')}</div>` : ''}</div>
+      ${
+        isTut
+          ? ''
+          : `<div class="progress target">
+               <div class="bar"><i class="fill"></i>${[0, 1, 2].map((i) => `<span class="mark" data-mark="${i}">${art('ui_star', ICON.star, '')}</span>`).join('')}</div>
+               <em></em>
+             </div>`
+      }
       <footer class="controls">
-        <button class="ctrl" data-a="undo">${art('icon_undo', ICON.undo)}<span>${t('undo')}</span></button>
-        <button class="ctrl" data-a="restart">${art('icon_restart', ICON.restart)}<span>${t('restart')}</span></button>
-        <button class="ctrl accent" data-a="hint">${art('icon_hint', ICON.hint)}<span>${t('hint')}</span><em>${freeHint ? t('hintFree') : 'AD'}</em></button>
+        <button class="ctrl" data-a="undo" aria-label="${t('undo')}">${ICON.undoFlat}</button>
+        <button class="ctrl" data-a="restart" aria-label="${t('restart')}">${ICON.restartFlat}</button>
+        <button class="ctrl" data-a="hint" aria-label="${t('hint')}">${ICON.bulb}<em>${freeHint ? t('hintFree') : 'AD'}</em></button>
       </footer>
     </div>`);
   mount(el, level.world);
@@ -498,7 +579,16 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   view.load(def, WORLDS[level.world - 1], state);
 
   // 지금 끝내면 받을 별과, 그 별을 지키는 이동 수 한도를 보여준다
+  // 판 아래의 막대: 이동 수만큼 차오르고, 별 표시를 지나면 그 별을 잃는다.
+  // 별 3개는 최소 이동 수까지, 2개는 그 1.5배까지 지킨다. 마지막 별은 잃지 않는다.
   const twoStarLimit = Math.floor(level.minMoves * 1.5);
+  const MARKS = [0.52, 0.8, 0.95];
+  const barPos = (moves: number) => {
+    if (moves <= level.minMoves) return (moves / level.minMoves) * MARKS[0];
+    if (moves <= twoStarLimit) return MARKS[0] + ((moves - level.minMoves) / Math.max(1, twoStarLimit - level.minMoves)) * (MARKS[1] - MARKS[0]);
+    return Math.min(1, MARKS[1] + ((moves - twoStarLimit) / Math.max(1, level.minMoves)) * (1 - MARKS[1]));
+  };
+  targetEl?.querySelectorAll<HTMLElement>('.mark').forEach((m, i) => (m.style.left = MARKS[i] * 100 + '%'));
   let shownStars = 0;
   const refresh = () => {
     if (!movesEl || !targetEl) return;
@@ -507,11 +597,14 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     movesEl.classList.remove('bump');
     void movesEl.offsetWidth;
     movesEl.classList.add('bump');
+    targetEl.querySelector<HTMLElement>('.fill')!.style.width = barPos(moves) * 100 + '%';
     const stars = starsFor(moves, level.minMoves);
     if (stars !== shownStars) {
       const lost = shownStars > stars;
       shownStars = stars;
-      targetEl.innerHTML = starsHtml(stars) + (stars === 3 ? `<em>≤${level.minMoves}</em>` : stars === 2 ? `<em>≤${twoStarLimit}</em>` : '');
+      // 왼쪽 표시부터 차례로 잃는다: 별 3개면 셋 다 켜지고, 2개면 첫 표시가 꺼진다
+      targetEl.querySelectorAll('.mark').forEach((m, i) => m.classList.toggle('off', i < 3 - stars));
+      targetEl.querySelector('em')!.textContent = stars === 3 ? String(level.minMoves) : stars === 2 ? String(twoStarLimit) : '';
       if (lost) {
         // 받을 수 있는 별이 하나 줄었다
         targetEl.classList.remove('lost');
@@ -867,24 +960,32 @@ function showClear(level: LevelInfo, moves: number, reward: ClearReward, worldDo
   const m = modal(
     `
     <h2 class="clear-title">${t(worldDone ? 'worldCleared' : 'cleared')}</h2>
-    <canvas class="mascot small" width="260" height="260"></canvas>
+    <i class="sprig tl"></i><i class="sprig tr"></i><i class="sprig bl"></i><i class="sprig br"></i>
     ${starsHtml(0, 'big')}
     <div class="stats">
-      <div><small>${t('yourMoves')}</small><b>${moves}</b></div>
-      <div><small>${t('minMoves')}</small><b>${level.minMoves}</b></div>
-      <div class="gold"><small>${t('earned')}</small><b><span class="coin"></span>+<span data-gold>0</span></b></div>
+      <div title="${t('yourMoves')}">${ICON.steps}<b>${moves}</b></div>
+      <div title="${t('minMoves')}">${ICON.crown}<b>${level.minMoves}</b></div>
+      <div class="gold" title="${t('earned')}"><b><span class="coin"></span>+<span data-gold>0</span></b></div>
     </div>
     ${worldDone ? `<p class="world-done">${nextWorld ? `${art('emblem_' + nextWorld, '', 'emblem')}<span>${t('worldNext')}<b>${worldName(nextWorld)}</b></span>` : `<span><b>${t('allCleared')}</b></span>`}</p>` : ''}
-    ${gold > 0 ? `<button class="btn ghost bonus" data-a="bonus"><span class="ad-chip">AD</span>${t('bonusAd', { n: gold })}</button>` : ''}
-    ${next ? `<button class="btn big" data-a="next">${t('next')}</button>` : ''}
+    ${gold > 0 ? `<button class="btn ghost bonus" data-a="bonus" aria-label="${t('bonusAd', { n: gold })}"><span class="ad-chip">AD</span><span class="coin"></span><b>x2</b></button>` : ''}
+    ${next ? `<button class="btn big" data-a="next" aria-label="${t('next')}">${ICON.arrow}</button>` : ''}
     <div class="row">
-      <button class="btn ghost" data-a="retry">${t('retry')}</button>
-      <button class="btn ghost" data-a="stages">${t('stages')}</button>
-      <button class="btn ghost" data-a="home">${t('home')}</button>
+      <button class="btn ghost" data-a="retry" aria-label="${t('retry')}">${ICON.retry}</button>
+      <button class="btn ghost" data-a="stages" aria-label="${t('stages')}">${ICON.grid}</button>
+      <button class="btn ghost" data-a="home" aria-label="${t('home')}">${ICON.home}</button>
     </div>`,
     false,
   );
-  startMascot(m.el.querySelector<HTMLCanvasElement>('.mascot')!, worldDone ? (time) => ({ name: 'win', t: time % 1.5 }) : jumpOnce());
+  // 결과 창은 아래에서 올라오고, 방금 푼 판은 위쪽 절반에 그대로 남는다
+  m.el.classList.add('sheet');
+  // 제목 리본은 창 밖, 화면 위쪽(판 위)에 띄운다
+  const title = m.el.querySelector<HTMLElement>('.clear-title')!;
+  title.style.setProperty('--n', String([...title.textContent!].length)); // 글자 수에 맞춰 크기를 줄인다
+  m.el.prepend(title);
+  const sprig = getSprite('ui_sprig');
+  if (sprig) m.el.style.setProperty('--sprig', `url('${sprig.src}')`);
+  document.querySelector('.play-screen')?.classList.add('cleared');
   if (worldDone) sfx.fanfare();
   const starEls = m.el.querySelectorAll<HTMLElement>('.stars.big i');
   for (let i = 0; i < stars; i++) {
@@ -977,24 +1078,44 @@ function drawItemPreview(canvas: HTMLCanvasElement, id: string, type: ItemType, 
 let cosmeticsTab: ItemType = 'skin';
 const MULTI_MAX = 10;
 
+// 옷방: 위쪽에서 여우가 고른 옷을 입고 움직이고, 옷은 아래 한 줄로 넘겨 본다. 상자와 뽑기는 맨 아래에 있다.
 export function showCosmetics(): void {
   const done = allCollected();
   const multi = Math.min(MULTI_MAX, Math.floor(save.gold / GACHA_COST)); // 한 번에 뽑을 수 있는 횟수
   const rates = RARITY_ORDER.map((r) => {
     const pct = { common: 60, rare: 28, epic: 10, legendary: 2 }[r];
-    return `<span style="--c:${RARITY_COLOR[r]}"><i></i>${t(r as StringKey)} ${pct}%</span>`;
+    return `<span style="--c:${RARITY_COLOR[r]}" title="${t(r as StringKey)}"><i></i>${pct}%</span>`;
   }).join('');
   const closed = getSprite('ui_chest_closed');
   const open = getSprite('ui_chest_open');
   const chestImages = closed && open ? `<img class="closed" src="${closed.src}" alt="" /><img class="open" src="${open.src}" alt="" />` : '';
+  const room = getSprite('ui_dress_room');
+  const count = (type: ItemType) => {
+    const all = ITEMS.filter((i) => i.type === type);
+    return `${all.filter((i) => owns(i.id)).length}/${all.length}`;
+  };
+  const left = drawsUntilGuarantee();
+  const pity = Array.from({ length: PITY_STREAK }, (_, i) => `<i class="${i < PITY_STREAK + 1 - left ? 'on' : ''}"></i>`).join('');
   const el = html(`
     <div class="cosmetics-screen">
+      <div class="dress-room" ${room ? `style="background-image:url('${room.src}')"` : ''}>
+        <canvas class="mascot dress-fox" width="440" height="440"></canvas>
+      </div>
       <header class="topbar">
-        <button class="icon-btn" data-a="back">${art('icon_back', ICON.back)}</button>
-        <h1>${t('cosmetics')}</h1>
+        <button class="round-btn" data-a="back">${ICON.arrow}</button>
         <span class="grow"></span>
-        ${goldPill()}
+        <div class="hud-pill"><span class="coin"></span><b>${save.gold.toLocaleString()}</b></div>
       </header>
+      <nav class="tabs">
+        <button data-tab="skin" class="${cosmeticsTab === 'skin' ? 'on' : ''}" aria-label="${t('skins')}">${ICON.hanger}<b>${count('skin')}</b></button>
+        <button data-tab="trail" class="${cosmeticsTab === 'trail' ? 'on' : ''}" aria-label="${t('trails')}">${ICON.paw}<b>${count('trail')}</b></button>
+      </nav>
+      <div class="inventory"></div>
+      <div class="strip-dots"></div>
+      <div class="info-row">
+        <div class="rates" title="${t('rates')}">${rates}</div>
+        ${done ? '' : `<div class="pity" title="${t('guarantee', { n: left })}">${pity}${art('ui_star', ICON.star, 'pity-star')}<b>${left}</b></div>`}
+      </div>
       <section class="gacha">
         <div class="chest" data-state="idle">
           <div class="rays"></div>
@@ -1016,26 +1137,33 @@ export function showCosmetics(): void {
             <circle cx="100" cy="108" r="4.5" fill="#5d3616"/><rect x="98" y="108" width="4" height="10" fill="#5d3616"/>
           </svg>`}</div>
         </div>
-        <h2>${t('chest')}</h2>
-        <div class="draw-row">
-          <button class="btn big" data-a="draw" ${done ? 'disabled' : ''}>
-            ${done ? t('allCollected') : `${t('draw')} <span class="coin"></span>${GACHA_COST}`}
-          </button>
-          ${!done && multi >= 2 ? `<button class="btn big multi" data-a="multi">${t('drawMulti', { n: multi })} <span class="coin"></span>${multi * GACHA_COST}</button>` : ''}
-        </div>
-        ${done ? '' : `<p class="pity">${t('guarantee', { n: drawsUntilGuarantee() })}</p>`}
-        ${!done && adDrawsLeft() > 0 ? `<button class="ad-draw" data-a="addraw"><span class="ad-chip">AD</span>${t('adDraw', { n: adDrawsLeft() })}</button>` : ''}
-        <div class="rates" title="${t('rates')}">${rates}</div>
+        <button class="draw-btn" data-a="draw" ${done ? 'disabled' : ''} aria-label="${t('draw')}">
+          ${done ? `<b>${t('allCollected')}</b>` : `<span class="coin"></span><b>${GACHA_COST}</b>`}
+        </button>
+        ${!done && multi >= 2 ? `<button class="draw-btn multi" data-a="multi" aria-label="${t('drawMulti', { n: multi })}"><b>x${multi}</b><span><span class="coin"></span>${multi * GACHA_COST}</span></button>` : ''}
+        ${!done && adDrawsLeft() > 0 ? `<button class="draw-btn ad" data-a="addraw" aria-label="${t('adDraw', { n: adDrawsLeft() })}"><em>AD</em>${ICON.film}<b>${adDrawsLeft()}</b></button>` : ''}
       </section>
-      <nav class="tabs">
-        <button data-tab="skin" class="${cosmeticsTab === 'skin' ? 'on' : ''}">${t('skins')}</button>
-        <button data-tab="trail" class="${cosmeticsTab === 'trail' ? 'on' : ''}">${t('trails')}</button>
-      </nav>
-      <div class="inventory"></div>
     </div>`);
   mount(el, Number(save.lastLevel.split('-')[0]) || 1);
 
+  // 옷방의 여우: 장착한 옷을 입고 숨쉬고, 옷을 갈아입으면 한 번 뛴다
+  let jumpAt = -9;
+  let last = 0;
+  getSheet(save.skin);
+  startMascot(el.querySelector<HTMLCanvasElement>('.dress-fox')!, (time) => {
+    last = time;
+    return time - jumpAt < 1 ? { name: 'win', t: time - jumpAt } : { name: 'idle', t: time };
+  });
+
   const inv = el.querySelector<HTMLElement>('.inventory')!;
+  const stripDots = el.querySelector<HTMLElement>('.strip-dots')!;
+  const markStrip = () => {
+    const pages = stripDots.children.length;
+    const max = inv.scrollWidth - inv.clientWidth;
+    const page = max > 0 ? Math.round((inv.scrollLeft / max) * (pages - 1)) : 0;
+    [...stripDots.children].forEach((d, i) => d.classList.toggle('on', i === page));
+  };
+  inv.addEventListener('scroll', markStrip, { passive: true });
   const fill = () => {
     const base = cosmeticsTab === 'skin' ? DEFAULT_SKIN : DEFAULT_TRAIL;
     const entries: { id: string; name: string; rarity: Rarity | null }[] = [
@@ -1046,14 +1174,18 @@ export function showCosmetics(): void {
     inv.innerHTML = entries
       .map((e) => {
         const owned = e.rarity === null || owns(e.id);
-        return `<button class="item ${owned ? '' : 'missing'} ${equipped === e.id ? 'equipped' : ''}" data-id="${e.id}" style="--c:${e.rarity ? RARITY_COLOR[e.rarity] : '#6d6785'}">
-          <canvas width="144" height="144"></canvas><span>${owned ? e.name : '???'}</span>${equipped === e.id ? `<em>${t('equipped')}</em>` : ''}</button>`;
+        return `<button class="item ${owned ? '' : 'missing'} ${equipped === e.id ? 'equipped' : ''}" data-id="${e.id}" data-name="${owned ? e.name : '???'}" style="--c:${e.rarity ? RARITY_COLOR[e.rarity] : '#c9a36a'}">
+          <canvas width="144" height="144"></canvas>${equipped === e.id ? '<em>✓</em>' : owned ? '' : `<em class="lock">${ICON.lock}</em>`}</button>`;
       })
       .join('');
     inv.querySelectorAll<HTMLElement>('.item').forEach((b, i) => {
       const e = entries[i];
-      drawItemPreview(b.querySelector('canvas')!, e.id, cosmeticsTab, e.rarity === null || owns(e.id));
+      // 없는 옷도 어떤 옷인지는 보여 주고(어둡게), 자물쇠를 단다
+      drawItemPreview(b.querySelector('canvas')!, e.id, cosmeticsTab, true);
     });
+    stripDots.innerHTML = '<i></i>'.repeat(Math.max(1, Math.ceil(entries.length / 5)));
+    inv.querySelector<HTMLElement>('.equipped')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    markStrip();
   };
   fill();
 
@@ -1065,8 +1197,12 @@ export function showCosmetics(): void {
       return;
     }
     equip(btn.dataset.id!);
+    getSheet(save.skin);
+    jumpAt = last;
+    toast(btn.dataset.name!);
     fill();
   });
+
 
   const chest = el.querySelector<HTMLElement>('.chest')!;
   let drawing = false;
@@ -1104,7 +1240,7 @@ export function showCosmetics(): void {
   let skipDraw: (() => void) | null = null;
   const chestSequence = (color: string, onOpen: () => void, onReveal: () => void) => {
     drawing = true;
-    el.querySelector('.gold-pill b')!.textContent = save.gold.toLocaleString();
+    el.querySelector('.hud-pill b')!.textContent = save.gold.toLocaleString();
     chest.style.setProperty('--ray', color);
     chest.dataset.state = 'shake';
     sfx.chestShake();

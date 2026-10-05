@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>화면 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1280px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; }
+      nav a { padding: 4px 12px; border-radius: 999px; background: #2d2540; color: #f3eefc; text-decoration: none; font-size: 0.9rem; }
+      section { margin-bottom: 32px; padding: 20px; border-radius: 18px; background: #231d30; }
+      h2 { margin: 0 0 4px; font-size: 1.3rem; color: #ffd24d; }
+      .tag { color: #b9b0cc; margin: 0 0 14px; }
+      .row { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+      figure { margin: 0; min-width: 220px; }
+      figure img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; object-position: top; border-radius: 14px; display: block; background: #100d17; }
+      figure.now img { opacity: 0.85; outline: 2px dashed #4a4263; outline-offset: -2px; }
+      figcaption b { display: block; margin-top: 10px; font-size: 1rem; }
+      figcaption span { display: block; color: #cfc7e0; font-size: 0.9rem; }
+      figcaption em { display: block; margin-top: 4px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+      .pick { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 9px; background: #ffd24d; color: #2a1c05; font-size: 0.75rem; vertical-align: middle; }
+      .note { margin: 14px 0 0; color: #cfc7e0; font-size: 0.95rem; }
+      ul { margin: 6px 0 0; padding-left: 1.2em; }
+      a { color: #9fd0ff; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>화면 시안 (타이틀부터 치장까지)</h1>
+      <p class="lead">화면 여섯 개에 방향이 다른 시안을 세 장씩 그렸습니다. 맨 왼쪽 점선 그림이 지금 게임의 화면입니다. 게임에는 아직 아무것도 넣지 않았습니다.</p>
+      <p class="lead">그림 생성은 한글을 정확히 그리지 못해, 버튼 글자는 아이콘으로 바꾸고 제목만 영문으로 넣었습니다. 실제로 만들 때는 한글 글꼴로 얹습니다. 그림을 누르면 크게 보입니다.</p>
+      <nav>
+        <a href="#title">타이틀</a><a href="#story">도입 이야기</a><a href="#select">스테이지 선택</a><a href="#play">플레이</a><a href="#clear">클리어</a><a href="#cosmetics">꾸미기</a><a href="#next">고르는 방법</a>
+      </nav>
+      <section id="title">
+        <h2>타이틀 (홈)</h2>
+        <p class="tag">플레이 버튼 하나로 이어서 하고, 스테이지와 꾸미기는 작게 둡니다.</p>
+        <div class="row">
+          <figure class="now"><a href="screens/current/title.png"><img src="screens/current/title.png" alt="지금 타이틀" /></a><figcaption><b>지금</b><span>배경 그림 위에 로고, 여우, 버튼 세 개.</span></figcaption></figure>
+          <figure><a href="screens/title_a.png"><img src="screens/title_a.png" alt="타이틀 A" /></a><figcaption><b>A. 쉼터 <span class="pick">추천</span></b><span>해 질 녘 유적에 여우가 앉아 있고, 꼬리 빛이 화면의 광원입니다. 로고는 덩굴에 매달린 나무 간판.</span><em>지금 구성과 가장 가까워 옮기기 쉽고, 편안한 분위기가 타겟과 맞습니다.</em></figcaption></figure>
+          <figure><a href="screens/title_b.png"><img src="screens/title_b.png" alt="타이틀 B" /></a><figcaption><b>B. 심장으로 가는 길</b><span>던전 여덟 곳의 문이 산길을 따라 올라가고 꼭대기에 깨진 심장이 있습니다. 깬 던전만 불이 켜집니다.</span><em>이야기와 진행도가 한눈에 보입니다. 다만 어둡고 복잡해 여우가 작아집니다.</em></figcaption></figure>
+          <figure><a href="screens/title_c.png"><img src="screens/title_c.png" alt="타이틀 C" /></a><figcaption><b>C. 캐릭터 포스터</b><span>상자를 미는 여우를 크게, 배경은 단순하게. 아래에 둥근 막대 하나로 버튼을 모읍니다.</span><em>무슨 게임인지 바로 보이고 이모티콘 느낌이 가장 강합니다. 미는 자세의 여우를 크게 다시 그려야 합니다.</em></figcaption></figure>
+        </div>
+      </section>
+
+      <section id="story">
+        <h2>도입 이야기</h2>
+        <p class="tag">처음 플레이를 누르면 나오는 세 장. 지금은 화면 위아래가 많이 비어 있습니다.</p>
+        <div class="row">
+          <figure class="now"><a href="screens/current/story.png"><img src="screens/current/story.png" alt="지금 이야기" /></a><figcaption><b>지금</b><span>가운데 가로 그림 한 장과 글 두 줄.</span></figcaption></figure>
+          <figure><a href="screens/story_a.png"><img src="screens/story_a.png" alt="이야기 A" /></a><figcaption><b>A. 화면 가득 그림</b><span>그림이 화면 전체를 채우고 글은 아래 양피지 띠에 들어갑니다.</span><em>몰입감이 가장 큽니다. 이야기 그림 세 장을 세로로 다시 그려야 합니다.</em></figcaption></figure>
+          <figure><a href="screens/story_b.png"><img src="screens/story_b.png" alt="이야기 B" /></a><figcaption><b>B. 그림책 <span class="pick">추천</span></b><span>펼친 그림책의 한 쪽처럼 보입니다. 종이 위에 그림과 글, 책갈피 끈, 종이 딱지 모양의 다음 버튼.</span><em>"옛날이야기를 듣는" 느낌이 설정과 맞고, 지금 가로 그림을 조금만 손봐서 쓸 수 있습니다.</em></figcaption></figure>
+          <figure><a href="screens/story_c.png"><img src="screens/story_c.png" alt="이야기 C" /></a><figcaption><b>C. 세 칸 만화</b><span>세 장을 한 화면에 세로로 쌓고, 넘길 때마다 다음 칸이 밝아집니다.</span><em>전체 흐름이 한 번에 보여 빨리 지나갑니다. 칸이 작아 그림의 힘은 약해집니다.</em></figcaption></figure>
+        </div>
+        <p class="note">A와 B의 첫 장에 여우가 그려졌는데, 이야기에서는 여우가 3장에 처음 나옵니다. 채택하면 그 부분은 맞춥니다.</p>
+      </section>
+
+      <section id="select">
+        <h2>스테이지 선택</h2>
+        <p class="tag">던전 8곳에 12개씩, 96개. 지금은 세로로 긴 목록입니다.</p>
+        <div class="row">
+          <figure class="now"><a href="screens/current/select.png"><img src="screens/current/select.png" alt="지금 스테이지 선택" /></a><figcaption><b>지금</b><span>던전마다 머리 그림과 3열 격자가 세로로 이어집니다.</span></figcaption></figure>
+          <figure><a href="screens/select_a.png"><img src="screens/select_a.png" alt="스테이지 A" /></a><figcaption><b>A. 굽이치는 지도</b><span>길 위의 디딤돌이 스테이지입니다. 여우가 지금 스테이지에 서 있고, 깬 던전은 밝고 다음 던전은 어둡습니다.</span><em>캐주얼 퍼즐에서 가장 익숙한 형태이고 "빛을 되찾는다"가 잘 보입니다. 던전 8곳의 긴 배경을 그려야 해서 작업량이 가장 많습니다.</em></figcaption></figure>
+          <figure><a href="screens/select_b.png"><img src="screens/select_b.png" alt="스테이지 B" /></a><figcaption><b>B. 던전 카드 <span class="pick">추천</span></b><span>던전 하나가 카드 한 장. 위는 던전 그림, 아래는 4x3 격자이고 옆으로 넘깁니다.</span><em>12개가 한 화면에 다 보이고 스크롤이 없습니다. 지금 있는 머리 그림과 칸 그림을 거의 그대로 쓸 수 있습니다.</em></figcaption></figure>
+          <figure><a href="screens/select_c.png"><img src="screens/select_c.png" alt="스테이지 C" /></a><figcaption><b>C. 내려가는 탑</b><span>미궁의 단면. 층마다 던전 하나, 문 12개가 스테이지이고 맨 아래에 심장이 있습니다.</span><em>96개 전체와 목표가 한눈에 보입니다. 문이 너무 작아 손가락으로 누르기 어려우므로, 층을 누르면 펼쳐지게 해야 합니다.</em></figcaption></figure>
+        </div>
+      </section>
+
+      <section id="play">
+        <h2>플레이</h2>
+        <p class="tag">가장 오래 보는 화면. 판이 잘 읽히는 것이 먼저입니다.</p>
+        <div class="row">
+          <figure class="now"><a href="screens/current/play.png"><img src="screens/current/play.png" alt="지금 플레이" /></a><figcaption><b>지금</b><span>어두운 바탕에 판, 위에 정보, 아래에 버튼 세 개.</span></figcaption></figure>
+          <figure><a href="screens/play_a.png"><img src="screens/play_a.png" alt="플레이 A" /></a><figcaption><b>A. 던전 안</b><span>판 둘레를 그 던전의 풍경(광산의 들보, 등불, 선로)으로 두르고 정보는 매달린 나무판에 둡니다.</span><em>던전마다 분위기가 확 달라집니다. 둘레 그림을 던전 8곳만큼 그려야 하고, 판이 조금 작아집니다.</em></figcaption></figure>
+          <figure><a href="screens/play_b.png"><img src="screens/play_b.png" alt="플레이 B" /></a><figcaption><b>B. 깔끔하게 <span class="pick">추천</span></b><span>풍경 없이 판을 가장 크게. 판 아래에 이동 수 막대가 있어 별을 잃는 지점이 보입니다.</span><em>가장 잘 읽히고 눈이 편합니다. 이동 수 막대는 다른 안을 고르더라도 가져올 만합니다. 바닥이 밝아 크림색 여우가 묻히지 않는지 확인이 필요합니다.</em></figcaption></figure>
+          <figure><a href="screens/play_c.png"><img src="screens/play_c.png" alt="플레이 C" /></a><figcaption><b>C. 한 손, 여우와 함께</b><span>판을 아래로 내리고, 위에는 여우의 표정이 보이는 정보판을 둡니다. 버튼은 오른쪽 아래에 모읍니다.</span><em>여우의 반응(힘씀, 놀람, 졸음)을 크게 보여 줄 수 있습니다. 배경 장식이 많아 판에서 눈이 분산됩니다.</em></figcaption></figure>
+        </div>
+      </section>
+
+      <section id="clear">
+        <h2>클리어</h2>
+        <p class="tag">96번 보게 되는 화면. 기쁘되 빨리 넘어갈 수 있어야 합니다.</p>
+        <div class="row">
+          <figure class="now"><a href="screens/current/clear.png"><img src="screens/current/clear.png" alt="지금 클리어" /></a><figcaption><b>지금</b><span>화면을 거의 덮는 큰 창.</span></figcaption></figure>
+          <figure><a href="screens/clear_a.png"><img src="screens/clear_a.png" alt="클리어 A" /></a><figcaption><b>A. 빛이 돌아온다</b><span>창 없이 화면 전체가 축하 장면. 던전에 빛이 들고 여우가 크게 뛰어오릅니다.</span><em>가장 기쁜 화면입니다. 매번 보기에는 과할 수 있어, 던전의 마지막 스테이지(던전 완료)에만 쓰는 것이 어울립니다.</em></figcaption></figure>
+          <figure><a href="screens/clear_b.png"><img src="screens/clear_b.png" alt="클리어 B" /></a><figcaption><b>B. 아래에서 올라오는 창 <span class="pick">추천</span></b><span>푼 판이 위에 그대로 보이고, 아래 절반에 결과 창이 올라옵니다.</span><em>방금 푼 판이 남아 있어 성취감이 이어지고, 버튼이 엄지 닿는 곳에 있습니다. 지금 창을 줄여 옮기면 됩니다.</em></figcaption></figure>
+          <figure><a href="screens/clear_c.png"><img src="screens/clear_c.png" alt="클리어 C" /></a><figcaption><b>C. 엽서</b><span>여우 사진이 붙은 엽서. 별은 도장, 골드는 동전 병, 이동 수는 표 조각.</span><em>손으로 꾸민 느낌이 타겟의 취향과 맞습니다. 이 화면만 종이 질감이면 어긋나므로 그림책(이야기 B), 스티커 수첩(꾸미기 C)과 함께 고를 때 좋습니다.</em></figcaption></figure>
+        </div>
+      </section>
+
+      <section id="cosmetics">
+        <h2>꾸미기 (뽑기와 보관함)</h2>
+        <p class="tag">골드를 쓰는 유일한 곳. 여우를 꾸미고 싶게 만들어야 합니다.</p>
+        <div class="row">
+          <figure class="now"><a href="screens/current/cosmetics.png"><img src="screens/current/cosmetics.png" alt="지금 꾸미기" /></a><figcaption><b>지금</b><span>위에 상자와 뽑기 버튼, 아래에 카드 격자.</span></figcaption></figure>
+          <figure><a href="screens/cosmetics_a.png"><img src="screens/cosmetics_a.png" alt="꾸미기 A" /></a><figcaption><b>A. 옷방 <span class="pick">추천</span></b><span>위쪽 절반에서 여우가 고른 옷을 입고 움직입니다. 옷은 아래에 한 줄로 넘겨 보고, 상자는 맨 아래로 내립니다.</span><em>입혀 보는 재미가 중심이 됩니다. 동작 시트를 그대로 미리보기에 쓸 수 있습니다. (시안의 22/22, 8/8 숫자는 잘못 그려진 것입니다.)</em></figcaption></figure>
+          <figure><a href="screens/cosmetics_b.png"><img src="screens/cosmetics_b.png" alt="꾸미기 B" /></a><figcaption><b>B. 보물 방</b><span>상자가 주인공. 보물 방 한가운데의 큰 상자와 큰 뽑기 버튼, 보관함은 아래 선반 한 줄.</span><em>뽑는 순간의 기대감이 가장 큽니다. 모은 옷을 둘러보기는 불편해집니다.</em></figcaption></figure>
+          <figure><a href="screens/cosmetics_c.png"><img src="screens/cosmetics_c.png" alt="꾸미기 C" /></a><figcaption><b>C. 스티커 수첩</b><span>펼친 수첩에 옷이 스티커로 붙습니다. 못 얻은 칸은 점선 자리. 뽑기는 아래 막대로.</span><em>"빈칸을 채우고 싶다"는 수집 욕구를 가장 잘 건드립니다. 지금 격자 구조와 같아 옮기기 쉽습니다.</em></figcaption></figure>
+        </div>
+      </section>
+
+      <section>
+        <h2>묶어서 본다면</h2>
+        <ul>
+          <li><b>무난한 묶음(추천 표시)</b>: 타이틀 A, 이야기 B, 스테이지 B, 플레이 B, 클리어 B, 꾸미기 A. 지금 구조를 가장 적게 고치고, 이미 있는 그림을 많이 살립니다.</li>
+          <li><b>풍경 묶음</b>: 타이틀 B, 이야기 A, 스테이지 A, 플레이 A, 클리어 A, 꾸미기 B. 던전의 분위기가 가장 진하지만 새로 그릴 배경이 가장 많습니다.</li>
+          <li><b>종이 묶음</b>: 타이틀 C, 이야기 B, 스테이지 B, 플레이 B, 클리어 C, 꾸미기 C. 그림책과 수첩 같은 손맛. 다른 퍼즐 게임과 가장 달라 보입니다.</li>
+        </ul>
+        <p class="note">추천은 제 판단입니다. 사람에게 보여 주고 고른 것은 아닙니다.</p>
+      </section>
+
+      <section id="next">
+        <h2>고르는 방법</h2>
+        <ul>
+          <li>화면마다 따로 고르셔도 됩니다(예: 타이틀 A, 스테이지 B, 플레이 B). "타이틀 A의 배경에 C의 아래 막대"처럼 섞어도 됩니다.</li>
+          <li>마음에 드는 것이 없으면 그 화면만 방향을 바꿔 다시 뽑겠습니다.</li>
+          <li>시안은 한 장짜리 그림이라, 채택하면 배경·버튼·틀을 따로 그려 지금 화면 구조에 맞춰 넣습니다. 그림과 똑같이 나오지는 않고, 구성과 분위기를 따라갑니다.</li>
+        </ul>
+        <p class="note">캐릭터 시안은 <a href="target.html">타겟층과 캐릭터 시안</a>에 있습니다.</p>
+      </section>
+    </main>
+  </body>
+</html>

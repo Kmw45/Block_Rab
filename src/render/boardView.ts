@@ -57,11 +57,9 @@ interface Particle {
 }
 
 // 색을 흰색 쪽으로 밝힌다. 회색 그림에 곱할 월드 색을 만들 때 쓴다.
-function lighten(hex: string, t: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  const ch = (shift: number) => Math.round(((n >> shift) & 255) + (255 - ((n >> shift) & 255)) * t);
-  return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
-}
+// 판의 틀과 줄눈 색(화면 시안의 크림색 판)
+const BOARD_FRAME = '#f6ecd2';
+const BOARD_GROUT = '#dccba4';
 
 function now(): number {
   return performance.now() / 1000;
@@ -467,28 +465,25 @@ export class BoardView {
 
     // 판 테두리
     const pad = s * 0.22;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    rr(ctx, ox - pad, oy - pad + s * 0.12, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    rr(ctx, ox - pad, oy - pad + s * 0.1, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
     ctx.fill();
-    ctx.fillStyle = theme.wallTop;
+    // 크림색 틀 안에 모래색 바닥(화면 시안의 판). 던전이 달라도 판의 색은 같고 배경색만 바뀐다.
+    ctx.fillStyle = BOARD_FRAME;
     rr(ctx, ox - pad, oy - pad, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
     ctx.fill();
-    ctx.fillStyle = theme.wall;
-    rr(ctx, ox - pad * 0.45, oy - pad * 0.45, def.w * s + pad * 0.9, def.h * s + pad * 0.9, s * 0.18);
+    ctx.fillStyle = BOARD_GROUT;
+    rr(ctx, ox - pad * 0.3, oy - pad * 0.3, def.w * s + pad * 0.6, def.h * s + pad * 0.6, s * 0.14);
     ctx.fill();
 
-    const floorImg = getTinted('floor', lighten(theme.floorA, 0.3));
+    const floorImg = getSprite('floor');
     for (let y = 0; y < def.h; y++) {
       for (let x = 0; x < def.w; x++) {
         if (floorImg) {
           ctx.save();
-          rr(ctx, ox + x * s + 1, oy + y * s + 1, s - 2, s - 2, s * 0.1);
+          rr(ctx, ox + x * s + s * 0.025, oy + y * s + s * 0.025, s * 0.95, s * 0.95, s * 0.09);
           ctx.clip();
           ctx.drawImage(floorImg, ox + x * s, oy + y * s, s, s);
-          if ((x + y) % 2) {
-            ctx.fillStyle = 'rgba(0,0,0,0.12)';
-            ctx.fillRect(ox + x * s, oy + y * s, s, s);
-          }
           ctx.restore();
           continue;
         }
@@ -506,7 +501,7 @@ export class BoardView {
     this.drawExit(time);
     drawTrail(ctx, this.trail, this.marks, time, ox, oy, s);
 
-    const wallImg = getTinted('wall', lighten(theme.wallTop, 0.55));
+    const wallImg = getSprite('wall');
     for (let y = 0; y < def.h; y++) {
       for (let x = 0; x < def.w; x++) {
         const kind = def.solid[y * def.w + x];
@@ -514,10 +509,7 @@ export class BoardView {
         const cy = oy + (y + 0.5) * s;
         if (kind === SOLID_WALL) {
           if (wallImg) {
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            rr(ctx, cx - s * 0.46, cy - s * 0.4, s * 0.92, s * 0.92, s * 0.12);
-            ctx.fill();
-            ctx.drawImage(wallImg, cx - s / 2, cy - s / 2 - s * 0.05, s, s);
+            ctx.drawImage(wallImg, cx - s * 0.49, cy - s * 0.49, s * 0.98, s * 0.98);
           } else this.drawWall(cx, cy);
         } else if (kind === SOLID_FIXED) {
           let dx = 0;
@@ -799,6 +791,18 @@ export class BoardView {
     const cx = this.ox + (x + 0.5) * s;
     const cy = this.oy + (y + 0.5) * s;
     const pulse = 0.5 + Math.sin(time * 2.6) * 0.5;
+    const img0 = getSprite('exit');
+    if (img0) {
+      // 그림 출구(초록 바탕의 별 칸): 제자리에서 맥박처럼 숨쉬고 둘레가 은은하게 빛난다
+      const g = ctx.createRadialGradient(cx, cy, s * 0.3, cx, cy, s * 0.78);
+      g.addColorStop(0, `rgba(255,226,120,${0.32 + pulse * 0.2})`);
+      g.addColorStop(1, 'rgba(255,226,120,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - s * 0.8, cy - s * 0.8, s * 1.6, s * 1.6);
+      const k = s * (0.95 + pulse * 0.04);
+      ctx.drawImage(img0, cx - k / 2, cy - k / 2, k, k);
+      return;
+    }
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * (0.62 + pulse * 0.1));
     g.addColorStop(0, theme.accent);
     g.addColorStop(0.45, theme.accent + '88');

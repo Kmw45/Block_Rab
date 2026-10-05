@@ -2256,3 +2256,1593 @@ h2 {
   letter-spacing: 0.06em;
   text-shadow: none;
 }
+
+/* ═════ 화면 시안(art/concepts/screens: 타이틀 A, 이야기 B, 스테이지 B, 플레이 B, 클리어 B, 꾸미기 A)을 옮긴 스타일 ═════ */
+
+/* ───── 공통 부품: 둥근 버튼, 갈색 알약 ───── */
+
+.round-btn {
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  color: #5b3a22;
+  background: #fbf1dc;
+  box-shadow:
+    inset 0 0 0 3px #ead9b5,
+    0 4px 0 #cdb78c,
+    0 8px 10px rgba(0, 0, 0, 0.22);
+  transition: transform 0.08s;
+}
+
+.round-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 0 0 3px #ead9b5,
+    0 1px 0 #cdb78c;
+}
+
+.round-btn.plum,
+.home-dock .round-btn {
+  color: #fbf1dc;
+  background: #80495f;
+  box-shadow:
+    inset 0 0 0 3px #a8707f,
+    0 0 0 2.5px #4f2c3d,
+    0 5px 0 2px #4f2c3d,
+    0 9px 12px rgba(0, 0, 0, 0.35);
+}
+
+.round-btn .art-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.hud-pill {
+  height: 40px;
+  padding: 0 16px 0 9px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  color: #fff3d6;
+  background: #4a2f1e;
+  box-shadow:
+    inset 0 0 0 2.5px #b98a55,
+    0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
+.hud-pill b {
+  font-weight: 400;
+}
+
+.hud-pill .stars {
+  font-size: 1.4rem;
+}
+
+.hud-pill .stars i:not(:first-child) {
+  display: none;
+}
+
+/* ───── 타이틀: 해 질 녘 유적의 쉼터 ───── */
+
+.title-screen.home {
+  padding: 0;
+}
+
+.title-screen.home .home-scene::after {
+  background: linear-gradient(rgba(24, 14, 36, 0.28), transparent 16%, transparent 72%, rgba(24, 14, 36, 0.3));
+}
+
+.title-screen.home .home-top {
+  z-index: 2;
+  gap: 8px;
+}
+
+.title-screen.home .corner {
+  z-index: 2;
+}
+
+/* 덩굴에 매달린 나무 간판. 밧줄은 그림의 윗부분을 잘라 화면 위까지 이어 붙인다. */
+.logo-sign {
+  position: absolute;
+  left: 50%;
+  top: 6.2%;
+  width: min(80%, 400px);
+  container-type: inline-size;
+  transform: translateX(-50%);
+  transform-origin: 50% -20%;
+  animation: sign-sway 6s ease-in-out infinite;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.3));
+}
+
+.logo-sign img {
+  display: block;
+  width: 100%;
+}
+
+.logo-sign::before,
+.logo-sign::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  width: 100%;
+  aspect-ratio: calc(var(--ar, 1.34) / 0.085);
+  background: var(--sign) top / 100% auto no-repeat;
+}
+
+.logo-sign::after {
+  transform: translateY(-100%);
+}
+
+@keyframes sign-sway {
+  0%,
+  100% {
+    transform: translateX(-50%) rotate(-0.9deg);
+  }
+  50% {
+    transform: translateX(-50%) rotate(0.9deg);
+  }
+}
+
+.title-screen.home .logo-sign .logo {
+  position: absolute;
+  left: 46.5%;
+  top: 60%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  font-size: 17cqw;
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  -webkit-text-stroke: 1.5cqw #6b4226;
+  animation: none;
+  filter: drop-shadow(0 0.8cqw 0 #4a2c18);
+}
+
+.title-screen.home .logo-sign .logo.en {
+  font-size: 12.5cqw;
+}
+
+.logo.en span {
+  display: block;
+}
+
+.logo-sign.plain {
+  top: 12%;
+}
+
+.title-screen.home .mascot {
+  left: 42%;
+  top: 75.5%;
+  width: min(92vw, 372px);
+  height: min(92vw, 372px);
+  transform: translate(-50%, -84%);
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.3));
+}
+
+.home-dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(10%, calc(env(safe-area-inset-bottom) + 22px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 2;
+}
+
+.home-dock .round-btn {
+  width: 60px;
+  height: 60px;
+}
+
+.btn.big.play,
+.has-ui .btn.big.play {
+  flex-direction: row;
+  gap: 12px;
+  min-width: 0;
+  width: 44%;
+  max-width: 210px;
+  min-height: 78px;
+  font-size: 2.1rem;
+  color: #4a2f1e;
+}
+
+.btn.big.play b {
+  font-weight: 400;
+}
+
+.btn.big.play svg {
+  font-size: 2.4rem;
+  color: #fff3d6;
+  stroke: #5b3a22;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  overflow: visible;
+}
+
+.home-dock .dot {
+  top: -2px;
+  right: -2px;
+}
+
+/* ───── 도입 이야기: 펼친 그림책 ───── */
+
+.story-screen {
+  padding: 0;
+  container-type: size;
+  background: #3a2418;
+}
+
+.story-defs {
+  position: absolute;
+}
+
+/* 책 그림은 9:16이다. 더 긴 화면에서는 조금 늘이고(14%까지), 남는 곳은 탁자 색으로 둔다. */
+.story-book {
+  position: relative;
+  flex: none;
+  width: 100cqw;
+  height: min(100cqh, 100cqw * 16 / 9 * 1.14);
+  background: center / 100% 100% no-repeat;
+}
+
+.story-book .story-skip {
+  position: absolute;
+  top: 1.6%;
+  right: 2.6%;
+  width: 12.5%;
+  height: 4.4%;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  color: #8a5a2b;
+  background: #fbf1dc;
+  box-shadow:
+    inset 0 0 0 2.5px #d9b87c,
+    0 3px 0 #b08a55;
+}
+
+.story-book .story-frame {
+  position: absolute;
+  left: 6.4%;
+  top: 13%;
+  width: 87.2%;
+  height: 53%;
+  aspect-ratio: auto;
+  border-radius: 9% / 8%;
+  overflow: hidden;
+  background: none;
+  box-shadow: none;
+  filter: url(#story-rough);
+}
+
+.story-book .story-caption {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 67.4%;
+  height: 11.6%;
+  min-height: 0;
+  justify-content: center;
+}
+
+.story-book .story-text {
+  color: #5b3a22;
+  text-shadow: none;
+  font-family: var(--display);
+  font-size: clamp(1rem, 4.7cqw, 1.35rem);
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.story-book .story-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 80.3%;
+  justify-content: center;
+  gap: 10px;
+}
+
+.story-book .story-dots i {
+  width: 9px;
+  height: 9px;
+  background: #cdbf9f;
+}
+
+.story-book .story-dots i.on {
+  background: #e9b93a;
+  box-shadow: none;
+}
+
+.story-next {
+  position: absolute;
+  left: 50%;
+  top: 88%;
+  width: 27%;
+  height: 7.4%;
+  transform: translate(-50%, -50%);
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 2.1rem;
+  color: #a9742d;
+  background: #fbf1dc;
+  box-shadow:
+    inset 0 0 0 3px #c99a58,
+    0 4px 0 #9a6f3a,
+    0 9px 12px rgba(0, 0, 0, 0.3);
+}
+
+.story-next:active {
+  transform: translate(-50%, calc(-50% + 3px));
+}
+
+/* ───── 스테이지 선택: 옆으로 넘기는 던전 카드 ───── */
+
+.select-screen {
+  padding-left: 0;
+  padding-right: 0;
+  background: #1c2733 center / cover no-repeat;
+}
+
+.select-screen > .topbar {
+  padding: 0 14px;
+}
+
+.select-screen .pill-btn {
+  min-width: 92px;
+  justify-content: center;
+}
+
+.select-screen .select-summary {
+  margin: 10px 18px 0;
+}
+
+.select-screen .select-summary .round-btn {
+  width: 46px;
+  height: 46px;
+  font-size: 1.4rem;
+}
+
+.select-screen .dev-banner {
+  margin: 8px 18px 0;
+}
+
+.select-screen .world-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 44px 0 6px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+}
+
+/* 첫 카드와 마지막 카드도 가운데에 올 수 있게 양끝에 빈 자리를 둔다 */
+.select-screen .world-list::before,
+.select-screen .world-list::after {
+  content: '';
+  flex: none;
+  width: calc(12% - 12px);
+}
+
+.select-screen .world {
+  position: relative;
+  flex: none;
+  width: 76%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: center;
+  border: 3px solid #9a7044;
+  border-image: none;
+  border-radius: 30px;
+  background: #4b3b31;
+  box-shadow:
+    inset 0 0 0 2px #6a5140,
+    0 12px 22px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.2s,
+    filter 0.2s;
+}
+
+.select-screen .world:not(.front) {
+  transform: scale(0.95);
+  filter: brightness(0.78);
+}
+
+.card-scene {
+  position: relative;
+  flex: 1 1 47%;
+  min-height: 0;
+  border-radius: 26px 26px 0 0;
+  background: #2b2330 center / cover no-repeat;
+  box-shadow: inset 0 -3px 0 #9a7044;
+}
+
+.world.locked .card-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(22, 15, 36, 0.74);
+}
+
+.card-plate {
+  position: absolute;
+  left: 50%;
+  top: -34px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.plate-no {
+  position: relative;
+  width: 86px;
+  height: 64px;
+  border: 3px solid #9a7044;
+  border-radius: 44px 44px 12px 12px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 1.8rem;
+  line-height: 1.25;
+  color: #4a2f1e;
+  background: #ecdcb6;
+}
+
+.plate-no b {
+  font-weight: 400;
+}
+
+.plate-no .emblem {
+  position: absolute;
+  left: 50%;
+  top: -20px;
+  width: 44px;
+  height: 44px;
+  margin: 0 0 0 -22px;
+}
+
+.card-plate h2 {
+  margin-top: -3px;
+  min-width: 168px;
+  padding: 5px 18px 4px;
+  border: 3px solid #9a7044;
+  border-radius: 14px;
+  font-size: 1.2rem;
+  white-space: nowrap;
+  text-align: center;
+  color: #4a2f1e;
+  background: #ecdcb6;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+}
+
+.select-screen .world-stars {
+  position: absolute;
+  left: 50%;
+  top: 78px;
+  transform: translateX(-50%);
+  padding: 1px 13px;
+  border-radius: 14px;
+  gap: 5px;
+  font-size: 1rem;
+  color: #cbbfae;
+  background: rgba(40, 28, 24, 0.84);
+}
+
+.select-screen .world-stars b {
+  font-weight: 400;
+  font-size: 1.15rem;
+  color: var(--gold);
+}
+
+.select-screen .world-stars svg {
+  color: var(--gold);
+}
+
+.card-fox {
+  position: absolute;
+  left: 0;
+  bottom: 4%;
+  width: 54%;
+  height: auto;
+  aspect-ratio: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.4));
+}
+
+.card-lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.card-lock .art-icon {
+  width: 76px;
+  height: 76px;
+}
+
+.select-screen .stage-grid {
+  flex: 1 1 53%;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px 8px;
+  padding: 12px 12px 8px;
+  align-content: space-evenly;
+}
+
+.select-screen .stage-wrap {
+  gap: 1px;
+}
+
+.select-screen .stage,
+.select-screen .stage.cleared,
+.select-screen .stage.locked {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 10% 0 0;
+  border-radius: 0;
+  font-size: 1.5rem;
+  color: #4a2f1e;
+  text-shadow: none;
+  background: var(--tile) center / 100% 100% no-repeat;
+  box-shadow: none;
+  opacity: 1;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35));
+}
+
+.select-screen .stage.locked {
+  filter: grayscale(0.9) brightness(0.5);
+}
+
+.select-screen .stage.locked .art-icon {
+  display: block;
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.select-screen .stage.skipped {
+  filter: saturate(0.5) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35));
+}
+
+.select-screen .stage.current {
+  filter: drop-shadow(0 0 2px #ffd24d) drop-shadow(0 0 7px #ffd24d);
+  animation: cur-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cur-pulse {
+  50% {
+    filter: drop-shadow(0 0 3px #ffe68a) drop-shadow(0 0 12px #ffd24d);
+  }
+}
+
+.stage .peek {
+  position: absolute;
+  left: 50%;
+  bottom: 60%;
+  width: 78%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.select-screen .stage-wrap .stars {
+  font-size: 0.85rem;
+  gap: 1px;
+}
+
+.select-screen .world.locked .stage-wrap {
+  opacity: 1;
+}
+
+.select-screen .world.locked .stage-wrap .stars {
+  visibility: hidden;
+}
+
+.pager {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 40px;
+}
+
+.pager i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4c4a5e;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.pager i.lit {
+  background: #d39b35;
+}
+
+.pager i.on {
+  width: 17px;
+  height: 17px;
+  background: #ffd24d;
+  box-shadow: 0 0 8px rgba(255, 210, 77, 0.6);
+}
+
+/* ───── 플레이: 풍경 없이 판을 크게 ───── */
+
+.play-screen {
+  --play-bg: color-mix(in srgb, var(--accent) 45%, #26323a);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cg fill='%23fff' fill-opacity='.07'%3E%3Cpath d='M30 22l5 9-5 9-5-9z'/%3E%3Cpath d='M128 118c0-9 5-14 5-14s5 5 5 14c5-4 11-3 11-3s-1 8-10 10h-12c-9-2-10-10-10-10s6-1 11 3z'/%3E%3Cpath d='M158 30l4 7-4 7-4-7z'/%3E%3Cpath d='M50 138c0-7 4-11 4-11s4 4 4 11c4-3 9-2 9-2s-1 6-8 8H49c-7-2-8-8-8-8s5-1 9 2z'/%3E%3C/g%3E%3C/svg%3E"),
+    var(--play-bg);
+}
+
+.play-screen .topbar {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 4px 0;
+}
+
+.hud-chip {
+  height: 52px;
+  min-width: 104px;
+  padding: 0 20px;
+  border-radius: 26px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #4a2f1e;
+  background: #fbf1dc;
+  box-shadow:
+    inset 0 0 0 3px #ead9b5,
+    0 4px 0 rgba(0, 0, 0, 0.16);
+}
+
+.hud-chip svg {
+  flex: none;
+  font-size: 1.4rem;
+  color: #5b3a22;
+}
+
+.hud-chip.stage-title svg {
+  color: #4f9a78;
+}
+
+.hud-chip b,
+.hud-chip.stage-title b,
+.hud-chip.moves b {
+  font-weight: 400;
+  font-size: 1.6rem;
+  color: #4a2f1e;
+}
+
+button.hud-chip {
+  font-size: 1rem;
+}
+
+.play-screen .board-wrap {
+  margin: 12px -8px 2px;
+}
+
+.progress {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  margin: 4px 10px 14px 24px;
+  transform-origin: center;
+}
+
+.progress .bar {
+  position: relative;
+  flex: 1;
+  height: 22px;
+  border-radius: 11px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(255, 255, 255, 0.13) calc(10% - 2px) 10%),
+    color-mix(in srgb, var(--play-bg) 68%, #000);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--play-bg) 84%, #fff);
+}
+
+.progress .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 11px;
+  background: linear-gradient(#ffdc66, #f5b82e);
+  box-shadow: inset 0 -3px 0 rgba(170, 105, 0, 0.25);
+  transition: width 0.2s ease-out;
+}
+
+.progress .mark {
+  position: absolute;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -92%);
+}
+
+.progress .mark::after {
+  content: '';
+  position: absolute;
+  left: calc(50% - 1px);
+  top: 78%;
+  width: 2px;
+  height: 17px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.progress .mark img,
+.progress .mark svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  color: var(--gold);
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.22));
+  transition: filter 0.2s;
+}
+
+.progress .mark.off img,
+.progress .mark.off svg {
+  filter: grayscale(1) brightness(0.5) opacity(0.85);
+}
+
+.progress.lost .mark.off {
+  animation: star-lost 0.5s ease-out;
+}
+
+.progress em {
+  flex: none;
+  min-width: 30px;
+  font-style: normal;
+  font-family: var(--display);
+  font-size: 1.4rem;
+  color: #fbf1dc;
+}
+
+.play-screen .controls {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0 0 8px;
+}
+
+.play-screen .ctrl {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 2.6rem;
+  color: #5b3a22;
+  background: #fbf1dc;
+  box-shadow:
+    inset 0 0 0 4px #ead9b5,
+    0 5px 0 rgba(0, 0, 0, 0.18);
+  filter: none;
+}
+
+.play-screen .ctrl:active {
+  transform: translateY(3px);
+  filter: none;
+  box-shadow: inset 0 0 0 4px #ead9b5;
+}
+
+.play-screen .ctrl em {
+  top: -3px;
+  right: -7px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  box-shadow:
+    0 0 0 2.5px #fbf1dc,
+    0 3px 0 2px rgba(0, 0, 0, 0.18);
+}
+
+.play-screen .tip {
+  border: 0;
+  border-image: none;
+  border-radius: 20px;
+  padding: 12px 16px;
+  color: #4a2f1e;
+  background: #fbf1dc;
+  box-shadow:
+    inset 0 0 0 3px #ead9b5,
+    0 4px 0 rgba(0, 0, 0, 0.16);
+}
+
+/* 클리어하면 판을 위쪽 절반으로 올리고, 아래에서 결과 창이 올라온다 */
+.play-screen.cleared {
+  padding-bottom: 53dvh;
+}
+
+.play-screen.cleared .topbar {
+  visibility: hidden;
+}
+
+.play-screen.cleared .progress,
+.play-screen.cleared .controls {
+  display: none;
+}
+
+/* ───── 클리어: 아래에서 올라오는 창 ───── */
+
+.backdrop.sheet {
+  place-items: end center;
+  padding: 0 8px max(10px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent 35%, rgba(8, 5, 14, 0.3));
+  backdrop-filter: none;
+}
+
+.backdrop.sheet .modal {
+  position: relative;
+  width: min(calc(100% - 26px), 470px);
+  max-height: none;
+  margin: 0 0 13px;
+  padding: 62px 20px 20px;
+  gap: 12px;
+  overflow: visible;
+  border: 0;
+  border-image: none;
+  border-radius: 36px;
+  color: #4a2f1e;
+  background: #fbf1dc;
+  box-shadow:
+    0 0 0 10px #70435a,
+    0 0 0 13px #4f2c3d,
+    0 20px 30px 6px rgba(0, 0, 0, 0.45);
+  filter: none;
+  animation: sheet-in 0.38s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+
+.backdrop.sheet .modal::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed #e2cda2;
+  border-radius: 31px;
+  pointer-events: none;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(55%);
+    opacity: 0;
+  }
+}
+
+.backdrop.sheet > .clear-title {
+  position: absolute;
+  left: 50%;
+  top: max(4.5%, calc(env(safe-area-inset-top) + 16px));
+  width: min(88%, 430px);
+  margin: 0;
+  padding: 0 0 30px;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: clamp(2.6rem, 15vw, 4rem) !important;
+  line-height: 1;
+  white-space: nowrap;
+  color: #ffe27a;
+  -webkit-text-stroke: 9px #6b4226;
+  paint-order: stroke fill;
+  text-shadow: none;
+  background: var(--ui-ribbon) center bottom / 100% 64% no-repeat;
+  filter: drop-shadow(0 5px 0 rgba(60, 30, 10, 0.35)) drop-shadow(0 0 14px rgba(255, 220, 120, 0.45));
+  animation: star-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+  pointer-events: none;
+}
+
+.sheet .stars.big {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  margin: 0;
+  transform: translate(-50%, -60%);
+  font-size: 5.4rem;
+  gap: 0;
+}
+
+.sheet .stars.big i:nth-child(2) {
+  transform: translateY(-16px) scale(1.06);
+}
+
+.sheet .stars.big i:not(.on) img {
+  filter: grayscale(1) brightness(0.8) opacity(0.92);
+}
+
+.sheet .stars.big i.on img {
+  filter: drop-shadow(0 3px 0 rgba(150, 90, 0, 0.35)) drop-shadow(0 0 8px rgba(255, 210, 77, 0.6));
+}
+
+.sprig {
+  position: absolute;
+  z-index: 1;
+  width: 56px;
+  height: 56px;
+  background: var(--sprig) center / contain no-repeat;
+  pointer-events: none;
+}
+
+.sprig.tl {
+  left: -20px;
+  top: -22px;
+  transform: rotate(-35deg);
+}
+
+.sprig.tr {
+  right: -20px;
+  top: -22px;
+  transform: scaleX(-1) rotate(-35deg);
+}
+
+.sprig.bl {
+  left: -10px;
+  bottom: -12px;
+}
+
+.sprig.br {
+  right: -10px;
+  bottom: -12px;
+  transform: scaleX(-1);
+}
+
+.sheet .stats {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.sheet .stats > div,
+.sheet .stats .gold {
+  grid-column: auto;
+  height: 58px;
+  padding: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 18px;
+  color: #4a2f1e;
+  background: #f0e2c6;
+}
+
+.sheet .stats svg {
+  font-size: 1.7rem;
+  color: #5b3a22;
+}
+
+.sheet .stats > div:nth-child(2) svg {
+  color: #f0b429;
+}
+
+.sheet .stats b {
+  font-size: 1.65rem;
+  white-space: nowrap;
+}
+
+.sheet .btn.bonus {
+  gap: 8px;
+  font-size: 1.7rem;
+  color: #ffd95e;
+  min-height: 66px;
+}
+
+.sheet .btn.bonus b {
+  font-weight: 400;
+}
+
+.sheet .btn.bonus .ad-chip {
+  margin-right: 4px;
+  font-size: 0.85rem;
+  padding: 2px 8px;
+}
+
+.sheet .btn.big svg {
+  font-size: 2.4rem;
+  color: #4a2f1e;
+}
+
+.sheet .row {
+  justify-content: center;
+  gap: 12px;
+}
+
+.sheet .row .btn {
+  flex: 0 0 86px;
+  min-height: 64px;
+  font-size: 1.8rem;
+  color: #fbf1dc;
+}
+
+.sheet .world-done span {
+  color: #7a5a40;
+}
+
+.sheet .world-done b {
+  color: #b9770e;
+}
+
+/* ───── 꾸미기: 옷방 ───── */
+
+.cosmetics-screen {
+  padding: 0;
+  background: #2f2227;
+}
+
+.dress-room {
+  position: relative;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 1.25;
+  max-height: 47%;
+  background: #3a2a30 center top / cover no-repeat;
+}
+
+.dress-room::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20%;
+  background: linear-gradient(transparent, #2f2227);
+}
+
+.dress-fox {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  z-index: 1;
+  width: 78%;
+  height: auto;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.3));
+}
+
+.cosmetics-screen .topbar {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: max(12px, env(safe-area-inset-top));
+  z-index: 2;
+}
+
+.cosmetics-screen .topbar .round-btn svg {
+  transform: scaleX(-1);
+}
+
+.cosmetics-screen .tabs {
+  position: relative;
+  z-index: 2;
+  width: 64%;
+  margin: -24px auto 0;
+  padding: 0;
+  gap: 10px;
+  border-radius: 0;
+  background: none;
+}
+
+.cosmetics-screen .tabs button,
+.cosmetics-screen .tabs button.on {
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  color: #cbb9a8;
+  background: #5a4a4c;
+  box-shadow: inset 0 0 0 2.5px #7a6866;
+  filter: none;
+}
+
+.cosmetics-screen .tabs button.on {
+  color: #4a2f1e;
+  background: #f7e7c6;
+  box-shadow:
+    inset 0 0 0 2.5px #e6cf9d,
+    0 4px 0 #b99a6a;
+}
+
+.cosmetics-screen .tabs svg {
+  font-size: 1.9rem;
+}
+
+.cosmetics-screen .tabs b {
+  font-family: var(--display);
+  font-weight: 400;
+}
+
+.cosmetics-screen .inventory {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 108px;
+  margin: 12px 0 0;
+  padding: 6px 16px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.cosmetics-screen .inventory::-webkit-scrollbar {
+  display: none;
+}
+
+.cosmetics-screen .item,
+.cosmetics-screen .item.equipped {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  border-radius: 50%;
+  background: #4a3238;
+  box-shadow: inset 0 0 0 2.5px color-mix(in srgb, var(--c) 60%, #4a3238);
+  filter: none;
+}
+
+.cosmetics-screen .item::after {
+  display: none;
+}
+
+.cosmetics-screen .item canvas {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 50%;
+}
+
+.cosmetics-screen .item.missing canvas {
+  filter: brightness(0.5) saturate(0.65);
+}
+
+.cosmetics-screen .item.equipped {
+  width: 86px;
+  height: 86px;
+  background: #5a2f3a;
+  box-shadow:
+    inset 0 0 0 3.5px #ffd27a,
+    0 0 14px rgba(255, 200, 90, 0.55);
+}
+
+.cosmetics-screen .item em {
+  top: auto;
+  bottom: -9px;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  color: #4a2f1e;
+  background: #f0b429;
+  box-shadow: 0 0 0 2px #fff3d6;
+}
+
+.cosmetics-screen .item em.lock {
+  bottom: -7px;
+  width: auto;
+  height: auto;
+  font-size: 1.3rem;
+  color: #f3e3c3;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+}
+
+.strip-dots {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 0 10px;
+}
+
+.strip-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b5a5c;
+}
+
+.strip-dots i.on {
+  background: #f0b429;
+}
+
+.info-row {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  margin: 0 16px;
+}
+
+.cosmetics-screen .rates,
+.cosmetics-screen .pity {
+  height: 44px;
+  margin: 0;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  color: #f3e3c3;
+  background: #261a1e;
+  box-shadow: inset 0 0 0 2px #4a3a3c;
+}
+
+.cosmetics-screen .rates {
+  flex: 1;
+  flex-wrap: nowrap;
+  justify-content: space-around;
+  gap: 4px;
+  padding: 0 8px;
+  font-size: 0.82rem;
+}
+
+.cosmetics-screen .rates i {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.cosmetics-screen .pity {
+  flex: none;
+  gap: 5px;
+  padding: 0 14px;
+  font-family: var(--display);
+  font-size: 1.15rem;
+}
+
+.cosmetics-screen .pity i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4a3a3c;
+}
+
+.cosmetics-screen .pity i.on {
+  background: #c9a36a;
+}
+
+.pity-star {
+  width: 22px;
+  height: 22px;
+}
+
+.cosmetics-screen .pity b {
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.cosmetics-screen .gacha {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 8px 14px max(22px, env(safe-area-inset-bottom));
+}
+
+/* 상자가 놓인 나무 선반 */
+.cosmetics-screen .gacha::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52%;
+  background: linear-gradient(#5d4031, #3d281f);
+  box-shadow: inset 0 5px 0 #73503c;
+}
+
+.cosmetics-screen .chest {
+  flex: none;
+  width: 120px;
+  height: 102px;
+  margin: 0 auto 10px 4px;
+}
+
+.draw-btn {
+  position: relative;
+  flex: 0 1 96px;
+  height: 86px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-family: var(--display);
+  font-size: 1.2rem;
+  color: #4a2f1e;
+  background: #f7e7c6;
+  box-shadow:
+    inset 0 0 0 2.5px #e6cf9d,
+    0 5px 0 #b99a6a,
+    0 9px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.08s;
+}
+
+.draw-btn b {
+  font-weight: 400;
+}
+
+.draw-btn > .coin {
+  font-size: 1.55rem;
+}
+
+.draw-btn.multi {
+  flex-basis: 108px;
+  background: #f5c96a;
+  box-shadow:
+    inset 0 0 0 2.5px #e2ae45,
+    0 5px 0 #a87a2a,
+    0 9px 10px rgba(0, 0, 0, 0.3);
+}
+
+.draw-btn.multi b {
+  font-size: 1.3rem;
+}
+
+.draw-btn.multi > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.draw-btn.ad {
+  color: #fbf1dc;
+  background: #68b0aa;
+  box-shadow:
+    inset 0 0 0 2.5px #4f9a94,
+    0 5px 0 #357a75,
+    0 9px 10px rgba(0, 0, 0, 0.3);
+}
+
+.draw-btn.ad svg {
+  font-size: 2.2rem;
+  color: #fbf1dc;
+}
+
+.draw-btn.ad em {
+  position: absolute;
+  top: -9px;
+  right: -7px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-style: normal;
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+  background: #e0483b;
+  box-shadow: 0 0 0 2px #fbf1dc;
+}
+
+.draw-btn:active {
+  transform: translateY(4px);
+}
+
+.draw-btn:disabled {
+  filter: grayscale(0.8);
+  opacity: 0.7;
+}
+
+/* ───── 시안 대조 뒤의 손질 ───── */
+
+.story-book {
+  height: min(100cqh, 100cqw * 16 / 9 * 1.24);
+}
+
+.title-screen.home .mascot {
+  left: 43%;
+  width: min(86vw, 344px);
+  height: min(86vw, 344px);
+}
+
+.hud-chip {
+  white-space: nowrap;
+}
+
+.hud-chip.stage-title svg {
+  font-size: 1.6rem;
+}
+
+/* 결과 창이 떠 있는 동안 판은 제목 리본 아래, 창 위에 들어간다 */
+.play-screen.cleared {
+  padding-top: 11dvh;
+}
+
+.play-screen.cleared .topbar {
+  display: none;
+}
+
+.sprig.tl {
+  left: -12px;
+  top: -16px;
+}
+
+.sprig.tr {
+  right: -12px;
+  top: -16px;
+}
+
+.dress-room {
+  flex: 1 1 auto;
+  min-height: 36%;
+  max-height: 47%;
+  aspect-ratio: auto;
+}
+
+.dress-fox {
+  width: auto;
+  height: 82%;
+  bottom: 5%;
+}
+
+.cosmetics-screen .gacha {
+  flex: none;
+  height: 150px;
+}
+
+/* 긴 제목("빛을 되찾았어요!")도 리본 안에 들어오게 글자 수로 크기를 정한다 */
+.backdrop.sheet > .clear-title {
+  font-size: clamp(1.7rem, calc(min(100vw, 520px) * 0.74 / var(--n, 4)), 4rem) !important;
+  -webkit-text-stroke-width: clamp(5px, 0.14em, 9px);
+}
+
+.btn.big.play {
+  white-space: nowrap;
+}
+
+.btn.big.play b {
+  font-size: clamp(1.5rem, 8vw, 2.1rem);
+}
+
+/* ───── 좌우 정렬 손질 ───── */
+
+/* 알약: 동전과 숫자 묶음이 가운데에 오게 양쪽 여백을 맞춘다 */
+.hud-pill {
+  padding: 0 14px 0 11px;
+  gap: 7px;
+}
+
+/* 플레이 버튼: 세모 아이콘은 그림 칸의 왼쪽이 비어 있어 그만큼 당긴다 */
+.btn.big.play svg {
+  margin-left: -0.22em;
+  margin-right: -0.06em;
+}
+
+/* 등불 그림 위에서도 별 개수가 읽히게 바탕을 깐다 */
+.select-screen .total-stars {
+  padding: 2px 14px 2px 8px;
+  border-radius: 18px;
+  background: rgba(18, 24, 36, 0.62);
+}
+
+/* 세로가 짧은 화면(PC 창)에서도 칸과 별이 카드 밖으로 밀리지 않게, 칸 크기를 줄 높이에 맞춘다 */
+.select-screen .stage-grid {
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  align-content: stretch;
+  justify-items: center;
+}
+
+.select-screen .stage-wrap {
+  min-height: 0;
+  width: 100%;
+  justify-content: center;
+}
+
+.select-screen .stage,
+.select-screen .stage.cleared,
+.select-screen .stage.locked {
+  flex: 0 1 auto;
+  width: auto;
+  height: calc(100% - 18px);
+  max-width: 100%;
+  max-height: 96px;
+  min-height: 0;
+  font-size: clamp(1.1rem, 5.6cqw, 1.5rem);
+}
+
+.select-screen .world {
+  container-type: inline-size;
+}
+
+/* 지금 스테이지의 여우는 칸 위로 올려 번호를 가리지 않는다 */
+.stage .peek {
+  bottom: 70%;
+  width: 72%;
+}
+
+/* 꾸미기: 남는 세로 공간은 상자 선반 위에 둔다 */
+.cosmetics-screen .gacha {
+  margin-top: auto;
+}
+
+.dress-room {
+  flex: 1 1 0;
+}
+
+/* 칸은 제 자리(열 폭과 줄 높이) 안에서 가장 큰 정사각형으로 그린다 */
+.select-screen .stage-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.select-screen .stage-wrap {
+  container-type: size;
+  height: 100%;
+}
+
+.select-screen .stage,
+.select-screen .stage.cleared,
+.select-screen .stage.locked {
+  flex: none;
+  width: min(100cqw, 100cqh - 18px, 96px);
+  height: min(100cqw, 100cqh - 18px, 96px);
+  max-width: none;
+  max-height: none;
+  font-size: clamp(1.1rem, 34cqw, 1.5rem);
+}
+
+/* 좁은 화면에서 골드 숫자가 옆 버튼 밑으로 밀려 들어가지 않게 한다 */
+.select-screen .topbar {
+  gap: 8px;
+}
+
+.select-screen .topbar .gold-pill {
+  flex: none;
+}
+
+.select-screen .pill-btn {
+  min-width: clamp(56px, 20vw, 92px);
+}
