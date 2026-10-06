@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>구덩이와 무너진 바닥 시안</title>
+    <style>
+      :root { color-scheme: dark; --s: 78px; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1300px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      h2 { font-size: 1.2rem; margin: 30px 0 8px; color: #ffd24d; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      .row { display: flex; flex-wrap: wrap; gap: 22px; }
+      figure { margin: 0; width: calc(var(--s) * 3 + 24px); }
+      figure.now .board { outline: 2px dashed #6a5f85; outline-offset: 3px; }
+      .board { display: grid; grid-template-columns: repeat(3, var(--s)); gap: 0; padding: 12px; border-radius: 16px; background: #3a2a2a; }
+      .cell { position: relative; width: var(--s); height: var(--s); background: center / cover no-repeat; box-shadow: inset 0 0 0 1px rgba(70, 45, 25, 0.16); }
+      .cell img { position: absolute; inset: 1%; width: 98%; height: 98%; object-fit: contain; }
+      .cell img.full { inset: 0; width: 100%; height: 100%; }
+      .cell img.sunk { inset: 9%; width: 82%; height: 82%; filter: brightness(0.6); }
+      .cell img.fox { inset: -14% -10% 2%; width: 120%; height: 112%; }
+      figcaption b { display: block; margin-top: 10px; font-size: 1rem; color: #ffd24d; }
+      figcaption span { display: block; color: #cfc7e0; font-size: 0.9rem; }
+      figcaption em { display: block; margin-top: 4px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+      ul { margin: 6px 0 0; padding-left: 1.2em; color: #cfc7e0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>구덩이와 무너진 바닥 시안</h1>
+      <p class="lead">구덩이 그림이 너무 사실적이라 게임 톤과 따로 놀고, 용암 동굴에서 바닥이 무너진 자리에도 같은 구덩이가 나와 어색하다는 의견으로 만든 시안입니다. 게임에는 아직 넣지 않았습니다.</p>
+
+      <h2>1. 구덩이 (던전 공통)</h2>
+      <p class="lead">돌 테두리를 그린 예전 그림 대신, 블록들과 같은 장난감 톤의 구멍만 그렸습니다. 바닥은 그리지 않아서 던전마다 그 던전의 바닥 위에 놓입니다. 아래 칸은 구덩이 뒤에 상자로 메운 모습입니다.</p>
+      <div class="row" id="pits"></div>
+
+      <h2>2. 용암 동굴에서 바닥이 무너진 자리</h2>
+      <p class="lead">가운데 칸이 무너진 자리이고, 그 왼쪽은 아직 무너지지 않은 바닥입니다. 아래 줄 가운데는 무너진 자리를 상자로 메운 모습입니다(무너진 자리는 구덩이처럼 블록으로 메울 수 있습니다).</p>
+      <div class="row" id="falls"></div>
+
+      <h2>고를 때 볼 점</h2>
+      <ul>
+        <li><b>A 뚫린 바닥</b>: "아예 무너졌다"에 가장 가깝습니다. 다만 뚫린 곳에 상자를 밀어 넣어 메운다는 규칙과는 덜 어울립니다(상자가 아래로 떨어질 것처럼 보입니다).</li>
+        <li><b>B 용암 웅덩이</b>: 용암 동굴답고, 들어갈 수 없다는 것이 한눈에 보입니다. 상자를 넣으면 굳어서 디딤돌이 된다고 읽힙니다.</li>
+        <li><b>C 가라앉는 조각</b>: 방금 무너졌다는 느낌이 가장 큽니다. 조각 때문에 "밟을 수 있나?" 하고 헷갈릴 수 있습니다.</li>
+        <li><b>D 꺼진 구덩이</b>: 새 구덩이와 같은 모양에 깨진 테두리만 더한 것입니다. 구덩이와 규칙이 같다는 것이 가장 분명합니다.</li>
+        <li>무너지는 순간의 움직임은 고른 그림에 맞춰 넣습니다. 예: A는 조각이 아래로 떨어지고, B는 바닥이 녹으며 용암이 차오릅니다.</li>
+        <li>다른 던전(8번 미궁의 심장)에도 무너지는 바닥이 나옵니다. 그곳의 바닥은 보라색이라 B·C를 고르면 색을 따로 맞추거나 D를 쓰는 편이 자연스럽습니다.</li>
+      </ul>
+    </main>
+    <script>
+      const SP = '../../public/assets/sprites/';
+      const SRC = 'crumble/';
+      const cell = (floor, ...imgs) => `<div class="cell" style="background-image:url(${SP}floor_${floor}.png)">${imgs.map(([src, cls]) => `<img class="${cls ?? ''}" src="${src}" alt="" />`).join('')}</div>`;
+      // 구덩이: 던전 여섯 곳의 바닥 위에 새 구덩이, 그리고 예전 구덩이
+      const pits = document.getElementById('pits');
+      const pit = (title, text, floor, src, cls, now) => `
+        <figure class="${now ? 'now' : ''}"><div class="board">
+          ${cell(floor, [SP + `wall_${floor}.png`])}${cell(floor)}${cell(floor, [SP + 'block_normal.png'])}
+          ${cell(floor)}${cell(floor, [src, cls])}${cell(floor, [src, cls])}
+          ${cell(floor, [src, cls], [SP + 'block_normal.png', 'sunk'])}${cell(floor)}${cell(floor, [SP + `wall_${floor}.png`])}
+        </div><figcaption><b>${title}</b><span>${text}</span></figcaption></figure>`;
+      pits.innerHTML =
+        pit('지금 (예전 그림)', '돌 테두리가 있는 사실적인 구덩이.', 1, '../source-old/v4/tile_pit-realistic.png', 'full', true) +
+        [[1, '무너진 유적'], [2, '버려진 광산'], [3, '얼음 동굴'], [7, '쌍둥이 신전'], [8, '미궁의 심장']].map(([w, name]) => pit(`새 구덩이 · ${name}`, '바닥은 그 던전의 것, 구멍만 공통.', w, SRC + 'pit.png')).join('');
+      // 무너진 바닥: 용암 동굴
+      const falls = document.getElementById('falls');
+      const fall = (title, text, src, cls, now) => `
+        <figure class="${now ? 'now' : ''}"><div class="board">
+          ${cell(6, [SP + 'wall_6.png'])}${cell(6)}${cell(6, ['../source-old/v4/tile_crumble-realistic.png', 'full'])}
+          ${cell(6, ['../source-old/v4/tile_crumble-realistic.png', 'full'])}${cell(6, [src, cls])}${cell(6)}
+          ${cell(6)}${cell(6, [src, cls], [SP + 'block_normal.png', 'sunk'])}${cell(6, [SP + 'wall_6.png'])}
+        </div><figcaption><b>${title}</b><span>${text}</span></figcaption></figure>`;
+      falls.innerHTML =
+        fall('지금', '무너지면 사실적인 돌 구덩이가 나온다.', '../source-old/v4/tile_pit-realistic.png', 'full', true) +
+        fall('A 뚫린 바닥', '판이 통째로 뚫려 저 아래 용암빛이 보인다.', SRC + 'fall_a.png') +
+        fall('B 용암 웅덩이', '바닥이 녹아 용암이 고였다.', SRC + 'fall_b.png') +
+        fall('C 가라앉는 조각', '깨진 바닥 조각이 용암에 가라앉는 중.', SRC + 'fall_c.png') +
+        fall('D 꺼진 구덩이', '새 구덩이에 깨진 테두리와 바닥의 불빛.', SRC + 'fall_d.png');
+    </script>
+  </body>
+</html>

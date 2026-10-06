@@ -1,5 +1,6 @@
 // Rev2D로 캐릭터를 관절 리깅해 동작 프레임을 뽑고 한 장의 시트로 묶는다.
-// 사용: node tools/make-anim.mjs [스킨 id 쉼표 목록]   (기본: art/parts에 부위 그림이 다 있는 모든 스킨)
+// 사용: node tools/make-anim.mjs [스킨 id 쉼표 목록] [--hd]   (기본: art/parts에 부위 그림이 다 있는 모든 스킨)
+// --hd: 게임용 시트 대신, 크게 보이는 화면(타이틀, 옷방)에서 쓰는 큰 시트(<id>_hd.webp, 한 칸 480px)만 만든다.
 // 부위 그림(art/parts/<id>_body.png, tail.png, tailtip.png)은 tools/gen-parts.mjs로 만든다.
 // 몸통은 시안의 앉은 자세를 그대로 옮긴 한 장이고(머리, 귀, 앞발, 뒷발 포함), 꼬리만 관절로 붙인다.
 // 팔다리를 따로 붙이면 부품이 떨어져 보이므로, 몸의 움직임은 전부 격자 변형과 뛰기로 낸다.
@@ -48,6 +49,16 @@ const FACES = ['closed', 'happy', 'strain', 'startle']; // 얼굴 덧그림의 �
 const COLS = 10;
 
 const transparent = { r: 0, g: 0, b: 0, alpha: 0 };
+// 큰 시트. 타이틀과 옷방에서는 캐릭터가 화면 폭만큼 크게 나와 240px 칸으로는 흐려 보인다("해상도가 떨어져 보인다"는 피드백).
+// 리그의 치수는 그대로 두고 부위 그림만 TEX배로 넣어 480px 칸으로 뽑는다. 구성은 src/render/draw.ts의 HD_ANIMS와 같아야 한다.
+const HD = process.argv.includes('--hd');
+const TEX = HD ? 2 : 1;
+const HD_FRAME = 480;
+const HD_CLIPS = [
+  ['idle', 48],
+  ['win', 30],
+  ['sleep', 40],
+];
 
 // 여백을 잘라 낸 그림과 그 크기
 async function trimmed(file) {
@@ -174,15 +185,13 @@ async function prepare(id) {
   const scale = Math.min(BODY_BOX[0] / body.w, BODY_BOX[1] / body.h);
   const bw = Math.round(body.w * scale);
   const bh = Math.round(body.h * scale);
-  const bodyBuf = await sharp(body.data).resize(bw, bh).png().toBuffer();
-
-
-  writeFileSync(resolve(WORK, 'body.png'), bodyBuf);
+  const bodyBuf = await sharp(body.data).resize(bw, bh).png().toBuffer(); // 눈을 찾는 데 쓰는 1배 그림
+  writeFileSync(resolve(WORK, 'body.png'), TEX === 1 ? bodyBuf : await sharp(body.data).resize(bw * TEX, bh * TEX).png().toBuffer());
   const eyes = await findEyes(bodyBuf, bw, bh);
   if (!eyes) console.warn(`${id}: 눈을 찾지 못해 표정 없이 만든다`);
   for (const kind of FACES) {
     const svg = eyes ? faceSvg(bw, bh, eyes, kind) : Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${bw}" height="${bh}"/>`);
-    writeFileSync(resolve(WORK, `face_${kind}.png`), await sharp(svg).png().toBuffer());
+    writeFileSync(resolve(WORK, `face_${kind}.png`), await sharp(svg, { density: 72 * TEX }).png().toBuffer());
   }
 
   const bodyX = CX - bw / 2;
@@ -190,16 +199,18 @@ async function prepare(id) {
 
   // 꼬리: 털 위에 결정을 얹어 한 장으로 만들고, 바깥으로 기울여 둔다. 결정은 어떤 스킨을 입어도 그대로 남는다.
   const fur = await limb(id, 'tail');
-  const fw = Math.round((fur.w * TAIL_H) / fur.h);
+  const tailH = TAIL_H * TEX;
+  const tipH = TIP_H * TEX;
+  const fw = Math.round((fur.w * tailH) / fur.h);
   const tip = await trimmed(`${PARTS}/tailtip.png`);
-  const tw = Math.round((tip.w * TIP_H) / tip.h);
-  const over = Math.round(TIP_H * 0.5); // 결정이 털 끝 위로 솟는 높이
+  const tw = Math.round((tip.w * tipH) / tip.h);
+  const over = Math.round(tipH * 0.5); // 결정이 털 끝 위로 솟는 높이
   const uw = Math.max(fw, tw);
-  const uh = TAIL_H + over;
+  const uh = tailH + over;
   const upright = await sharp({ create: { width: uw, height: uh, channels: 4, background: transparent } })
     .composite([
-      { input: await sharp(fur.data).resize(fw, TAIL_H, { fit: 'fill' }).png().toBuffer(), left: Math.round((uw - fw) / 2), top: over },
-      { input: await sharp(tip.data).resize(tw, TIP_H, { fit: 'fill' }).png().toBuffer(), left: Math.round((uw - tw) / 2), top: 0 },
+      { input: await sharp(fur.data).resize(fw, tailH, { fit: 'fill' }).png().toBuffer(), left: Math.round((uw - fw) / 2), top: over },
+      { input: await sharp(tip.data).resize(tw, tipH, { fit: 'fill' }).png().toBuffer(), left: Math.round((uw - tw) / 2), top: 0 },
     ])
     .png()
     .toBuffer();
@@ -208,10 +219,10 @@ async function prepare(id) {
   // 기울인 그림 안에서 꼬리가 몸에 붙는 점(원래 그림의 아래쪽 가운데)
   const rad = (TAIL_TILT * Math.PI) / 180;
   const tail = {
-    w: tilted.info.width,
-    h: tilted.info.height,
-    baseX: tilted.info.width / 2 - (uh / 2) * Math.sin(rad),
-    baseY: tilted.info.height / 2 + (uh / 2) * Math.cos(rad),
+    w: Math.round(tilted.info.width / TEX),
+    h: Math.round(tilted.info.height / TEX),
+    baseX: (tilted.info.width / 2 - (uh / 2) * Math.sin(rad)) / TEX,
+    baseY: (tilted.info.height / 2 + (uh / 2) * Math.cos(rad)) / TEX,
   };
   // 동작 자세: 움직이거나 밀 때 앉은 그림 대신 보여 줄 그림
   let poses = null;
@@ -225,7 +236,7 @@ async function prepare(id) {
       const sc = Math.min(box[0] / img.w, box[1] / img.h);
       const w = Math.round(img.w * sc);
       const h = Math.round(img.h * sc);
-      writeFileSync(resolve(WORK, `pose_${k}.png`), await sharp(img.data).resize(w, h).png().toBuffer());
+      writeFileSync(resolve(WORK, `pose_${k}.png`), await sharp(img.data).resize(w * TEX, h * TEX).png().toBuffer());
       poses[k] = { w, h };
     }
   }
@@ -496,7 +507,7 @@ function rev2d(args) {
 
 mkdirSync(WORK, { recursive: true });
 mkdirSync(OUT, { recursive: true });
-const only = process.argv[2]?.split(',');
+const only = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2].split(',') : undefined;
 const skins = readdirSync(PARTS)
   .filter((f) => f.endsWith('_body.png'))
   .map((f) => f.slice(0, -9))
@@ -513,6 +524,21 @@ for (const id of skins) {
   if (first) {
     console.log(rev2d(['validate', 'blob.r2d.json']).trim().split('\n').slice(-3).join(' | '));
     first = false;
+  }
+  if (HD) {
+    const hd = [];
+    for (const [clip, count] of HD_CLIPS) {
+      const dir = resolve(WORK, 'frames', clip);
+      rev2d(['frames', 'blob.r2d.json', '-o', dir, '--anim', clip, '--frames', String(count), '--scale', String(HD_FRAME / CANVAS), '--bg', 'transparent', '--no-physics']);
+      for (const file of JSON.parse(readFileSync(resolve(dir, 'manifest.json'), 'utf8')).files) hd.push(resolve(dir, file));
+    }
+    const hdRows = Math.ceil(hd.length / COLS);
+    const out = await sharp({ create: { width: COLS * HD_FRAME, height: hdRows * HD_FRAME, channels: 4, background: transparent } })
+      .composite(hd.map((input, i) => ({ input, left: (i % COLS) * HD_FRAME, top: Math.floor(i / COLS) * HD_FRAME })))
+      .webp({ quality: 80, alphaQuality: 88, effort: 5 })
+      .toFile(`${OUT}/${id}_hd.webp`);
+    console.log(`${id.padEnd(10)} 큰 시트 ${hd.length}프레임 -> ${COLS * HD_FRAME}x${hdRows * HD_FRAME}  ${(out.size / 1024).toFixed(0)}KB`);
+    continue;
   }
   const frames = [];
   for (const [clip, count] of CLIPS) {

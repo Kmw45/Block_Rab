@@ -1676,6 +1676,109 @@ h2 {
   background: repeating-linear-gradient(-45deg, #ffd24d 0 12px, #f2b620 12px 24px);
 }
 
+/* 개발자 모드의 확인 도구 */
+button.dev-banner {
+  display: block;
+  width: auto;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dev-tools {
+  text-align: left;
+}
+
+/* 스테이지 화면: 가운데 카드의 진행도를 바로 바꾸는 막대 */
+.dev-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 6px 18px 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ffe9a8;
+  white-space: nowrap;
+}
+
+.dev-bar b {
+  min-width: 11.5em;
+  text-align: center;
+  font-weight: 800;
+}
+
+.dev-bar button {
+  min-width: 40px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  color: #111;
+  background: #ffd24d;
+  cursor: pointer;
+}
+
+.dev-tools .dev-h {
+  margin: 12px 0 6px;
+  font-weight: 800;
+}
+
+.dev-tools .dev-h small {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.dev-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dev-chip {
+  min-width: 38px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 800;
+  color: #111;
+  background: #ffe9a8;
+  cursor: pointer;
+}
+
+.dev-chip.on {
+  background: #f2b620;
+  box-shadow: inset 0 0 0 2px #111;
+}
+
+.dev-note {
+  margin: 10px 0 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.dev-solve {
+  align-self: center;
+  flex: none;
+  margin: 0 0 8px;
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #111;
+  background: repeating-linear-gradient(-45deg, #ffd24d 0 12px, #f2b620 12px 24px);
+  cursor: pointer;
+}
+
+.play-screen.cleared .dev-solve {
+  display: none;
+}
+
 /* ───── 연속 뽑기 ───── */
 
 .draw-row {
@@ -3901,4 +4004,128 @@ button.hud-chip {
 
 .select-screen .pill-btn {
   min-width: clamp(56px, 20vw, 92px);
+}
+
+/* 스테이지 칸은 던전마다 다르다(--tile-open, --tile-clear는 app.ts가 던전 카드에 넣는다).
+   아직 못 깬 칸은 그 던전의 어두운 칸에 밝은 숫자, 깬 칸은 밝게 빛나는 칸에 짙은 숫자다. */
+.select-screen .stage,
+.select-screen .stage.locked {
+  padding-top: 0;
+  color: #fbf1dc;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  background-image: var(--tile-open, var(--tile));
+}
+
+.select-screen .stage.cleared {
+  padding-top: 4%;
+  color: #4a2f1e;
+  text-shadow: none;
+  background-image: var(--tile-clear, var(--tile));
+}
+
+/* 타이틀 위쪽: 골드와 별 표시를 한 덩어리로 묶어 간판의 두 밧줄 사이에 둔다.
+   왼쪽 위에 따로 두었더니 왼쪽 밧줄이 표시를 가로질러 "타이틀과 숫자의 배치가 안 맞는다"는 피드백이 있었다.
+   밧줄은 화면 폭의 20%와 75%쯤에 있고 그 가운데는 47.5%다(간판의 글자도 같은 이유로 46.5%에 있다). */
+.title-screen.home .home-top {
+  left: 47.5%;
+  transform: translateX(-50%);
+  gap: 0;
+  height: 40px;
+  padding: 0 4px;
+  border-radius: 20px;
+  white-space: nowrap;
+  background: #4a2f1e;
+  box-shadow:
+    inset 0 0 0 2.5px #b98a55,
+    0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
+.title-screen.home .home-top .hud-pill {
+  height: auto;
+  padding: 0 10px 0 7px;
+  background: none;
+  box-shadow: none;
+}
+
+.title-screen.home .home-top .hud-pill + .hud-pill {
+  padding-left: 10px;
+  border-left: 2px solid rgba(185, 138, 85, 0.6);
+  border-radius: 0;
+}
+
+/* 장면 전환(별 조리개). 새 화면은 바로 올려 두고, 옛 화면을 그 위에 남겨 둔 채 조리개로 가린다(app.ts의 mount) */
+.screen {
+  animation: none;
+}
+
+.screen.leaving {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.iris {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  width: 100%;
+  height: 100%;
+}
+
+/* 플레이 화면의 버튼과 알약: 윗면, 테두리, 아래로 보이는 옆면이 있는 도톰한 모양.
+   색(--ui-*)은 던전마다 다르고 app.ts의 UI_TONES가 넣는다. 광택은 넣지 않는다(화풍이 무광이다). */
+.play-screen {
+  --ui-face: #fbf1dc;
+  --ui-rim: #e3cfa2;
+  --ui-lip: #b79a66;
+  --ui-ink: #5b3a22;
+}
+
+.play-screen .ctrl,
+.play-screen .round-btn,
+.play-screen .hud-chip {
+  color: var(--ui-ink);
+  background: linear-gradient(#fff, var(--ui-face) 38%, color-mix(in srgb, var(--ui-face) 80%, var(--ui-rim)));
+  transition: transform 0.07s;
+}
+
+.play-screen .ctrl {
+  box-shadow:
+    inset 0 0 0 4px var(--ui-rim),
+    inset 0 -7px 0 0 color-mix(in srgb, var(--ui-rim) 55%, transparent),
+    0 7px 0 var(--ui-lip),
+    0 12px 12px rgba(0, 0, 0, 0.32);
+}
+
+.play-screen .ctrl:active {
+  transform: translateY(6px);
+  box-shadow:
+    inset 0 0 0 4px var(--ui-rim),
+    inset 0 -3px 0 0 color-mix(in srgb, var(--ui-rim) 55%, transparent),
+    0 1px 0 var(--ui-lip);
+}
+
+.play-screen .round-btn,
+.play-screen .hud-chip {
+  box-shadow:
+    inset 0 0 0 3px var(--ui-rim),
+    inset 0 -5px 0 0 color-mix(in srgb, var(--ui-rim) 55%, transparent),
+    0 5px 0 var(--ui-lip),
+    0 9px 10px rgba(0, 0, 0, 0.28);
+}
+
+.play-screen .round-btn:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 0 0 3px var(--ui-rim),
+    0 1px 0 var(--ui-lip);
+}
+
+.play-screen .hud-chip svg,
+.play-screen .hud-chip.stage-title svg,
+.play-screen .hud-chip b,
+.play-screen .hud-chip.stage-title b,
+.play-screen .hud-chip.moves b {
+  color: var(--ui-ink);
 }

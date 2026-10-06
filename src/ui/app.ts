@@ -59,7 +59,7 @@ import {
   worldPassed,
   worldStars,
 } from '../game/store';
-import { BoardView } from '../render/boardView';
+import { BoardView, MOVE_TIME } from '../render/boardView';
 import { AnimName, SHEET_SCALE, drawBlock, drawCharacter, drawTrail } from '../render/draw';
 import { burst } from '../render/fx';
 import { getSheet, getSprite } from '../render/sprites';
@@ -99,17 +99,120 @@ const ICON = {
   film: svg('<rect x="3" y="5" width="18" height="14" rx="2.4"/><path d="M10.2 9.2v5.6l4.8-2.8z" fill="#3f8f8a"/><g fill="#3f8f8a"><rect x="4.4" y="6.6" width="1.8" height="1.8"/><rect x="4.4" y="11.1" width="1.8" height="1.8"/><rect x="4.4" y="15.6" width="1.8" height="1.8"/><rect x="17.8" y="6.6" width="1.8" height="1.8"/><rect x="17.8" y="11.1" width="1.8" height="1.8"/><rect x="17.8" y="15.6" width="1.8" height="1.8"/></g>', true),
 };
 
+// 장면 전환은 별 조리개다(사용자 선택, 시안 art/concepts/transitions.html의 A): 지금 화면이 별 모양으로 오므라들어
+// 닫히고, 다음 화면에서 별이 다시 열린다. 새 화면은 바로 올려 두고(크기를 재는 코드가 곧바로 돌 수 있게) 옛 화면을
+// 그 위에 잠깐 남겨 둔 채 가린다. 옛 화면은 문서에서 새 화면 뒤에 두어 document.querySelector가 새 화면을 먼저 찾게 한다.
+const IRIS_CLOSE = 0.36;
+const IRIS_HOLD = 0.05;
+const IRIS_OPEN = 0.46;
+let irisCanvas: HTMLCanvasElement | null = null;
+let irisRun = 0;
+
+// 화면마다 시선이 모이는 자리(가로, 세로 비율). 별이 여기로 오므라들고 여기서 열린다
+function irisFocus(node: HTMLElement): [number, number] {
+  if (node.classList.contains('title-screen')) return [0.43, 0.63]; // 여우
+  if (node.classList.contains('play-screen')) return [0.5, 0.46]; // 판
+  return [0.5, 0.5];
+}
+
+function runIris(old: HTMLElement, node: HTMLElement, atSwap: () => void): void {
+  const canvas = (irisCanvas ??= Object.assign(document.createElement('canvas'), { className: 'iris' }));
+  const ctx = canvas.getContext('2d')!;
+  const id = ++irisRun;
+  const [ox, oy] = irisFocus(old);
+  const [nx, ny] = irisFocus(node);
+  let t0 = 0;
+  let swapped = false;
+  canvas.style.display = 'block';
+  sfx.iris();
+  const frame = (ms: number) => {
+    if (id !== irisRun) return;
+    if (!t0) t0 = ms;
+    const t = (ms - t0) / 1000;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.round(app.clientWidth * dpr);
+    const h = Math.round(app.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    let k: number;
+    let fx = ox;
+    let fy = oy;
+    if (t < IRIS_CLOSE) {
+      const p = t / IRIS_CLOSE;
+      k = 1 - p * p * p; // 처음에는 천천히, 끝에서 빠르게 닫힌다
+    } else {
+      if (!swapped) {
+        swapped = true;
+        old.remove();
+        atSwap();
+      }
+      const p = Math.max(0, Math.min(1, (t - IRIS_CLOSE - IRIS_HOLD) / IRIS_OPEN));
+      k = p * p * p;
+      fx = nx;
+      fy = ny;
+    }
+    // 별의 오목한 꼭짓점까지가 화면을 다 덮어야 하므로 반지름을 넉넉히 잡는다
+    const r = k * Math.hypot(w, h) * 2;
+    const star = () => {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const a = k * 1.2 + (i * Math.PI) / 5 - Math.PI / 2;
+        const d = i % 2 ? r * 0.52 : r;
+        ctx.lineTo(fx * w + Math.cos(a) * d, fy * h + Math.sin(a) * d);
+      }
+      ctx.closePath();
+    };
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#2b1d36';
+    ctx.fillRect(0, 0, w, h);
+    if (k > 0.001) {
+      ctx.globalCompositeOperation = 'destination-out';
+      star();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = '#ffd978';
+      ctx.lineWidth = w * 0.018;
+      ctx.lineJoin = 'round';
+      star();
+      ctx.stroke();
+    }
+    if (t >= IRIS_CLOSE + IRIS_HOLD + IRIS_OPEN) {
+      canvas.style.display = 'none';
+      return;
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
 function mount(node: HTMLElement, world?: number): void {
   dispose?.();
   dispose = null;
-  const th = WORLDS[(world ?? 1) - 1];
-  const root = document.documentElement.style;
-  root.setProperty('--bg-top', th.bgTop);
-  root.setProperty('--bg-bottom', th.bgBottom);
-  root.setProperty('--accent', th.accent);
-  root.setProperty('--accent-dark', th.accentDark);
+  const applyTheme = () => {
+    const th = WORLDS[(world ?? 1) - 1];
+    const root = document.documentElement.style;
+    root.setProperty('--bg-top', th.bgTop);
+    root.setProperty('--bg-bottom', th.bgBottom);
+    root.setProperty('--accent', th.accent);
+    root.setProperty('--accent-dark', th.accentDark);
+  };
   node.classList.add('screen');
-  app.replaceChildren(node);
+  app.querySelectorAll(':scope > .leaving').forEach((n) => n.remove()); // 앞선 전환이 끝나기 전에 또 바뀐 경우
+  const old = app.querySelector<HTMLElement>(':scope > .screen');
+  // 같은 화면을 다시 그리는 것(설정을 바꿨을 때, 스테이지 화면의 갱신)은 전환 없이 바꾼다. 플레이에서 플레이로(다음 단계)는 전환한다
+  const redraw = !!old && [...old.classList].some((c) => c.endsWith('-screen') && c !== 'play-screen' && node.classList.contains(c));
+  if (!old || redraw || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    irisRun++;
+    if (irisCanvas) irisCanvas.style.display = 'none';
+    applyTheme();
+    app.replaceChildren(node, ...(irisCanvas ? [irisCanvas] : []));
+    return;
+  }
+  old.classList.add('leaving');
+  runIris(old, node, applyTheme);
+  app.replaceChildren(node, old, irisCanvas!);
 }
 
 function html(markup: string): HTMLElement {
@@ -237,16 +340,42 @@ function showSettings(rerender: () => void): void {
 
 // 화면 위에서 움직이는 캐릭터(홈, 결과 창). 캔버스가 화면에서 사라지면 스스로 멈춘다.
 // clip: 지금 재생할 동작과 그 동작 안에서의 시간을 돌려준다.
-function startMascot(canvas: HTMLCanvasElement, clip: (time: number) => { name: AnimName; t: number }): void {
+// hd: 크게 보이는 캐릭터(타이틀, 옷방). 캔버스를 화면의 실제 픽셀 수에 맞추고 큰 시트로 그린다.
+// 그릴 시트가 다 올 때까지는 그 스킨으로 바꾸지 않는다. 시트가 없을 때의 정지 그림은 크기와 자리가 달라서, 섞여 보이면
+// "처음에 위치가 이상하거나 크기가 다르게 보인다"는 피드백이 있었다. 옷을 갈아입을 때는 새 옷의 시트가 올 때까지
+// 입고 있던 옷을 그대로 보여 주다가 바뀌는 순간 onSwap을 부른다(옷방은 그때 점프한다. 먼저 뛰면 흐린 시트로 뛰게 된다).
+function startMascot(canvas: HTMLCanvasElement, clip: (time: number) => { name: AnimName; t: number }, hd = false, onSwap?: () => void): void {
+  let shown = ''; // 지금 그리고 있는 스킨
+  let wanted = '';
+  let wantedAt = 0;
   const ctx = canvas.getContext('2d')!;
+  if (hd) {
+    const css = canvas.getBoundingClientRect().width;
+    if (css) canvas.width = canvas.height = Math.round(css * Math.min(devicePixelRatio || 1, 3));
+  }
   const size = canvas.width;
   const frame = (ms: number) => {
     if (!canvas.isConnected) return;
     requestAnimationFrame(frame);
     const time = ms / 1000;
     ctx.clearRect(0, 0, size, size);
+    if (save.skin !== shown) {
+      if (wanted !== save.skin) {
+        wanted = save.skin;
+        wantedAt = time;
+      }
+      // 큰 시트를 쓰는 화면은 큰 시트를 기다린다. 너무 오래 안 오면(처음 1.5초, 갈아입을 때 4초) 보통 시트로 보여 준다
+      const big = hd && !!getSheet(wanted + '_hd');
+      const small = !!getSheet(wanted);
+      if (hd ? big || (small && time - wantedAt > (shown ? 4 : 1.5)) : small) {
+        const swapped = shown !== '';
+        shown = wanted;
+        if (swapped) onSwap?.();
+      }
+    }
+    if (!shown) return;
     // 동작 시트 한 칸이 캔버스에 꼭 들어가게 그린다(귀와 점프가 잘리지 않게)
-    drawCharacter(ctx, save.skin, size / 2, size * 0.645, (size / SHEET_SCALE) * 0.98, 2, time, 1, clip(time));
+    drawCharacter(ctx, shown, size / 2, size * 0.645, (size / SHEET_SCALE) * 0.98, 2, time, 1, clip(time), hd);
   };
   requestAnimationFrame(frame);
 }
@@ -255,6 +384,22 @@ function startMascot(canvas: HTMLCanvasElement, clip: (time: number) => { name: 
 const CHEST_ANIMS = { idle: [0, 16, 10], shake: [16, 20, 20] } as const;
 const CHEST_COLS = 6;
 const CHEST_FRAME = 256;
+
+// 플레이 화면의 버튼 색: [윗면, 테두리, 아래로 보이는 옆면, 아이콘]. 던전마다 판의 둘레 턱(board_N)과 같은 재질로 맞춘다.
+// 처음에는 모든 던전이 납작한 크림색 버튼이었는데 "플랫해 보인다, 스테이지에 맞게 약간 입체적으로"라는 피드백이 있었다.
+const UI_TONES: [string, string, string, string][] = [
+  ['#fbf1dc', '#e3cfa2', '#b79a66', '#5b3a22'], // 1 사암
+  ['#f6dcab', '#c99555', '#8a5a2b', '#4a2c12'], // 2 나무 판자
+  ['#f4fbff', '#bfe0f5', '#7fa9cc', '#2f5a7a'], // 3 눈과 얼음
+  ['#f8e6c6', '#c0566a', '#7a2638', '#5a1f2c'], // 4 붉은 책과 호두나무
+  ['#ffe9a8', '#d9a441', '#9a6a1c', '#5a3a0c'], // 5 황동
+  ['#ffdcb6', '#e2703a', '#7a2c14', '#5a2410'], // 6 달궈진 돌
+  ['#fff6f4', '#f0b8c4', '#c98a9a', '#7a4a5a'], // 7 분홍 상감 대리석
+  ['#f1e6ff', '#b693f0', '#6f4bb0', '#45297a'], // 8 자수정
+];
+
+// 꾹 누르고 있을 때 다음 칸으로 가는 간격(ms). 한 칸을 가는 시간과 같아야 칸과 칸이 끊기지 않고 이어진다
+const HOLD_REPEAT = Math.round(MOVE_TIME * 1000);
 
 // 플레이 화면에서 뒤로 갈 곳. 홈의 플레이 버튼으로 들어왔으면 홈, 스테이지 메뉴에서 골랐으면 메뉴로 돌아간다.
 let playOrigin: 'home' | 'select' = 'home';
@@ -323,7 +468,7 @@ export function showTitle(): void {
       if (awakeAt < 0) awakeAt = time;
       if (time - jumpAt < 1) return { name: 'win', t: time - jumpAt };
       return { name: time - awakeAt > 12 ? 'sleep' : 'idle', t: time };
-    });
+    }, true);
   }
   if (homeBg || getSprite('ui_title_art')) return; // 그림이 있으면 움직이는 도형 그림은 쓰지 않는다
 
@@ -441,6 +586,10 @@ export function showSelect(focus?: number): void {
     const open = storyPagesOpen(worldPassed(w));
     const old = getSprite('ui_scene_' + w) ?? getSprite('ui_banner_' + w);
     const sceneBg = `url('${sceneUrl(w, open)}')${old ? `, url('${old.src}')` : ''}`;
+    // 스테이지 칸은 던전마다 다르다: 아직 못 깬 칸은 그 던전의 어두운 칸, 깬 칸은 밝게 빛나는 칸
+    const openTile = getSprite('ui_stage_open_' + w);
+    const clearTile = getSprite('ui_stage_cleared_' + w);
+    const tileVars = (openTile ? `;--tile-open:url('${openTile.src}')` : '') + (clearTile ? `;--tile-clear:url('${clearTile.src}')` : '');
     const cells = worldLevels(w)
       .map((lv) => {
         const stars = save.stars[lv.id] ?? 0;
@@ -450,7 +599,7 @@ export function showSelect(focus?: number): void {
       })
       .join('');
     list += `
-      <section class="world ${unlocked ? '' : 'locked'} ${lit ? 'lit' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark}">
+      <section class="world ${unlocked ? '' : 'locked'} ${lit ? 'lit' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark}${tileVars}">
         <div class="card-scene" style="background-image:${sceneBg}">
           <div class="card-plate">
             <span class="plate-no">${art('emblem_' + w, '', 'emblem')}<b>${w}</b></span>
@@ -477,14 +626,24 @@ export function showSelect(focus?: number): void {
         <span class="total-stars">${starsHtml(1)}<b>${totalStars}</b>/${LEVELS.length * 3}</span>
         <button class="round-btn plum" data-a="tutorial" aria-label="${t('tutReplay')}" title="${t('tutReplay')}">${ICON.retry}</button>
       </div>
-      ${DEV_MODE ? '<div class="dev-banner">DEV · 스테이지와 치장 전부 열림 · 광고 없음 · 별도 저장</div>' : ''}
+      ${DEV_MODE ? '<button class="dev-banner" data-a="dev">DEV · 전부 열림 · 광고 없음 · 별도 저장 · <u>확인 도구 열기</u></button>' : ''}
+      ${
+        DEV_MODE
+          ? `<div class="dev-bar" title="가운데 카드의 던전에서 깬 단계 수를 바꾼다. 4, 8, 12를 넘으면 카드의 그림이 바뀐다">
+               <span>그림 확인</span>
+               <button data-step="-4">-4</button><button data-step="-1">-1</button>
+               <b data-dev-count></b>
+               <button data-step="1">+1</button><button data-step="4">+4</button>
+             </div>`
+          : ''
+      }
       <div class="world-list">${list}</div>
       <div class="pager">${dots}</div>
     </div>`);
   mount(el, lastWorld);
   const bg = getSprite('ui_select_bg');
   if (bg) el.style.backgroundImage = `url('${bg.src}')`;
-  // 스테이지 칸은 던전과 상관없이 같은 그림(덩굴 두른 크림색 칸)을 쓴다
+  // 던전의 칸 그림이 없을 때 쓰는 공통 칸(덩굴 두른 크림색 칸)
   const tile = getSprite('ui_stage_cleared_1');
   if (tile) el.style.setProperty('--tile', `url('${tile.src}')`);
   const worldList = el.querySelector<HTMLElement>('.world-list')!;
@@ -500,6 +659,8 @@ export function showSelect(focus?: number): void {
     });
     dotEls.forEach((d, i) => d.classList.toggle('on', i === best));
     cards.forEach((c, i) => c.classList.toggle('front', i === best));
+    const devCount = el.querySelector('[data-dev-count]');
+    if (devCount) devCount.textContent = `던전 ${best + 1} · ${worldPassed(best + 1)}/${LEVELS_PER_WORLD} · ${storyPagesOpen(worldPassed(best + 1))}장`;
   };
   worldList.scrollLeft = center(cards[lastWorld - 1]);
   mark();
@@ -507,6 +668,16 @@ export function showSelect(focus?: number): void {
   el.querySelector('.pager')!.addEventListener('click', (e) => {
     const go = (e.target as HTMLElement).dataset.go;
     if (go) worldList.scrollTo({ left: center(cards[Number(go) - 1]), behavior: 'smooth' });
+  });
+  const frontWorld = () => Number(cards.find((c) => c.classList.contains('front'))?.dataset.world) || lastWorld;
+  el.querySelector('[data-a=dev]')?.addEventListener('click', () => showDevTools(frontWorld()));
+  // 개발자 모드: 가운데 카드의 진행도를 바로 바꾸고 화면을 다시 그려, 카드의 그림이 바뀌는 것을 본다
+  el.querySelector('.dev-bar')?.addEventListener('click', (e) => {
+    const step = Number((e.target as HTMLElement).closest<HTMLElement>('[data-step]')?.dataset.step);
+    if (!step) return;
+    const w = frontWorld();
+    devSetProgress(w, Math.max(0, Math.min(LEVELS_PER_WORLD, worldPassed(w) + step)));
+    showSelect(w);
   });
   el.querySelector('[data-a=tutorial]')!.addEventListener('click', () => showTutorial(0));
   el.querySelector('[data-a=back]')!.addEventListener('click', showTitle);
@@ -550,6 +721,73 @@ export function showSelect(focus?: number): void {
 }
 
 
+// 개발자 모드: 그 던전의 앞 count단계까지 깬 것으로 기록을 맞춘다(앞의 던전은 모두 깬 것으로, 뒤는 안 깬 것으로)
+function devSetProgress(world: number, count: number): void {
+  for (const l of LEVELS) {
+    if (l.world < world || (l.world === world && l.index <= count)) save.stars[l.id] = save.stars[l.id] || 3;
+    else delete save.stars[l.id];
+  }
+  save.skipped = null;
+  save.lastLevel = `${world}-${Math.min(LEVELS_PER_WORLD, count + 1)}`;
+  persist();
+}
+
+// 개발자 모드(?dev)의 확인 도구: 던전 이야기를 바로 넘겨 보고, 진행도를 원하는 데로 맞춘다.
+// 새 이야기가 열리는 순간은 진행도를 3, 7, 11로 맞추고 다음 단계에서 "자동 풀기"를 누르면 볼 수 있다.
+function showDevTools(world: number): void {
+  const chips = (attr: string, values: number[], on: number) => values.map((v) => `<button class="dev-chip ${v === on ? 'on' : ''}" data-${attr}="${v}">${v}</button>`).join('');
+  const worlds = Array.from({ length: WORLD_COUNT }, (_, i) => i + 1);
+  const m = modal(`
+    <h2>확인 도구</h2>
+    <p class="dev-h">던전 이야기 보기 <small>네 장과 다음 던전의 첫 장</small></p>
+    <div class="dev-row">${chips('story', worlds, 0)}</div>
+    <p class="dev-h">진행도 맞추기 <small>던전을 고르고, 그 던전에서 깬 단계 수를 누른다</small></p>
+    <div class="dev-row" data-worlds>${chips('w', worlds, world)}</div>
+    <div class="dev-row">${chips('n', [0, 3, 4, 7, 8, 11, 12], -1)}</div>
+    <p class="dev-h">소리 듣기 <small>위에서 고른 던전의 재질 소리</small></p>
+    <div class="dev-row"><button class="dev-chip" data-snd="wall">벽</button><button class="dev-chip" data-snd="step">발소리</button><button class="dev-chip" data-snd="push">밀기</button><button class="dev-chip" data-snd="edge">가장자리</button></div>
+    <p class="dev-note">앞의 던전은 모두 깬 것으로 맞춘다. 3, 7, 11로 맞춘 뒤 다음 단계에 들어가 "자동 풀기"를 누르면 클리어 연출과 새 이야기가 열리는 것을 볼 수 있다.</p>
+    <div class="row">
+      <button class="btn ghost" data-a="intro">도입 이야기</button>
+      <button class="btn ghost" data-a="reset">기록 초기화</button>
+    </div>`);
+  m.el.querySelector('.modal')!.classList.add('dev-tools');
+  let picked = world;
+  m.el.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('button');
+    if (!btn) return;
+    const d = btn.dataset;
+    if (d.w) {
+      picked = Number(d.w);
+      m.el.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', b === btn));
+    } else if (d.snd) {
+      if (d.snd === 'step') sfx.step(picked);
+      else if (d.snd === 'push') sfx.pushOf('normal', picked);
+      else sfx.bumpOf(d.snd, picked);
+    } else if (d.story) {
+      const w = Number(d.story);
+      m.close();
+      const pages = Array.from({ length: STORY_PAGES_PER_WORLD }, (_, i) => storyPage(w, i + 1));
+      if (w < WORLD_COUNT) pages.push(storyPage(w + 1, 1));
+      showBook(pages, w, () => showSelect(w));
+    } else if (d.n) {
+      const count = Number(d.n);
+      devSetProgress(picked, count);
+      m.close();
+      showSelect(picked);
+      toast(`던전 ${picked}: ${count}단계까지 깬 것으로 맞췄어요`);
+    } else if (d.a === 'intro') {
+      m.close();
+      showStory(() => showSelect(picked));
+    } else if (d.a === 'reset') {
+      m.close();
+      resetSave();
+      showSelect(1);
+      toast('기록을 지웠어요');
+    }
+  });
+}
+
 // ───────── 플레이 ─────────
 
 // 튜토리얼 단계를 플레이 화면으로 연다
@@ -590,6 +828,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
                <em></em>
              </div>`
       }
+      ${DEV_MODE && !isTut ? '<button class="dev-solve" data-a="devsolve">자동 풀기</button>' : ''}
       <footer class="controls">
         <button class="ctrl" data-a="undo" aria-label="${t('undo')}">${ICON.undoFlat}</button>
         <button class="ctrl" data-a="restart" aria-label="${t('restart')}">${ICON.restartFlat}</button>
@@ -612,6 +851,11 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   view.skin = save.skin;
   view.trail = save.trail;
   view.load(def, WORLDS[level.world - 1], state, level.world);
+  // 장면 전환으로 가려져 있는 동안에는 블록이 튀어나오는 연출을 미룬다
+  if (app.querySelector(':scope > .leaving')) view.delayIntro(IRIS_CLOSE + IRIS_HOLD + 0.12);
+  // 버튼과 알약은 그 던전의 판 테두리와 같은 재질 색으로 도톰하게 만든다
+  const tone = UI_TONES[level.world - 1] ?? UI_TONES[0];
+  (['face', 'rim', 'lip', 'ink'] as const).forEach((k, i) => el.style.setProperty('--ui-' + k, tone[i]));
   // 던전마다의 배경 그림
   const bgImg = getSprite('bg_' + level.world);
   if (bgImg) el.style.setProperty('--play-img', `url("${bgImg.src}")`);
@@ -685,7 +929,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     if (!res.ok) {
       // 부딪힌 것에 따라 흔들림과 소리가 다르다
       const hit = view.bump(res, dir);
-      sfx.bumpOf(hit);
+      sfx.bumpOf(hit, level.world);
       vibrate(hit === 'edge' || hit === 'oneway' || hit === 'pit' ? 8 : hit === 'fixed' || hit === 'door' ? [12, 30, 12] : 15);
       clearTimeout(holdTimer);
       holdDir = null;
@@ -713,12 +957,12 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     guide();
     if (res.pushed >= 0) {
       if (def.kinds[res.pushed] === 'ice') sfx.slide(Math.abs(res.to - res.from) / (dir % 2 === 0 ? def.w : 1));
-      else sfx.pushOf(def.kinds[res.pushed]);
+      else sfx.pushOf(def.kinds[res.pushed], level.world);
       if (res.becameFixed) sfx.lock();
       if (res.sunk) sfx.sink();
       vibrate(10);
     } else if (res.slid > 0) sfx.slide(res.slid);
-    else sfx.move();
+    else sfx.step(level.world);
     if (res.teleported) sfx.warp();
     refresh();
     if (res.won) win();
@@ -819,6 +1063,24 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     }, 30);
   };
 
+  // 개발자 모드: 지금 상태에서 해답대로 끝까지 움직여 클리어 연출과 그 뒤의 흐름을 바로 본다
+  const autoSolve = () => {
+    if (finished || busy) return;
+    let path = solve(def, state, { timeMs: 2000 }).path;
+    if (!path.length) {
+      // 지금 상태에서 못 풀면 처음으로 돌아가 저장된 해답을 쓴다
+      restart();
+      path = [...level.solution].map((c) => DIR_CHARS.indexOf(c) as Dir);
+    }
+    let i = 0;
+    const tick = () => {
+      if (finished || !el.isConnected || i >= path.length) return;
+      move(path[i++]);
+      setTimeout(tick, HOLD_REPEAT + 20);
+    };
+    tick();
+  };
+
   // 탐색이 시간 안에 끝나지 않으면 처음 상태로 돌아가 저장된 해답으로 안내한다
   const restartHintFallback = () => {
     state = initialState(def);
@@ -846,7 +1108,11 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   };
   const skipBtn = el.querySelector<HTMLElement>('[data-a=skip]');
   if (skipBtn && (save.stars[level.id] ?? 0) > 0) skipBtn.style.visibility = 'hidden';
-  if (!isTut) showRuleCard(def);
+  // 새 규칙 카드는 장면 전환이 다 열린 뒤에 띄운다
+  if (!isTut) {
+    if (app.querySelector(':scope > .leaving')) setTimeout(() => el.isConnected && showRuleCard(def), (IRIS_CLOSE + IRIS_HOLD + IRIS_OPEN) * 1000);
+    else showRuleCard(def);
+  }
 
   // 스와이프하면 한 칸, 누르고 있으면 같은 방향으로 계속 이동한다
   let anchor: [number, number] | null = null;
@@ -860,7 +1126,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   const repeat = () => {
     if (holdDir === null) return;
     move(holdDir);
-    holdTimer = window.setTimeout(repeat, 170);
+    holdTimer = window.setTimeout(repeat, HOLD_REPEAT);
   };
   const board = el.querySelector<HTMLElement>('.board-wrap')!;
   board.addEventListener('pointerdown', (e) => {
@@ -885,11 +1151,16 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   board.addEventListener('pointercancel', stopHold);
 
   const KEYS: Record<string, Dir> = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3, w: 0, d: 1, s: 2, a: 3 };
+  let lastKeyMove = 0;
   const onKey = (e: KeyboardEvent) => {
     if (document.querySelector('.backdrop')) return;
     const dir = KEYS[e.key];
     if (dir !== undefined) {
       e.preventDefault();
+      // 키를 누르고 있으면 키보드가 아주 빠르게 되풀이해 보낸다. 한 칸을 다 간 뒤에만 다음 칸으로 가게 한다
+      const at = performance.now();
+      if (e.repeat && at - lastKeyMove < HOLD_REPEAT - 8) return;
+      lastKeyMove = at;
       move(dir);
     } else if (e.key === 'z' || e.key === 'Backspace') undo();
     else if (e.key === 'r') restart();
@@ -905,6 +1176,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     } else if (a === 'undo') undo();
     else if (a === 'restart') restart();
     else if (a === 'hint' && !isTut) hint();
+    else if (a === 'devsolve') autoSolve();
     else if (a === 'skip') skip();
     else if (a === 'tutskip') {
       save.tutorial = TUTORIALS.length;
@@ -1212,7 +1484,7 @@ export function showCosmetics(): void {
   startMascot(el.querySelector<HTMLCanvasElement>('.dress-fox')!, (time) => {
     last = time;
     return time - jumpAt < 1 ? { name: 'win', t: time - jumpAt } : { name: 'idle', t: time };
-  });
+  }, true, () => (jumpAt = last));
 
   const inv = el.querySelector<HTMLElement>('.inventory')!;
   const stripDots = el.querySelector<HTMLElement>('.strip-dots')!;
@@ -1255,9 +1527,11 @@ export function showCosmetics(): void {
       sfx.deny();
       return;
     }
+    const before = save.skin;
     equip(btn.dataset.id!);
     getSheet(save.skin);
-    jumpAt = last;
+    // 같은 옷을 다시 누르면 바로 뛰고, 옷이 바뀌면 새 옷의 그림이 온 순간에 뛴다(startMascot의 onSwap)
+    if (save.skin === before) jumpAt = last;
     toast(btn.dataset.name!);
     fill();
   });

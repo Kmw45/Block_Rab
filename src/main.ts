@@ -2,7 +2,7 @@ import './styles.css';
 import { sfx, unlockAudio } from './game/audio';
 import { DEV_MODE, LEVELS, loadSave, save } from './game/store';
 import { initFx } from './render/fx';
-import { loadSprites } from './render/sprites';
+import { getSheet, loadSprites } from './render/sprites';
 import { applyArt, showCosmetics, showPlay, showSelect, showStory, showTitle, showTutorial } from './ui/app';
 
 loadSave();
@@ -23,6 +23,9 @@ document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 void loadSprites().then(() => {
   applyArt();
+  // 타이틀의 캐릭터가 바로 또렷하게 나오도록 장착한 스킨의 시트를 미리 부른다
+  getSheet(save.skin + '_hd');
+  getSheet(save.skin);
   // 개발 서버와 개발자 모드(?dev) 전용 바로가기: go=select | cosmetics | story | play:3-2 | tut:0, gold=500
   if (import.meta.env.DEV || DEV_MODE) {
     if (DEV_MODE) document.documentElement.classList.add('dev-mode');

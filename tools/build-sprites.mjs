@@ -41,7 +41,9 @@ function spec(key) {
   if (/^bg_\d$/.test(key)) return { size: 720, height: 1280, fill: 1, opaque: true };
   if (key === 'exit_star') return { size: 256, fill: 0.94 };
   if (key === 'exit_pad') return { size: 256, fill: 0.98 };
-  if (key === 'floor' || ['tile_pit', 'tile_ice', 'tile_switch', 'tile_door', 'tile_crumble'].includes(key)) return { size: 256, fill: 1, opaque: true };
+  // 구덩이와 무너지는 바닥은 바닥 없이 물건만 그린 투명한 그림이다(던전마다 바닥이 달라서 그 위에 얹는다)
+  if (['tile_pit', 'tile_crumble', 'tile_crumbled'].includes(key)) return { size: 256, fill: 0.97 };
+  if (key === 'floor' || ['tile_ice', 'tile_switch', 'tile_door'].includes(key)) return { size: 256, fill: 1, opaque: true };
   if (key === 'tile_portal') return { size: 256, fill: 0.96 };
   if (key === 'ui_bg') return { size: 540, height: 810, fill: 1, opaque: true };
   if (key.startsWith('story_')) return { size: 640, height: 640, fill: 1, opaque: true };

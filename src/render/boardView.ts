@@ -34,7 +34,10 @@ const BACK_CRYSTAL_Y = 0.07;
 // 등을 보이는 동작. 앞모습 동작과 바뀌는 순간에는 종이를 뒤집듯 납작해졌다가 펴진다
 const BACK_ANIMS: ReadonlySet<AnimName> = new Set(['walkU', 'pushU', 'idleB', 'bumpB']);
 const TURN_TIME = 0.12;
-const MOVE_TIME = 0.16;
+// 한 칸을 가는 시간과 곡선은 사용자가 고른 "부드러운 가감속"이다(시안 art/concepts/movement.html의 A).
+// 0.16초에 출발이 가장 빠른 곡선이었을 때는 "너무 툭 튀어나가는 느낌"이라는 피드백이 있었다.
+// 바꾸면 app.ts의 연속 이동 간격(HOLD_REPEAT)도 같이 맞춘다. 간격이 이보다 짧으면 칸마다 가다 말고 다시 출발해 덜컥거린다.
+export const MOVE_TIME = 0.22;
 // 디오라마 판(board_N 그림, 폭 900px로 줄인 것)에서 잰 치수(px): side는 좌우 턱, top은 위쪽 턱, bottom은 아래쪽 턱과 앞 단면을 합친 높이.
 // slant는 그림이 위로 갈수록 좁아지는 정도(맨 위에서 한쪽이 안으로 들어온 px)다. 판의 칸은 반듯한 네모이므로 그릴 때 이만큼 펴서 쓴다(straighten).
 // 그림마다 다르므로 그림을 다시 뽑으면 다시 잰다. 턱보다 조금 작게 적어야 판 안쪽 색이 바닥 밖으로 비치지 않는다.
@@ -54,6 +57,19 @@ const SLAB_FRONT = 0.62; // 앞 단면은 위에서 내려다본 것처럼 세�
 const WIN_RISE = 0.5;
 const WIN_MERGE = 1.05;
 const STAR_HEIGHT = 0.46; // 출구 위에 떠 있는 별의 높이(칸 단위)
+
+// 벽에 부딪혔을 때 튀는 것(던전마다의 벽 재질): 먼지 수, 조각의 색과 수, 조각이 별 모양인지, 불꽃의 색.
+// 소리는 audio.ts의 WALL_SOUNDS가 같은 재질로 낸다.
+const WALL_BITS: { dust: number; chips: [string, number, boolean?][]; sparks?: string }[] = [
+  { dust: 4, chips: [['#9a94a6', 3]] }, // 1 이끼 낀 돌
+  { dust: 3, chips: [['#b98a55', 3], ['#5fd0c0', 2, true]] }, // 2 나뭇조각과 광석
+  { dust: 0, chips: [['#ffffff', 9], ['#dceeff', 5]] }, // 3 눈가루
+  { dust: 1, chips: [['#f3e6c8', 5], ['#b85a6e', 2]] }, // 4 종잇조각
+  { dust: 0, chips: [['#d9a441', 2]], sparks: '#ffe9a8' }, // 5 황동
+  { dust: 1, chips: [['#3a3438', 3], ['#ff9a4d', 3]], sparks: '#ffb070' }, // 6 흑요석과 불티
+  { dust: 2, chips: [['#ffffff', 3], ['#f0c8cf', 2]] }, // 7 대리석
+  { dust: 0, chips: [['#c9a2ff', 5, true], ['#ffffff', 2, true]], sparks: '#e3ccff' }, // 8 자수정
+];
 
 // 막혔을 때 부딪힌 것. 흔들림과 소리가 이것에 따라 달라진다
 export type BumpKind = 'edge' | 'wall' | 'fixed' | 'door' | 'oneway' | 'pit' | 'normal' | 'rail' | 'ice' | 'link' | 'locked';
@@ -95,7 +111,8 @@ function now(): number {
 
 function tweenPos(t: Tween, time: number): [number, number] {
   const k = Math.min(1, Math.max(0, (time - t.t0) / t.dur));
-  const e = 1 - (1 - k) * (1 - k) * (1 - k);
+  // 천천히 출발해 가운데서 가장 빠르고 천천히 멈춘다
+  const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
   return [t.fx + (t.tx - t.fx) * e, t.fy + (t.ty - t.fy) * e];
 }
 
@@ -132,7 +149,7 @@ export class BoardView {
   private shown?: { name: AnimName; t: number; look: Dir };
   private world = 1; // 던전 번호. 판, 벽, 바닥 그림을 고른다
   private shakeLink = false; // 쌍둥이 블록은 함께 흔들린다
-  private cellFx = new Map<number, { t0: number; dir: Dir; kind: BumpKind | 'press' }>(); // 칸마다의 반응(벽의 흔들림, 문의 덜컹거림 등)
+  private cellFx = new Map<number, { t0: number; dir: Dir; kind: BumpKind | 'press' | 'fall' }>(); // 칸마다의 반응(벽의 흔들림, 문의 덜컹거림 등)
   private rings: { x: number; y: number; t0: number; life: number; color: string; r0: number; r1: number }[] = []; // 바닥에 누워 퍼지는 고리
   private starAng = 0; // 출구의 별이 도는 각도
   private animUntil = 0; // 구덩이에 가라앉은 정도(0~1)
@@ -175,6 +192,11 @@ export class BoardView {
     this.setState(state, true);
     this.resize();
     if (!this.raf) this.raf = requestAnimationFrame(this.frame);
+  }
+
+  // 블록과 캐릭터가 튀어나오는 등장을 늦춘다(장면 전환으로 가려져 있는 동안)
+  delayIntro(seconds: number): void {
+    this.introT0 += seconds;
   }
 
   stop(): void {
@@ -238,9 +260,11 @@ export class BoardView {
       // 밟고 떠난 바닥이 무너진다
       const [kx, ky] = this.xy(res.crumbled);
       this.camShake = Math.max(this.camShake, 0.03);
-      for (let i = 0; i < 9; i++) {
-        this.spawn(kx + 0.5, ky + 0.55, { color: 'rgba(120,90,80,0.8)', speed: 1.3, life: 0.5, size: 0.22, tex: 'fx_dust', grow: 1 });
-      }
+      // 바닥이 깨져 용암에 가라앉는다: 그림이 바뀌는 동안(drawTiles의 'fall') 불티가 튀고 고리가 번진다
+      this.cellFx.set(res.crumbled, { t0: time, dir, kind: 'fall' });
+      this.rings.push({ x: kx + 0.5, y: ky + 0.5, t0: time, life: 0.45, color: '#ffb070', r0: 0.2, r1: 0.7 });
+      for (let i = 0; i < 4; i++) this.spawn(kx + 0.5, ky + 0.55, { color: 'rgba(120,90,80,0.8)', speed: 1.1, life: 0.45, size: 0.2, tex: 'fx_dust', grow: 1 });
+      for (let i = 0; i < 8; i++) this.spawn(kx + 0.5, ky + 0.5, { color: i % 2 ? '#ffd27a' : '#ff8a3d', speed: 1.6, life: 0.5 + Math.random() * 0.3, size: 0.05, grav: -1.2, vy: -0.8 });
     }
     // 스위치가 눌리거나 풀리면 스위치에서 고리가 퍼지고 문이 덜컹거린다
     if (doorsOpen(this.def, before) !== doorsOpen(this.def, res.state)) {
@@ -408,8 +432,10 @@ export class BoardView {
       for (let i = 0; i < n; i++) this.spawn(hx, hy, { color, speed: 2, life: 0.3, size: 0.13, tex: 'fx_spark', ...back });
     };
     if (kind === 'wall') {
-      dust(4);
-      chips(3, '#9a94a6');
+      const bits = WALL_BITS[this.world - 1] ?? WALL_BITS[0];
+      if (bits.dust) dust(bits.dust);
+      for (const [color, n, star] of bits.chips) chips(n, color, star);
+      if (bits.sparks) sparks(4, bits.sparks);
     } else if (kind === 'fixed' || kind === 'locked') {
       dust(4);
       this.camShake = Math.max(this.camShake, 0.02);
@@ -889,8 +915,22 @@ export class BoardView {
           ctx.stroke();
         }
       } else if (t === TILE_PIT || t === TILE_CRUMBLE) {
-        const img = getSprite('tile_pit');
-        if (img) ctx.drawImage(img, x, y, s, s);
+        // 구덩이는 구멍, 무너진 바닥은 깨진 조각이 용암에 가라앉는 그림이다
+        const img = (t === TILE_CRUMBLE ? getSprite('tile_crumbled') : undefined) ?? getSprite('tile_pit');
+        const ffx = this.cellFx.get(i);
+        const fk = ffx && ffx.kind === 'fall' ? (time - ffx.t0) / 0.38 : 1;
+        if (img && fk < 1) {
+          // 무너지는 순간: 멀쩡하던 바닥이 작아지며 가라앉고 그 아래에서 새 그림이 드러난다
+          const whole = getSprite('tile_crumble');
+          ctx.globalAlpha = Math.min(1, fk * 1.6);
+          ctx.drawImage(img, x, y, s, s);
+          if (whole) {
+            const k = 1 - fk * 0.3;
+            ctx.globalAlpha = 1 - fk;
+            ctx.drawImage(whole, cx - (s * k) / 2, cy - (s * k) / 2 + s * 0.06 * fk, s * k, s * k);
+          }
+          ctx.globalAlpha = 1;
+        } else if (img) ctx.drawImage(img, x, y, s, s);
         else {
           ctx.fillStyle = '#07050c';
           rr(ctx, x + s * 0.1, y + s * 0.1, s * 0.8, s * 0.8, s * 0.2);
@@ -1385,7 +1425,7 @@ export class BoardView {
       ctx.globalAlpha = 1;
       return;
     }
-    const hop = Math.sin(mk * Math.PI) * s * 0.07;
+    const hop = Math.sin(mk * Math.PI) * s * 0.06;
     const warp = Math.min(1, (time - this.warpT0) / 0.22);
     const intro = this.introScale(time, 0) * (0.35 + 0.65 * (1 - Math.pow(1 - warp, 3)));
     if (intro <= 0) return;

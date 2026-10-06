@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>장면 전환 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1400px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      h2 { font-size: 1.2rem; margin: 28px 0 8px; color: #ffd24d; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      .wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: #231d30; border-radius: 14px; overflow: hidden; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #332a47; vertical-align: top; }
+      th { color: #b9b0cc; font-weight: 600; }
+      .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+      button { padding: 6px 14px; border: 0; border-radius: 999px; background: #2d2540; color: #f3eefc; font: inherit; font-size: 0.9rem; cursor: pointer; }
+      button.on { background: #ffd24d; color: #2a1c05; }
+      .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
+      figure { margin: 0; }
+      .phone { position: relative; aspect-ratio: 390 / 844; border-radius: 18px; overflow: hidden; background: #100d17; perspective: 900px; cursor: pointer; }
+      .phone img, .phone canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .phone img { object-fit: cover; backface-visibility: hidden; will-change: transform, opacity; }
+      figcaption b { display: block; margin-top: 10px; font-size: 1rem; color: #ffd24d; }
+      figcaption span { display: block; color: #cfc7e0; font-size: 0.9rem; }
+      figcaption em { display: block; margin-top: 4px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+      ul { margin: 6px 0 0; padding-left: 1.2em; color: #cfc7e0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>장면 전환 시안</h1>
+      <p class="lead">지금은 화면이 바뀔 때 아무 연출 없이 바로 바뀝니다. 전환 방식 다섯 가지를 실제 게임 화면(타이틀 → 스테이지 → 플레이)으로 돌려 봤습니다. 화면을 누르면 그 시안만 다시 재생합니다. 게임에는 아직 넣지 않았습니다.</p>
+      <div class="bar">
+        <button id="all" class="on">모두 재생</button>
+        <button id="slow">느리게 보기 (1/3)</button>
+      </div>
+      <div class="row" id="row"></div>
+
+      <h2>상용 게임은 어떻게 하나</h2>
+      <div class="wrap">
+        <table>
+          <tr><th>방식</th><th>참고 게임</th><th>특징</th><th>시안</th></tr>
+          <tr><td>모양 조리개(화면이 한 점으로 오므라들었다 열림)</td><td>슈퍼 마리오, 별의 커비, 동물의 숲</td><td>캐릭터나 목표에 시선을 모으고 닫힌다. 귀엽고 "한 판이 끝났다"는 느낌이 뚜렷하다. 0.8초쯤으로 긴 편이라 자주 나오면 답답할 수 있다.</td><td>A</td></tr>
+          <tr><td>종이를 넘기거나 접는다</td><td>페이퍼 마리오, 그림책 형식의 이야기 게임</td><td>그림책 설정과 가장 잘 맞는다. 이야기 화면과 한 벌로 읽힌다. 입체 회전이라 낮은 사양 기기에서 무거울 수 있다.</td><td>B</td></tr>
+          <tr><td>빛으로 하얗게 덮였다 걷힌다</td><td>모뉴먼트 밸리, 저니, 알토의 모험</td><td>차분하고 짧다(0.5초쯤). "빛을 되찾는다"는 설정과 맞는다. 어디서든 무난해서 기본 전환으로 쓰기 좋다.</td><td>C</td></tr>
+          <tr><td>타일이나 도형이 화면을 덮었다 걷힌다</td><td>포켓몬스터의 전투 진입, 여러 퍼즐 게임</td><td>블록 퍼즐이라는 정체성을 보여 준다. 경쾌하지만 움직이는 조각이 많아 가장 요란하다.</td><td>D</td></tr>
+          <tr><td>누른 것이 커지며 다음 화면이 된다</td><td>로얄 매치 같은 맵에서 스테이지로 들어가는 게임, 휴대폰의 앱 열기</td><td>"저 칸 안으로 들어간다"는 공간감이 생기고 가장 빠르다(0.4초쯤). 누른 자리를 기준으로 해야 해서 화면마다 따로 맞춰야 한다.</td><td>E</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top: 8px">위 표는 알고 있는 내용을 정리한 것이고, 이번에 각 게임을 다시 확인하지는 않았습니다.</p>
+
+      <h2>고를 때 볼 점</h2>
+      <ul>
+        <li>퍼즐 게임은 화면이 자주 바뀝니다(스테이지마다 두 번). 한 번에 0.5초를 넘기면 금방 길게 느껴집니다.</li>
+        <li>하나로 통일하지 않고 쓰임새를 나눌 수 있습니다. 예: 평소에는 C(빛), 스테이지에 들어가고 나올 때는 A(별 조리개), 이야기 화면은 B(책장).</li>
+        <li>다섯 가지 모두 코드로 그립니다. 새 그림은 필요 없습니다.</li>
+      </ul>
+    </main>
+    <script>
+      const SCREENS = ['title', 'select', 'play'].map((n) => `transitions/${n}.jpg`);
+      const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const clamp = (t) => Math.max(0, Math.min(1, t));
+      const TAU = Math.PI * 2;
+      function star(ctx, x, y, r, rot) {
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const a = rot + (i * TAU) / 10 - Math.PI / 2;
+          const k = i % 2 ? r * 0.52 : r;
+          ctx.lineTo(x + Math.cos(a) * k, y + Math.sin(a) * k);
+        }
+        ctx.closePath();
+      }
+      // 초점: 화면마다 시선이 가는 자리(여우, 가운데 카드, 판의 출구)
+      const FOCUS = [[0.43, 0.63], [0.5, 0.52], [0.5, 0.42]];
+      const DEMOS = [
+        {
+          id: 'iris', dur: 0.85, title: 'A 별 조리개', text: '화면이 별 모양으로 오므라들었다가 다음 화면에서 다시 열린다.', ref: '슈퍼 마리오, 별의 커비',
+          draw(ctx, w, h, p, d) {
+            const [fx, fy] = FOCUS[p < 0.5 ? d.from : d.to];
+            const k = p < 0.5 ? 1 - ease(p * 2) : ease((p - 0.5) * 2);
+            ctx.fillStyle = '#2b1d36';
+            ctx.fillRect(0, 0, w, h);
+            ctx.globalCompositeOperation = 'destination-out';
+            star(ctx, fx * w, fy * h, k * h * 1.5, k * 1.2);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            // 별의 테두리
+            if (k > 0.01) {
+              ctx.strokeStyle = '#ffd978';
+              ctx.lineWidth = w * 0.02;
+              ctx.lineJoin = 'round';
+              star(ctx, fx * w, fy * h, k * h * 1.5, k * 1.2);
+              ctx.stroke();
+            }
+            return p >= 0.5;
+          },
+        },
+        {
+          id: 'page', dur: 0.75, title: 'B 책장 넘기기', text: '지금 화면이 그림책의 한 쪽처럼 왼쪽으로 넘어가고 다음 화면이 드러난다.', ref: '페이퍼 마리오',
+          css(a, b, p) {
+            const k = ease(p);
+            b.style.opacity = 1;
+            b.style.filter = `brightness(${0.55 + 0.45 * k})`;
+            a.style.transformOrigin = '0% 50%';
+            a.style.transform = `rotateY(${-105 * k}deg)`;
+            a.style.filter = `brightness(${1 - 0.35 * k})`;
+            a.style.zIndex = 2;
+          },
+        },
+        {
+          id: 'glow', dur: 0.55, title: 'C 빛 번짐', text: '여우의 꼬리빛이 화면을 따뜻하게 덮었다가 걷히며 다음 화면이 나온다.', ref: '모뉴먼트 밸리, 저니',
+          draw(ctx, w, h, p, d) {
+            const [fx, fy] = FOCUS[d.from];
+            if (p < 0.5) {
+              const k = ease(p * 2);
+              const g = ctx.createRadialGradient(fx * w, fy * h, 0, fx * w, fy * h, h * (0.1 + k * 1.3));
+              g.addColorStop(0, `rgba(255,248,222,${Math.min(1, k * 1.6)})`);
+              g.addColorStop(0.6, `rgba(255,226,150,${k})`);
+              g.addColorStop(1, `rgba(255,226,150,${k * k})`);
+              ctx.fillStyle = g;
+            } else ctx.fillStyle = `rgba(255,244,214,${1 - ease((p - 0.5) * 2)})`;
+            ctx.fillRect(0, 0, w, h);
+            return p >= 0.5;
+          },
+        },
+        {
+          id: 'tiles', dur: 0.8, title: 'D 블록 타일', text: '크림색 블록이 대각선으로 차례차례 화면을 덮었다가 같은 순서로 걷힌다.', ref: '포켓몬스터의 전투 진입',
+          draw(ctx, w, h, p) {
+            const cols = 5;
+            const s = w / cols;
+            const rows = Math.ceil(h / s);
+            for (let y = 0; y < rows; y++) {
+              for (let x = 0; x < cols; x++) {
+                const delay = ((x + y) / (cols + rows)) * 0.55;
+                const t = p < 0.5 ? clamp((p * 2 - delay) / 0.4) : 1 - clamp(((p - 0.5) * 2 - delay) / 0.4);
+                if (t <= 0) continue;
+                const k = ease(t);
+                const cx = (x + 0.5) * s;
+                const cy = (y + 0.5) * s;
+                const half = (s * k) / 2 + 0.5;
+                ctx.fillStyle = (x + y) % 2 ? '#f6ecd2' : '#efe0bd';
+                ctx.strokeStyle = '#b98a55';
+                ctx.lineWidth = s * 0.05 * k;
+                ctx.beginPath();
+                ctx.roundRect(cx - half, cy - half, half * 2, half * 2, s * 0.16 * k);
+                ctx.fill();
+                if (k < 0.98) ctx.stroke();
+              }
+            }
+            return p >= 0.5;
+          },
+        },
+        {
+          id: 'zoom', dur: 0.45, title: 'E 안으로 들어가기', text: '누른 버튼이나 칸 쪽으로 화면이 커지며 다음 화면으로 넘어간다.', ref: '로얄 매치, 휴대폰의 앱 열기',
+          css(a, b, p, d) {
+            const k = ease(p);
+            // 누른 자리: 타이틀의 플레이 버튼, 스테이지의 지금 칸, 플레이의 뒤로 가기
+            const [ox, oy] = [[0.5, 0.86], [0.2, 0.67], [0.08, 0.05]][d.from];
+            a.style.transformOrigin = `${ox * 100}% ${oy * 100}%`;
+            a.style.transform = `scale(${1 + k * 1.6})`;
+            a.style.opacity = 1 - clamp(k * 1.5);
+            a.style.zIndex = 2;
+            b.style.opacity = 1;
+            b.style.transform = `scale(${0.9 + 0.1 * k})`;
+          },
+        },
+      ];
+
+      let speed = 1;
+      for (const d of DEMOS) {
+        const fig = document.createElement('figure');
+        fig.innerHTML = `<div class="phone"><img alt="" /><img alt="" /><canvas></canvas></div><figcaption><b>${d.title}</b><span>${d.text}</span><em>참고: ${d.ref} · ${d.dur}초</em></figcaption>`;
+        document.getElementById('row').append(fig);
+        const [a, b] = fig.querySelectorAll('img');
+        const cv = fig.querySelector('canvas');
+        Object.assign(d, { a, b, cv, ctx: cv.getContext('2d'), from: 0, to: 1, t0: -1, idle: 0.8 });
+        a.src = SCREENS[0];
+        b.src = SCREENS[1];
+        b.style.opacity = 0;
+        fig.querySelector('.phone').onclick = () => (d.idle = 0);
+      }
+      function reset(d) {
+        for (const img of [d.a, d.b]) img.removeAttribute('style');
+        d.a.src = SCREENS[d.from];
+        d.b.src = SCREENS[d.to];
+        d.b.style.opacity = 0;
+      }
+      let last = performance.now();
+      function tick(now) {
+        const dt = ((now - last) / 1000) * speed;
+        last = now;
+        for (const d of DEMOS) {
+          const w = (d.cv.width = d.cv.clientWidth * 2);
+          const h = (d.cv.height = d.cv.clientHeight * 2);
+          if (d.t0 < 0) {
+            d.idle -= dt / speed; // 쉬는 시간은 느리게 보기와 상관없다
+            if (d.idle <= 0) d.t0 = 0;
+            continue;
+          }
+          d.t0 += dt;
+          const p = clamp(d.t0 / d.dur);
+          if (d.draw) {
+            const swapped = d.draw(d.ctx, w, h, p, d);
+            d.a.style.opacity = swapped ? 0 : 1;
+            d.b.style.opacity = swapped ? 1 : 0;
+          } else d.css(d.a, d.b, p, d);
+          if (p >= 1) {
+            d.from = d.to;
+            d.to = (d.to + 1) % SCREENS.length;
+            reset(d);
+            d.t0 = -1;
+            d.idle = 1.5;
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      document.getElementById('all').onclick = () => DEMOS.forEach((d) => (d.idle = 0));
+      document.getElementById('slow').onclick = (e) => {
+        speed = speed === 1 ? 1 / 3 : 1;
+        e.target.classList.toggle('on', speed !== 1);
+      };
+    </script>
+  </body>
+</html>

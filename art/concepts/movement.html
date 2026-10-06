@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>이동 느낌 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1200px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      h2 { font-size: 1.2rem; margin: 28px 0 8px; color: #ffd24d; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      .wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: #231d30; border-radius: 14px; overflow: hidden; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #332a47; vertical-align: top; }
+      th { color: #b9b0cc; font-weight: 600; }
+      .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; margin: 0 -20px 16px; padding: 12px 20px; background: #17131fee; }
+      button { padding: 6px 14px; border: 0; border-radius: 999px; background: #2d2540; color: #f3eefc; font: inherit; font-size: 0.9rem; cursor: pointer; }
+      button.on { background: #ffd24d; color: #2a1c05; }
+      .demo { display: grid; grid-template-columns: minmax(0, 520px) 1fr; gap: 18px; align-items: center; margin-bottom: 14px; padding: 12px; border-radius: 18px; background: #231d30; }
+      .demo.now { outline: 2px dashed #4a4263; outline-offset: -2px; }
+      canvas.stage { width: 100%; border-radius: 12px; display: block; }
+      .demo b { display: block; font-size: 1.05rem; color: #ffd24d; }
+      .demo span { display: block; color: #cfc7e0; font-size: 0.92rem; }
+      .demo em { display: block; margin-top: 4px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+      canvas.curve { width: 150px; height: 60px; margin-top: 8px; border-radius: 8px; background: #17131f; }
+      ul { margin: 6px 0 0; padding-left: 1.2em; color: #cfc7e0; }
+      @media (max-width: 760px) { .demo { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>이동 느낌 시안</h1>
+      <p class="lead">지금은 한 칸을 0.16초에 가는데, 출발하는 순간이 가장 빠르고 뒤로 갈수록 느려지는 곡선이라 "툭 튀어나가는" 느낌이 납니다. 같은 여우를 다섯 가지 방식으로 움직여 봤습니다. 작은 그래프는 한 칸을 가는 동안의 위치 변화입니다(가로가 시간). 게임에는 아직 넣지 않았습니다.</p>
+      <div class="bar">
+        <button data-mode="tap" class="on">한 칸씩 누르기</button>
+        <button data-mode="hold">꾹 눌러 연속 이동</button>
+        <button data-slow="1">느리게 보기 (1/4)</button>
+      </div>
+      <div id="list"></div>
+
+      <h2>상용 게임은 어떻게 하나</h2>
+      <div class="wrap">
+        <table>
+          <tr><th>방식</th><th>참고 게임</th><th>특징</th><th>시안</th></tr>
+          <tr><td>천천히 출발해 천천히 멈춘다</td><td>모뉴먼트 밸리, A Monster's Expedition</td><td>가속과 감속이 있어 무게가 느껴지고 차분하다. 한 칸이 조금 길어져 빠르게 풀고 싶을 때는 굼뜨게 느껴질 수 있다.</td><td>A</td></tr>
+          <tr><td>칸마다 웅크렸다 폴짝 뛴다</td><td>크로시 로드</td><td>뛰기 전의 웅크림과 착지의 눌림이 있어 캐릭터가 살아 보인다. 작은 동물과 잘 맞는다. 동작이 커서 길게 이동하면 요란하다.</td><td>B</td></tr>
+          <tr><td>조금 지나쳤다가 제자리로 돌아온다</td><td>Patrick's Parabox 같은 요즘 퍼즐 게임, 휴대폰 화면의 스프링 움직임</td><td>빠르면서도 끝이 말랑하다. 반응은 지금처럼 즉각적이고 도착만 부드럽다.</td><td>C</td></tr>
+          <tr><td>꾹 누르면 칸이 이어져 일정한 속도로 걷는다</td><td>포켓몬스터, 젤다의 전설(2D) 같은 격자 이동 게임</td><td>칸마다 멈췄다 다시 출발하지 않아서 연속 이동이 매끄럽다. 한 칸만 갈 때는 부드럽게 출발하고 멈춘다.</td><td>D</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top: 8px">위 표는 알고 있는 내용을 정리한 것이고, 이번에 각 게임을 다시 확인하지는 않았습니다.</p>
+
+      <h2>고를 때 볼 점</h2>
+      <ul>
+        <li>"툭" 하는 느낌은 두 군데서 옵니다. 출발이 가장 빠른 곡선, 그리고 꾹 누를 때 칸마다 멈췄다 다시 튀어나가는 것입니다. A·B·C는 앞의 것을, D는 뒤의 것까지 고칩니다.</li>
+        <li>섞을 수 있습니다. 예: 한 칸씩 누를 때는 B(폴짝), 꾹 누를 때는 D(이어 걷기).</li>
+        <li>블록을 밀 때와 빙판에서 미끄러질 때도 고른 곡선에 맞춰 함께 바꿉니다.</li>
+        <li>한 칸에 걸리는 시간이 길어지면 연속 이동의 간격(지금 0.17초)도 같이 맞춰야 합니다.</li>
+      </ul>
+    </main>
+    <script>
+      const sheet = Object.assign(new Image(), { src: '../../public/assets/anim/default.webp' });
+      const FRAME = 240, COLS = 10, SCALE = (0.94 * 400) / 232, GROUND = 352 / 400;
+      const outCubic = (k) => 1 - Math.pow(1 - k, 3);
+      const inOut = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+      const clamp = (k) => Math.max(0, Math.min(1, k));
+      // 시안: dur 한 칸의 시간, move(k) -> { x 위치(0~1), lift 떠오른 높이(칸), sx/sy 눌림 }
+      const VARIANTS = [
+        {
+          id: 'now', now: true, dur: 0.16, title: '지금', text: '출발이 가장 빠르고 뒤로 갈수록 느려진다. 꾹 누르면 칸마다 멈췄다 다시 튀어나간다.', ref: '0.16초',
+          move: (k) => ({ x: outCubic(k), lift: Math.sin(k * Math.PI) * 0.07 }),
+        },
+        {
+          id: 'smooth', dur: 0.22, title: 'A 부드러운 가감속', text: '천천히 출발해 가운데서 가장 빠르고 천천히 멈춘다.', ref: '모뉴먼트 밸리 · 0.22초',
+          move: (k) => ({ x: inOut(k), lift: Math.sin(k * Math.PI) * 0.06 }),
+        },
+        {
+          id: 'hop', dur: 0.26, title: 'B 웅크렸다 폴짝', text: '살짝 웅크렸다가 높이 뛰고, 착지하며 눌렸다 펴진다.', ref: '크로시 로드 · 0.26초',
+          move(k) {
+            const pre = 0.16, land = 0.84;
+            if (k < pre) { const a = k / pre; return { x: 0, lift: 0, sx: 1 + 0.1 * a, sy: 1 - 0.14 * a }; }
+            if (k < land) { const a = (k - pre) / (land - pre); return { x: inOut(a), lift: Math.sin(a * Math.PI) * 0.24, sx: 1 - 0.05 * Math.sin(a * Math.PI), sy: 1 + 0.08 * Math.sin(a * Math.PI) }; }
+            const a = (k - land) / (1 - land);
+            return { x: 1, lift: 0, sx: 1 + 0.1 * (1 - a), sy: 1 - 0.14 * (1 - a) };
+          },
+        },
+        {
+          id: 'spring', dur: 0.26, title: 'C 스프링', text: '빠르게 가서 조금 지나쳤다가 말랑하게 제자리로 돌아온다.', ref: 'Patrick\'s Parabox · 0.26초',
+          move: (k) => ({ x: 1 - Math.exp(-6.5 * k) * Math.cos(8.5 * k) * (1 - k), lift: Math.sin(clamp(k * 1.6) * Math.PI) * 0.06 }),
+        },
+        {
+          id: 'walk', dur: 0.2, chain: true, title: 'D 이어 걷기', text: '꾹 누르면 칸이 이어져 일정한 속도로 간다. 한 칸만 갈 때는 부드럽게 출발하고 멈춘다.', ref: '포켓몬스터 · 0.2초',
+          // first/last: 이어 걷는 줄의 첫 칸과 마지막 칸인지. 가운데 칸은 등속이다
+          move(k, first, last) {
+            let x = k;
+            if (first && last) x = inOut(k);
+            else if (first) x = k * k * (2 - k); // 멈춘 데서 출발해 끝에서는 걷는 속도가 된다
+            else if (last) x = 1 - (1 - k) * (1 - k) * (1 + k); // 걷는 속도로 들어와 부드럽게 멈춘다
+            return { x, lift: Math.abs(Math.sin(k * Math.PI)) * 0.05 };
+          },
+        },
+      ];
+      let mode = 'tap', slow = 1;
+      const list = document.getElementById('list');
+      const CELLS = 6, S = 80;
+      for (const v of VARIANTS) {
+        const el = document.createElement('div');
+        el.className = 'demo' + (v.now ? ' now' : '');
+        el.innerHTML = `<canvas class="stage" width="${CELLS * S + 40}" height="${S + 90}"></canvas><div><b>${v.title}</b><span>${v.text}</span><em>참고: ${v.ref}</em><canvas class="curve" width="300" height="120"></canvas></div>`;
+        list.append(el);
+        Object.assign(v, { cv: el.querySelector('.stage'), ctx: el.querySelector('.stage').getContext('2d'), cell: 0, from: 0, dir: 1, t0: -9, next: 0.5, first: true, last: true, animT0: 0, animUntil: -9 });
+        // 위치 그래프
+        const c = el.querySelector('.curve').getContext('2d');
+        c.strokeStyle = '#3a3150';
+        c.strokeRect(10, 10, 280, 100);
+        c.strokeStyle = '#ffd24d';
+        c.lineWidth = 3;
+        c.beginPath();
+        for (let i = 0; i <= 100; i++) c.lineTo(10 + i * 2.8, 110 - v.move(i / 100, true, true).x * 100 * 0.8 - 10);
+        c.stroke();
+      }
+      function step(v, t) {
+        if (t < v.next) return;
+        const atEnd = (v.dir > 0 && v.cell === CELLS - 1) || (v.dir < 0 && v.cell === 0);
+        if (atEnd) v.dir = -v.dir;
+        const stepsLeft = v.dir > 0 ? CELLS - 1 - v.cell : v.cell;
+        const moving = t - v.t0 < v.dur + 0.02;
+        v.first = mode === 'tap' || !moving || atEnd;
+        v.last = mode === 'tap' || stepsLeft === 1;
+        v.from = v.cell;
+        v.cell += v.dir;
+        v.t0 = t;
+        if (t > v.animUntil) v.animT0 = t;
+        v.animUntil = t + v.dur + 0.04;
+        const end = v.cell === 0 || v.cell === CELLS - 1;
+        // 꾹 누를 때: 게임은 0.17초마다 다음 칸으로 간다. 한 칸이 그보다 길면 그 시간에 맞춘다
+        v.next = t + (end ? 1.1 : mode === 'hold' ? Math.max(v.dur, v.chain ? v.dur : 0.17) : 0.6);
+      }
+      function draw(v, t) {
+        const { ctx, cv } = v;
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        const ox = 20, oy = 70;
+        for (let i = 0; i < CELLS; i++) {
+          ctx.fillStyle = i % 2 ? '#e9cfa0' : '#f0d9ad';
+          ctx.fillRect(ox + i * S, oy, S, S);
+        }
+        const k = clamp((t - v.t0) / v.dur);
+        const m = k < 1 ? v.move(k, v.first, v.last) : { x: 1, lift: 0 };
+        const px = v.from + (v.cell - v.from) * m.x;
+        const cx = ox + (px + 0.5) * S;
+        const cy = oy + 0.5 * S - (m.lift ?? 0) * S;
+        const moving = t < v.animUntil;
+        const frame = moving ? 48 + (Math.floor((t - v.animT0) * 36) % 12) : Math.floor(t * 30) % 48;
+        const size = S * SCALE;
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.beginPath();
+        ctx.ellipse(cx, oy + 0.5 * S + S * 0.335, S * 0.29 * (1 - (m.lift ?? 0) * 1.2), S * 0.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.save();
+        ctx.translate(cx, cy + S * 0.36);
+        ctx.scale((v.dir < 0 ? -1 : 1) * (m.sx ?? 1), m.sy ?? 1);
+        if (sheet.complete && sheet.naturalWidth) ctx.drawImage(sheet, (frame % COLS) * FRAME, Math.floor(frame / COLS) * FRAME, FRAME, FRAME, -size / 2, -size * GROUND, size, size);
+        ctx.restore();
+      }
+      let clock = 0, last = performance.now();
+      function tick(nowMs) {
+        clock += (Math.min(100, nowMs - last) / 1000) * slow;
+        last = nowMs;
+        for (const v of VARIANTS) {
+          step(v, clock);
+          draw(v, clock);
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      for (const b of document.querySelectorAll('.bar button')) {
+        b.onclick = () => {
+          if (b.dataset.mode) {
+            mode = b.dataset.mode;
+            for (const o of document.querySelectorAll('[data-mode]')) o.classList.toggle('on', o === b);
+          } else {
+            slow = slow === 1 ? 0.25 : 1;
+            b.classList.toggle('on', slow !== 1);
+          }
+        };
+      }
+    </script>
+  </body>
+</html>

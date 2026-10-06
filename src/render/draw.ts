@@ -516,6 +516,10 @@ const ANIMS = {
   bumpB: [256, 12, 30, false],
 } as const;
 export type AnimName = keyof typeof ANIMS;
+// 큰 시트(<id>_hd.webp, 한 칸 480px): 타이틀과 옷방처럼 캐릭터가 크게 나오는 화면에서 쓴다. 240px 칸을 화면 폭만큼 늘리면 흐려 보인다.
+// [시작 프레임, 프레임 수]. tools/make-anim.mjs의 HD_CLIPS와 같아야 한다. 초당 프레임과 반복은 ANIMS를 따른다.
+const HD_ANIMS: Partial<Record<AnimName, readonly [number, number]>> = { idle: [0, 48], win: [48, 30], sleep: [78, 40] };
+const HD_FRAME = 480;
 const SHEET_COLS = 10;
 const SHEET_FRAME = 240;
 // 시트 한 칸은 400px 캔버스이고 발바닥이 위에서 352px에 있다. 캐릭터 키(약 232px)가 칸의 0.78배가 되게 그린다.
@@ -533,10 +537,15 @@ export function drawCharacter(
   time: number,
   squash = 1,
   anim?: { name: AnimName; t: number },
+  hd = false, // 큰 시트가 있으면 그것으로 그린다
 ): void {
-  const sheet = anim ? getSheet(id) : undefined;
+  const hdClip = hd && anim ? HD_ANIMS[anim.name] : undefined;
+  const hdSheet = hdClip ? getSheet(id + '_hd') : undefined;
+  const sheet = anim ? (hdSheet ?? getSheet(id)) : undefined;
   if (sheet && anim) {
-    const [start, count, fps, loop] = ANIMS[anim.name];
+    const [lowStart, , fps, loop] = ANIMS[anim.name];
+    const [start, count] = hdSheet && hdClip ? hdClip : [lowStart, ANIMS[anim.name][1]];
+    const cell = hdSheet ? HD_FRAME : SHEET_FRAME;
     const n = Math.floor(Math.max(0, anim.t) * fps);
     const frame = start + (loop ? n % count : Math.min(count - 1, n));
     const size = s * SHEET_SCALE;
@@ -549,10 +558,10 @@ export function drawCharacter(
     if (look === 3) ctx.scale(-1, 1);
     ctx.drawImage(
       sheet,
-      (frame % SHEET_COLS) * SHEET_FRAME,
-      Math.floor(frame / SHEET_COLS) * SHEET_FRAME,
-      SHEET_FRAME,
-      SHEET_FRAME,
+      (frame % SHEET_COLS) * cell,
+      Math.floor(frame / SHEET_COLS) * cell,
+      cell,
+      cell,
       -size / 2,
       s * 0.36 - size * SHEET_GROUND,
       size,
