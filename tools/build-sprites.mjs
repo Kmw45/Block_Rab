@@ -34,6 +34,13 @@ function spec(key) {
   if (key === 'story_book' || key === 'ui_select_bg') return { size: 720, height: 1280, fill: 1, opaque: true };
   if (/^ui_scene_\d$/.test(key) || key === 'ui_dress_room') return { size: 720, height: 576, fill: 1, opaque: true };
   if (key === 'tile_oneway' || key === 'exit') return { size: 256, fill: 0.98 };
+  // 던전마다의 디오라마 그림: 바닥, 벽, 판(여백만 잘라 내고 게임에서 9-슬라이스로 늘린다), 배경
+  if (/^floor_\d$/.test(key)) return { size: 256, fill: 1, opaque: true };
+  if (/^wall_\d$/.test(key)) return { size: 256, fill: 0.97 };
+  if (/^board_\d$/.test(key)) return { trim: 900 };
+  if (/^bg_\d$/.test(key)) return { size: 720, height: 1280, fill: 1, opaque: true };
+  if (key === 'exit_star') return { size: 256, fill: 0.94 };
+  if (key === 'exit_pad') return { size: 256, fill: 0.98 };
   if (key === 'floor' || ['tile_pit', 'tile_ice', 'tile_switch', 'tile_door', 'tile_crumble'].includes(key)) return { size: 256, fill: 1, opaque: true };
   if (key === 'tile_portal') return { size: 256, fill: 0.96 };
   if (key === 'ui_bg') return { size: 540, height: 810, fill: 1, opaque: true };
@@ -51,8 +58,15 @@ function spec(key) {
 }
 
 const manifest = {};
+mkdirSync('public/assets/scenes', { recursive: true });
 for (const file of readdirSync(SRC).filter((f) => f.endsWith('.png')).sort()) {
   const key = file.replace(/\.png$/, '');
+  if (/^scene_\d_\d$/.test(key)) {
+    // 던전 이야기 장면은 서른두 장이라 시작할 때 한꺼번에 불러오지 않는다. 목록(manifest)에 올리지 않고 화면이 필요할 때 주소로 부른다.
+    const out = await sharp(`${SRC}/${file}`).resize(720, 576, { fit: 'cover' }).removeAlpha().jpeg({ quality: 82 }).toFile(`public/assets/scenes/${key}.jpg`);
+    console.log(`${key.padEnd(18)} -> scenes/${key}.jpg  ${(out.size / 1024).toFixed(0)}KB`);
+    continue;
+  }
   if (key.startsWith('skin_')) {
     // 스킨의 정지 그림은 tools/make-anim.mjs가 동작 리그의 기본 자세로 만든다. 여기서는 목록에만 올린다.
     manifest[key] = file;
@@ -98,12 +112,14 @@ for (const file of readdirSync(SRC).filter((f) => f.endsWith('.png')).sort()) {
     const top = first(rows, w * 0.02);
     const bottom = last(rows, w * 0.02);
     if (trim) {
-      const out = await sharp(data, { raw: info })
+      // 판 그림은 크고 투명해서 WebP로 줄인다(PNG로는 한 장에 350KB쯤 된다)
+      const webp = /^board_\d$/.test(key);
+      const name = webp ? `${key}.webp` : file;
+      const cut = sharp(data, { raw: info })
         .extract({ left, top, width: right - left + 1, height: bottom - top + 1 })
-        .resize({ width: trim })
-        .png({ compressionLevel: 9, palette: true, quality: 92 })
-        .toFile(`${OUT}/${file}`);
-      manifest[key] = file;
+        .resize({ width: trim });
+      const out = await (webp ? cut.webp({ quality: 86, alphaQuality: 90 }) : cut.png({ compressionLevel: 9, palette: true, quality: 92 })).toFile(`${OUT}/${name}`);
+      manifest[key] = name;
       console.log(`${key.padEnd(18)} ${w}x${h} (그림 ${right - left + 1}x${bottom - top + 1}) -> ${out.width}x${out.height}  ${(out.size / 1024).toFixed(0)}KB`);
       continue;
     }

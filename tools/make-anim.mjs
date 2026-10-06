@@ -29,15 +29,21 @@ const SKINS = JSON.parse(readFileSync(new URL('./skins.json', import.meta.url), 
 const CLIPS = [
   ['idle', 48],
   ['walkS', 12],
-  ['walkF', 12],
+  ['walkD', 12],
   ['pushS', 14],
-  ['pushF', 14],
+  ['pushD', 14],
   ['win', 30],
   ['bump', 12],
   ['sleep', 40],
+  ['walkU', 12],
+  ['pushU', 14],
+  ['idleB', 48],
+  ['bumpB', 12],
 ];
 // 동작 자세 그림(<id>_run|push|jump.png)과 그것이 들어갈 최대 크기. 세 장이 다 있는 스킨만 자세를 바꾼다.
 const POSES = { run: [310, 206], push: [280, 250], jump: [250, 266] };
+// 위아래를 보는 그림: 위로 뛰는 뒷모습, 아래로 뛰는 앞모습, 위를 보고 앉은 뒷모습. 있는 것만 쓰고, 없으면 앞모습 동작으로 대신한다.
+const DIR_POSES = { up: [250, 240], down: [250, 240], back: [290, 252] };
 const FACES = ['closed', 'happy', 'strain', 'startle']; // 얼굴 덧그림의 종류
 const COLS = 10;
 
@@ -211,8 +217,11 @@ async function prepare(id) {
   let poses = null;
   if (Object.keys(POSES).every((k) => existsSync(`${PARTS}/${id}_${k}.png`))) {
     poses = {};
-    for (const [k, box] of Object.entries(POSES)) {
-      const img = await trimmed(`${PARTS}/${id}_${k}.png`);
+    for (const [k, box] of Object.entries({ ...POSES, ...DIR_POSES })) {
+      // 앉은 뒷모습이 없으면 위로 뛰는 뒷모습으로 대신한다(pot은 생성 도구가 앉은 뒷모습을 거듭 거부했다)
+      const file = [k, ...(k === 'back' ? ['up'] : [])].map((n) => `${PARTS}/${id}_${n}.png`).find((p) => existsSync(p));
+      if (!file) continue;
+      const img = await trimmed(file);
       const sc = Math.min(box[0] / img.w, box[1] / img.h);
       const w = Math.round(img.w * sc);
       const h = Math.round(img.h * sc);
@@ -283,6 +292,9 @@ function buildRig(g) {
       p('PoseRun', 0, 1, '달려 나가는 자세'),
       p('PosePush', 0, 1, '앞발로 미는 자세'),
       p('PoseJump', 0, 1, '뛰어오른 자세'),
+      p('PoseUp', 0, 1, '위로 뛰어가는 뒷모습'),
+      p('PoseDown', 0, 1, '아래로 뛰어오는 앞모습'),
+      p('PoseBack', 0, 1, '위를 보고 앉은 뒷모습'),
       p('Lunge', -1, 1, '몸을 앞뒤로 내밀기'),
     ],
     textures: [
@@ -335,10 +347,10 @@ function buildRig(g) {
       num01('part:face_startle.opacity', 'Startle', 0, 1),
       num01('part:body.opacity', 'Hide', 1, 0),
       num01('part:tail.opacity', 'Hide', 1, 0),
-      ...(g.poses ? [num01('part:pose_run.opacity', 'PoseRun', 0, 1), num01('part:pose_push.opacity', 'PosePush', 0, 1), num01('part:pose_jump.opacity', 'PoseJump', 0, 1)] : []),
+      ...Object.keys(g.poses ?? {}).map((k) => num01(`part:pose_${k}.opacity`, 'Pose' + k[0].toUpperCase() + k.slice(1), 0, 1)),
       num('bone:body.x', 'Lunge', -16, 16),
     ],
-    animations: clips(!!g.poses),
+    animations: clips(!!g.poses, g.poses ?? {}),
   };
 }
 
@@ -346,7 +358,7 @@ const hold = (param, duration, v) => track(param, [[0, v], [duration, v]]);
 
 // 동작. 걷는 다리가 없으므로 이동은 폴짝 뛰는 것으로 낸다(한 칸에 한 번).
 // 겹쳐 쓰는 것: 숨(Puff), 휘어 기울기(Sway), 출렁임(Jelly), 눌림(Squash), 뛰기(Hop), 귀(Ear), 꼬리(Float), 표정.
-function clips(posed) {
+function clips(posed, has) {
   // 동작 자세를 보여 주는 동안: 앉은 그림을 숨기고 그 자세를 켠다
   const pose = (name, d) => [hold('Hide', d, 1), hold(name, d, 1)];
   // 뛰기 한 번: 바닥에서 눌렸다가 늘어나며 뜨고, 귀는 반 박자 늦게 따라온다
@@ -357,19 +369,32 @@ function clips(posed) {
     track('Jelly', [[0, 0], [d * 0.3, -0.4], [d * 0.8, 0.4], [d, 0]]),
     hold('Sway', d, lean),
   ];
+  // 위아래로 한 칸: 두 발로 낮게 뛰며 몸이 좌우로 흔들린다
+  const scamper = [track('Hop', [[0, 0], [0.15, 0.3], [0.3, 0], [0.5, 0]]), track('BodyRot', [[0, -0.2], [0.15, 0.2], [0.3, -0.2], [0.5, -0.2]]), track('Squash', [[0, 0.2], [0.1, -0.2], [0.3, 0.2], [0.5, 0.2]])];
+  const jumpWalk = posed ? [...pose('PoseJump', 0.5), track('Hop', [[0, 0], [0.25, 0.6], [0.5, 0]]), track('Squash', [[0, 0.4], [0.14, -0.4], [0.4, -0.1], [0.5, 0.4]])] : hop(0.5, 0);
+  const crouchPush = [hold('Strain', 0.5, 1), wave('Ear', 0.5, 0.08, 0, -0.6, 2), wave('Squash', 0.5, 0.08, 0, 0.3, 2), wave('Puff', 0.5, 0.3, 0, -0.6, 2), wave('Jelly', 0.5, 0.3, 0.25, 0, 2)];
+  const idleTracks = [
+    wave('Puff', 1.6, 0.7, 0),
+    wave('Sway', 1.6, 0.2, 0.3),
+    wave('Jelly', 1.6, 0.05, 0.55),
+    track('Blink', [[0, 0], [0.7, 0], [0.76, 1], [0.86, 1], [0.92, 0], [1.6, 0]]),
+    track('Ear', [[0, 0], [1.05, 0], [1.15, 0.6], [1.28, -0.15], [1.4, 0], [1.6, 0]]),
+  ];
+  const bumpTracks = [
+    hold('Startle', 0.4, 1),
+    track('Ear', [[0, 0], [0.08, 1], [0.25, -0.6], [0.4, -0.9]]),
+    track('Squash', [[0, 0], [0.08, 0.3], [0.2, -0.1], [0.4, 0]]),
+    track('Puff', [[0, 0], [0.07, -0.9], [0.18, 0.6], [0.3, -0.2], [0.4, 0]]),
+    track('Jelly', [[0, 0], [0.06, -1], [0.16, 0.8], [0.28, -0.4], [0.4, 0]]),
+    track('Sway', [[0, 0], [0.1, -0.5], [0.4, 0]]),
+  ];
   return [
     {
       id: 'idle',
       duration: 1.6,
       loop: true,
       description: '숨쉬기: 머리와 가슴이 살짝 오르내리고, 머리가 천천히 좌우로 흔들리고, 가끔 눈을 깜빡이고 귀를 쫑긋한다',
-      tracks: [
-        wave('Puff', 1.6, 0.7, 0),
-        wave('Sway', 1.6, 0.2, 0.3),
-        wave('Jelly', 1.6, 0.05, 0.55),
-        track('Blink', [[0, 0], [0.7, 0], [0.76, 1], [0.86, 1], [0.92, 0], [1.6, 0]]),
-        track('Ear', [[0, 0], [1.05, 0], [1.15, 0.6], [1.28, -0.15], [1.4, 0], [1.6, 0]]),
-      ],
+      tracks: [...idleTracks],
     },
     {
       id: 'walkS',
@@ -381,11 +406,11 @@ function clips(posed) {
         : hop(0.5, 0.45),
     },
     {
-      id: 'walkF',
+      id: 'walkD',
       duration: 0.5,
       loop: true,
-      description: '앞뒤로 한 칸: 앞발을 들고 뛰어오른 자세로 뛴다',
-      tracks: posed ? [...pose('PoseJump', 0.5), track('Hop', [[0, 0], [0.25, 0.6], [0.5, 0]]), track('Squash', [[0, 0.4], [0.14, -0.4], [0.4, -0.1], [0.5, 0.4]])] : hop(0.5, 0),
+      description: '아래로 한 칸: 이쪽을 보고 두 발로 뛰어온다(그림이 없으면 앞발을 들고 뛰어오른 자세)',
+      tracks: has.down ? [...pose('PoseDown', 0.5), ...scamper] : [...jumpWalk],
     },
     {
       id: 'pushS',
@@ -397,11 +422,11 @@ function clips(posed) {
         : [hold('Sway', 0.5, 0.95), hold('BodyRot', 0.5, 0.3), hold('Strain', 0.5, 1), wave('Ear', 0.5, 0.08, 0, -0.6, 2), wave('Jelly', 0.5, 0.4, 0.25, 0.2, 2), wave('Squash', 0.5, 0.08, 0, 0.15, 2), wave('Puff', 0.5, 0.3, 0, -0.5, 2)],
     },
     {
-      id: 'pushF',
+      id: 'pushD',
       duration: 0.5,
       loop: true,
-      description: '앞뒤로 밀기: 몸을 웅크리고 힘줄 때마다 출렁인다',
-      tracks: [hold('Strain', 0.5, 1), wave('Ear', 0.5, 0.08, 0, -0.6, 2), wave('Squash', 0.5, 0.08, 0, 0.3, 2), wave('Puff', 0.5, 0.3, 0, -0.6, 2), wave('Jelly', 0.5, 0.3, 0.25, 0, 2)],
+      description: '아래로 밀기: 몸을 웅크리고 힘줄 때마다 출렁인다',
+      tracks: [...crouchPush],
     },
     {
       id: 'win',
@@ -424,14 +449,7 @@ function clips(posed) {
       duration: 0.4,
       loop: false,
       description: '막혔을 때: 깜짝 놀라 귀가 섰다가 축 처진다',
-      tracks: [
-        hold('Startle', 0.4, 1),
-        track('Ear', [[0, 0], [0.08, 1], [0.25, -0.6], [0.4, -0.9]]),
-        track('Squash', [[0, 0], [0.08, 0.3], [0.2, -0.1], [0.4, 0]]),
-        track('Puff', [[0, 0], [0.07, -0.9], [0.18, 0.6], [0.3, -0.2], [0.4, 0]]),
-        track('Jelly', [[0, 0], [0.06, -1], [0.16, 0.8], [0.28, -0.4], [0.4, 0]]),
-        track('Sway', [[0, 0], [0.1, -0.5], [0.4, 0]]),
-      ],
+      tracks: [...bumpTracks],
     },
     {
       id: 'sleep',
@@ -439,6 +457,35 @@ function clips(posed) {
       loop: true,
       description: '오래 가만히 두면: 눈을 감고 귀를 늘어뜨린 채 천천히 숨쉰다',
       tracks: [hold('Blink', 2, 1), hold('Ear', 2, -0.8), wave('Puff', 2, 0.75, 0, -0.2), hold('Sway', 2, 0.35), wave('Jelly', 2, 0.1, 0.5)],
+    },
+    // 위를 보는 동작들. 뒷모습 그림이 없는 스킨은 앞모습 동작을 그대로 쓴다
+    {
+      id: 'walkU',
+      duration: 0.5,
+      loop: true,
+      description: '위로 한 칸: 등을 보이고 두 발로 뛰어간다',
+      tracks: has.up ? [...pose('PoseUp', 0.5), ...scamper] : [...jumpWalk],
+    },
+    {
+      id: 'pushU',
+      duration: 0.5,
+      loop: true,
+      description: '위로 밀기: 등을 보인 채 웅크려 민다',
+      tracks: has.back ? [...pose('PoseBack', 0.5), wave('Squash', 0.5, 0.08, 0, 0.3, 2), wave('BodyRot', 0.5, 0.05, 0.25, 0, 2)] : [...crouchPush],
+    },
+    {
+      id: 'idleB',
+      duration: 1.6,
+      loop: true,
+      description: '위를 본 채 숨쉬기: 위로 간 뒤에는 돌아서지 않고 등을 보이고 앉아 있는다',
+      tracks: has.back ? [...pose('PoseBack', 1.6), wave('Squash', 1.6, 0.07), wave('BodyRot', 1.6, 0.05, 0.3)] : [...idleTracks],
+    },
+    {
+      id: 'bumpB',
+      duration: 0.4,
+      loop: false,
+      description: '위쪽이 막혔을 때: 등을 보인 채 움찔한다',
+      tracks: has.back ? [...pose('PoseBack', 0.4), track('Squash', [[0, 0], [0.08, 0.4], [0.2, -0.15], [0.4, 0]]), track('BodyRot', [[0, 0], [0.06, -0.25], [0.16, 0.2], [0.28, -0.1], [0.4, 0]])] : [...bumpTracks],
     },
   ];
 }
@@ -461,7 +508,7 @@ for (const id of skins) {
   const geometry = await prepare(id);
   const rig = buildRig(geometry);
   // 꼬리는 모든 동작에서 몸과 어긋난 박자로 흔들린다. 걷거나 밀 때는 더 빨리 흔든다.
-  for (const a of rig.animations) a.tracks.push(wave('Float', a.duration, a.id === 'sleep' ? 0.25 : 0.85, 0.15, 0, a.id === 'idle' || a.id === 'sleep' ? 1 : 2));
+  for (const a of rig.animations) a.tracks.push(wave('Float', a.duration, a.id === 'sleep' ? 0.25 : 0.85, 0.15, 0, a.id === 'idle' || a.id === 'idleB' || a.id === 'sleep' ? 1 : 2));
   writeFileSync(resolve(WORK, 'blob.r2d.json'), JSON.stringify(rig, null, 1));
   if (first) {
     console.log(rev2d(['validate', 'blob.r2d.json']).trim().split('\n').slice(-3).join(' | '));

@@ -19,6 +19,7 @@ import {
 import { solve } from '../core/solver';
 import { DEFAULT_SKIN, DEFAULT_TRAIL, ITEMS, Item, ItemType, RARITY_COLOR, RARITY_ORDER, Rarity } from '../data/items';
 import { TUTORIALS } from '../data/tutorial';
+import { STORY_PAGES_PER_WORLD, STORY_STEP, WORLD_STORIES, sceneUrl, storyPagesOpen } from '../data/stories';
 import { WORLDS } from '../data/worlds';
 import { ads } from '../game/ads';
 import { applyAudioSettings, sfx, vibrate } from '../game/audio';
@@ -55,6 +56,7 @@ import {
   totalStars,
   useAdDraw,
   worldLevels,
+  worldPassed,
   worldStars,
 } from '../game/store';
 import { BoardView } from '../render/boardView';
@@ -287,7 +289,7 @@ export function showTitle(): void {
       </div>
     </div>`);
   mount(el, needTutorial ? 1 : cur.world);
-  el.querySelector('[data-a=stages]')!.addEventListener('click', showSelect);
+  el.querySelector('[data-a=stages]')!.addEventListener('click', () => showSelect());
   el.querySelector('[data-a=cosmetics]')!.addEventListener('click', showCosmetics);
   // 처음이면 스테이지 선택보다 튜토리얼을 먼저 한다
   el.querySelector('[data-a=start]')!.addEventListener('click', () => {
@@ -354,7 +356,36 @@ const STORY_PAGES = 3;
 
 // 그림 한 장에 글 한 줄씩 넘겨 본다. 끝나거나 건너뛰면 done으로 이어진다.
 export function showStory(done: () => void): void {
-  let page = 0;
+  const pages = Array.from({ length: STORY_PAGES }, (_, i) => ({ img: getSprite('story_' + (i + 1))?.src ?? '', text: t(('story' + (i + 1)) as StringKey) }));
+  showBook(pages, WORLD_COUNT, () => {
+    save.story = true;
+    persist();
+    done();
+  });
+}
+
+// 던전 이야기의 한 장
+function storyPage(world: number, page: number): BookPage {
+  return { img: sceneUrl(world, page), text: WORLD_STORIES[world - 1][page - 1][save.lang === 'ko' ? 0 : 1], wide: true };
+}
+
+// 방금 단계를 지나 새로 열린 이야기를 보여 준다. 던전의 마지막 장 뒤에는 다음 던전의 첫 장이 이어진다.
+function showUnlockedStory(world: number, page: number, done: () => void): void {
+  const pages = [storyPage(world, page)];
+  if (page === STORY_PAGES_PER_WORLD && world < WORLD_COUNT) pages.push(storyPage(world + 1, 1));
+  showBook(pages, world, done);
+}
+
+interface BookPage {
+  img: string;
+  text: string;
+  note?: string; // 글 아래에 작게 덧붙이는 말(다음 장이 열리는 조건)
+  wide?: boolean; // 가로로 긴 그림. 좌우가 잘리지 않게 그림 칸을 낮춘다
+}
+
+// 펼친 그림책으로 이야기를 한 장씩 넘겨 본다. 마지막 장에서 넘기거나 건너뛰면 done을 부른다.
+function showBook(pages: BookPage[], world: number, done: () => void, start = 0): void {
+  let page = start;
   // 펼친 그림책 한 쪽. 책 그림(story_book) 위에 그림과 글, 버튼을 비율로 올려놓는다.
   const book = getSprite('story_book');
   const el = html(`
@@ -365,28 +396,27 @@ export function showStory(done: () => void): void {
         <button class="story-skip" data-a="skip" aria-label="${t('storySkip')}">${ICON.skip}</button>
         <div class="story-frame"></div>
         <div class="story-caption"></div>
-        <div class="story-dots">${'<i></i>'.repeat(STORY_PAGES)}</div>
+        <div class="story-dots">${pages.length > 1 ? '<i></i>'.repeat(pages.length) : ''}</div>
         <button class="story-next" data-a="next">${ICON.arrow}</button>
       </div>
     </div>`);
   const show = () => {
-    const img = getSprite('story_' + (page + 1));
+    const p = pages[page];
+    el.querySelector('.story-book')!.classList.toggle('wide', !!p.wide);
     // 통째로 다시 넣어 그림과 글이 들어오는 움직임을 처음부터 재생한다
-    el.querySelector('.story-frame')!.innerHTML = img ? `<div class="story-pic" style="background-image:url('${img.src}')"></div>` : '';
-    el.querySelector('.story-caption')!.innerHTML = `<p class="story-text pre">${t(('story' + (page + 1)) as StringKey)}</p>`;
+    el.querySelector('.story-frame')!.innerHTML = p.img ? `<div class="story-pic" style="background-image:url('${p.img}')"></div>` : '';
+    el.querySelector('.story-caption')!.innerHTML = `<p class="story-text pre">${p.text}</p>${p.note ? `<p class="story-note">${p.note}</p>` : ''}`;
     el.querySelectorAll('.story-dots i').forEach((dot, i) => dot.classList.toggle('on', i === page));
-    el.querySelector('[data-a=next]')!.setAttribute('aria-label', t(page === STORY_PAGES - 1 ? 'storyStart' : 'storyNext'));
+    el.querySelector('[data-a=next]')!.setAttribute('aria-label', t(page === pages.length - 1 ? 'storyStart' : 'storyNext'));
+    // 다음 장의 그림을 미리 불러 둔다
+    if (pages[page + 1]?.img) new Image().src = pages[page + 1].img;
   };
-  const finish = () => {
-    save.story = true;
-    persist();
-    done();
-  };
-  mount(el, WORLD_COUNT);
+  mount(el, world);
   show();
-  el.querySelector('[data-a=skip]')!.addEventListener('click', finish);
+  sfx.hint();
+  el.querySelector('[data-a=skip]')!.addEventListener('click', done);
   el.querySelector('[data-a=next]')!.addEventListener('click', () => {
-    if (++page >= STORY_PAGES) finish();
+    if (++page >= pages.length) done();
     else show();
   });
 }
@@ -394,8 +424,9 @@ export function showStory(done: () => void): void {
 // ───────── 스테이지 선택 ─────────
 
 // 던전 하나가 카드 한 장이다. 위는 던전 그림, 아래는 4x3 스테이지 칸이고 옆으로 넘겨 본다.
-export function showSelect(): void {
-  const lastWorld = Number(save.lastLevel.split('-')[0]) || 1;
+// focus: 가운데에 둘 던전. 없으면 마지막으로 한 던전이다
+export function showSelect(focus?: number): void {
+  const lastWorld = (typeof focus === 'number' ? focus : 0) || Number(save.lastLevel.split('-')[0]) || 1;
   const cur = currentLevel();
   const totalStars = LEVELS.reduce((n, l) => n + (save.stars[l.id] ?? 0), 0);
   const peek = getSprite('ui_fox_peek');
@@ -406,7 +437,10 @@ export function showSelect(): void {
     const unlocked = isWorldUnlocked(w);
     // 던전을 모두 지나면 그곳에 빛이 돌아온다. 못 깬 던전의 그림은 조금 어둡다.
     const lit = isWorldCleared(w);
-    const scene = getSprite('ui_scene_' + w) ?? getSprite('ui_banner_' + w);
+    // 카드의 그림은 지금까지 열린 이야기의 가장 최근 장이다. 그 그림이 없으면 예전 던전 그림이 보인다
+    const open = storyPagesOpen(worldPassed(w));
+    const old = getSprite('ui_scene_' + w) ?? getSprite('ui_banner_' + w);
+    const sceneBg = `url('${sceneUrl(w, open)}')${old ? `, url('${old.src}')` : ''}`;
     const cells = worldLevels(w)
       .map((lv) => {
         const stars = save.stars[lv.id] ?? 0;
@@ -417,13 +451,13 @@ export function showSelect(): void {
       .join('');
     list += `
       <section class="world ${unlocked ? '' : 'locked'} ${lit ? 'lit' : ''}" data-world="${w}" style="--accent:${th.accent};--accent-dark:${th.accentDark}">
-        <div class="card-scene" ${scene ? `style="background-image:url('${scene.src}')"` : ''}>
+        <div class="card-scene" style="background-image:${sceneBg}">
           <div class="card-plate">
             <span class="plate-no">${art('emblem_' + w, '', 'emblem')}<b>${w}</b></span>
             <h2>${worldName(w)}</h2>
           </div>
           <span class="world-stars">${ICON.star}<b>${worldStars(w)}</b>/${LEVELS_PER_WORLD * 3}</span>
-          ${unlocked && w === cur.world ? '<canvas class="mascot card-fox" width="300" height="300"></canvas>' : ''}
+          ${unlocked ? `<span class="scene-pages" title="${t('storyPages', { a: open, b: STORY_PAGES_PER_WORLD })}">${Array.from({ length: STORY_PAGES_PER_WORLD }, (_, i) => `<i class="${i < open ? 'on' : ''}"></i>`).join('')}</span>` : ''}
           ${unlocked ? '' : `<div class="card-lock">${art('ui_lock', ICON.lock)}</div>`}
         </div>
         <div class="stage-grid">${cells}</div>
@@ -474,12 +508,6 @@ export function showSelect(): void {
     const go = (e.target as HTMLElement).dataset.go;
     if (go) worldList.scrollTo({ left: center(cards[Number(go) - 1]), behavior: 'smooth' });
   });
-  const fox = el.querySelector<HTMLCanvasElement>('.card-fox');
-  if (fox) {
-    getSheet(save.skin);
-    startMascot(fox, (time) => ({ name: 'idle', t: time }));
-  }
-
   el.querySelector('[data-a=tutorial]')!.addEventListener('click', () => showTutorial(0));
   el.querySelector('[data-a=back]')!.addEventListener('click', showTitle);
   el.querySelector('[data-a=cosmetics]')!.addEventListener('click', showCosmetics);
@@ -496,10 +524,17 @@ export function showSelect(): void {
     }
     const btn = target.closest<HTMLElement>('.stage');
     if (!btn) {
-      // 던전 그림을 누르면 그 던전의 한 줄 이야기를 보여 준다
+      // 던전 그림을 누르면 지금까지 열린 이야기를 처음부터 넘겨 본다. 잠긴 던전은 한 줄 소개만 보여 준다
       if (target.closest('.card-scene')) {
-        const th = WORLDS[world - 1];
-        toast((isWorldCleared(world) ? `[${t('worldLit')}] ` : '') + (save.lang === 'ko' ? th.storyKo : th.storyEn));
+        if (!isWorldUnlocked(world)) {
+          const th = WORLDS[world - 1];
+          toast(save.lang === 'ko' ? th.storyKo : th.storyEn);
+          return;
+        }
+        const open = storyPagesOpen(worldPassed(world));
+        const pages = Array.from({ length: open }, (_, i) => storyPage(world, i + 1));
+        if (open < STORY_PAGES_PER_WORLD) pages[open - 1].note = t('storyMore', { n: open * STORY_STEP });
+        showBook(pages, world, () => showSelect(world));
       }
       return;
     }
@@ -576,7 +611,10 @@ export function showPlay(level: LevelInfo, tut?: number): void {
   const view = new BoardView(canvas);
   view.skin = save.skin;
   view.trail = save.trail;
-  view.load(def, WORLDS[level.world - 1], state);
+  view.load(def, WORLDS[level.world - 1], state, level.world);
+  // 던전마다의 배경 그림
+  const bgImg = getSprite('bg_' + level.world);
+  if (bgImg) el.style.setProperty('--play-img', `url("${bgImg.src}")`);
 
   // 지금 끝내면 받을 별과, 그 별을 지키는 이동 수 한도를 보여준다
   // 판 아래의 막대: 이동 수만큼 차오르고, 별 표시를 지나면 그 별을 잃는다.
@@ -645,9 +683,10 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     if (finished || busy) return;
     const res = step(def, state, dir);
     if (!res.ok) {
-      view.bump(res, dir);
-      sfx.bump();
-      if (res.bumpBlock >= 0) vibrate(15);
+      // 부딪힌 것에 따라 흔들림과 소리가 다르다
+      const hit = view.bump(res, dir);
+      sfx.bumpOf(hit);
+      vibrate(hit === 'edge' || hit === 'oneway' || hit === 'pit' ? 8 : hit === 'fixed' || hit === 'door' ? [12, 30, 12] : 15);
       clearTimeout(holdTimer);
       holdDir = null;
       if (tutData && !tutBumped && res.bumpBlock >= 0) {
@@ -660,7 +699,11 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     const doorWasOpen = doorsOpen(def, state);
     history.push(state);
     state = res.state;
-    if (doorsOpen(def, state) !== doorWasOpen) sfx.door();
+    if (doorsOpen(def, state) !== doorWasOpen) {
+      if (doorWasOpen) sfx.switchOff();
+      else sfx.switchOn();
+      sfx.door();
+    } else if (res.pushed < 0 && def.tile[state.p] === TILE_SWITCH) sfx.tick();
     if (res.crumbled >= 0) sfx.crack();
     view.applyStep(res, dir);
     if (tutData && res.pushed >= 0 && !tutPushed) {
@@ -670,7 +713,7 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     guide();
     if (res.pushed >= 0) {
       if (def.kinds[res.pushed] === 'ice') sfx.slide(Math.abs(res.to - res.from) / (dir % 2 === 0 ? def.w : 1));
-      else sfx.push();
+      else sfx.pushOf(def.kinds[res.pushed]);
       if (res.becameFixed) sfx.lock();
       if (res.sunk) sfx.sink();
       vibrate(10);
@@ -685,19 +728,29 @@ export function showPlay(level: LevelInfo, tut?: number): void {
     finished = true;
     stopHold();
     view.playWin();
-    sfx.clear();
-    vibrate([30, 40, 60]);
+    // 여우가 빛기둥을 타고 떠올라 별에 닿는 순간(1.05초 뒤)에 터지는 소리와 클리어 음이 난다
+    sfx.enter();
+    setTimeout(() => {
+      sfx.starBurst();
+      sfx.clear();
+      vibrate([30, 40, 60]);
+    }, 1050);
     if (isTut) {
       save.tutorial = Math.max(save.tutorial, tut + 1);
       persist();
-      setTimeout(() => showTutorialClear(tut), 1120);
+      setTimeout(() => showTutorialClear(tut), 1650);
       return;
     }
     const moves = history.length;
     const wasCleared = isWorldCleared(level.world);
+    const pagesBefore = storyPagesOpen(worldPassed(level.world));
     const reward = recordClear(level, moves);
     const worldDone = !wasCleared && isWorldCleared(level.world);
-    setTimeout(() => showClear(level, moves, reward, worldDone), 1120);
+    // 이번에 지나서 이야기의 새 장이 열렸는가(0이면 아니다). 그림을 미리 불러 둔다
+    const pagesNow = storyPagesOpen(worldPassed(level.world));
+    const newPage = pagesNow > pagesBefore ? pagesNow : 0;
+    if (newPage) new Image().src = sceneUrl(level.world, newPage);
+    setTimeout(() => showClear(level, moves, reward, worldDone, newPage), 1650);
   };
 
   const undo = () => {
@@ -953,7 +1006,7 @@ function jumpOnce(): (time: number) => { name: AnimName; t: number } {
 }
 
 // worldDone: 이번 클리어로 그 던전을 처음 모두 지났다. 이때만 가장 큰 축하를 한다.
-function showClear(level: LevelInfo, moves: number, reward: ClearReward, worldDone: boolean): void {
+function showClear(level: LevelInfo, moves: number, reward: ClearReward, worldDone: boolean, newPage = 0): void {
   const { stars, gold } = reward;
   const next = nextLevel(level.id);
   const nextWorld = worldDone && level.world < WORLD_COUNT ? level.world + 1 : 0;
@@ -969,6 +1022,7 @@ function showClear(level: LevelInfo, moves: number, reward: ClearReward, worldDo
     </div>
     ${worldDone ? `<p class="world-done">${nextWorld ? `${art('emblem_' + nextWorld, '', 'emblem')}<span>${t('worldNext')}<b>${worldName(nextWorld)}</b></span>` : `<span><b>${t('allCleared')}</b></span>`}</p>` : ''}
     ${gold > 0 ? `<button class="btn ghost bonus" data-a="bonus" aria-label="${t('bonusAd', { n: gold })}"><span class="ad-chip">AD</span><span class="coin"></span><b>x2</b></button>` : ''}
+    ${newPage ? `<p class="story-new">${ICON.sprout}<span>${t('storyNew')}</span></p>` : ''}
     ${next ? `<button class="btn big" data-a="next" aria-label="${t('next')}">${ICON.arrow}</button>` : ''}
     <div class="row">
       <button class="btn ghost" data-a="retry" aria-label="${t('retry')}">${ICON.retry}</button>
@@ -1030,8 +1084,13 @@ function showClear(level: LevelInfo, moves: number, reward: ClearReward, worldDo
       return;
     }
     m.close();
-    if (a === 'retry') showPlay(level);
-    else if (a === 'stages') showSelect();
+    if (a === 'retry') {
+      showPlay(level);
+      return;
+    }
+    // 새 이야기가 열렸으면 그림책으로 먼저 보여 주고, 고른 곳으로 이어 간다
+    if (newPage) await new Promise<void>((resolve) => showUnlockedStory(level.world, newPage, resolve));
+    if (a === 'stages') showSelect();
     else if (a === 'home') showTitle();
     else if (a === 'next' && next) {
       // 전면 광고는 레벨 사이에만, 3개 클리어마다 한 번, 월드 1에서는 띄우지 않는다

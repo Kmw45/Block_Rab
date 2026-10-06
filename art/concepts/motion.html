@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>위아래 이동 동작 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1280px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      h2 { font-size: 1.2rem; margin: 28px 0 8px; color: #ffd24d; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: #231d30; border-radius: 14px; overflow: hidden; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #332a47; vertical-align: top; }
+      th { color: #b9b0cc; font-weight: 600; }
+      .wrap { overflow-x: auto; }
+      .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; align-items: center; }
+      .bar span { color: #b9b0cc; font-size: 0.9rem; margin-left: 8px; }
+      button { padding: 6px 14px; border: 0; border-radius: 999px; background: #2d2540; color: #f3eefc; font: inherit; font-size: 0.9rem; cursor: pointer; }
+      button.on { background: #ffd24d; color: #2a1c05; }
+      .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+      figure { margin: 0; padding: 14px; border-radius: 18px; background: #231d30; }
+      figure.now { outline: 2px dashed #4a4263; outline-offset: -2px; }
+      canvas { display: block; width: 100%; border-radius: 12px; }
+      figcaption b { display: block; margin-top: 10px; font-size: 1rem; color: #ffd24d; }
+      figcaption span { display: block; color: #cfc7e0; font-size: 0.9rem; }
+      figcaption em { display: block; margin-top: 4px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>위아래 이동 동작 시안</h1>
+      <p class="lead">위로 갈 때 뒷모습이 됐다가 멈추면 바로 정면으로 돌아와 "확확 돌아가는" 문제를, 상용 게임들이 쓰는 방식별로 풀어 본 시안입니다. 게임에는 아직 넣지 않았습니다.</p>
+
+      <h2>상용 게임은 어떻게 하나</h2>
+      <div class="wrap">
+        <table>
+          <tr><th>방식</th><th>쓰는 게임</th><th>특징</th><th>시안</th></tr>
+          <tr><td>마지막 방향을 본 채로 멈춘다</td><td>포켓몬스터, 젤다의 전설(2D), 스타듀 밸리, Baba Is You</td><td>4방향 그림을 쓰는 게임의 표준. 멈춰도 정면으로 돌아오지 않으므로 도는 일이 입력이 있을 때만 생긴다. 방향마다 쉬는 그림이 필요하다.</td><td>②</td></tr>
+          <tr><td>한동안 그 방향을 보다가 쉬는 자세로 돌아온다</td><td>쉬는 동작이 따로 있는 캐릭터 게임들</td><td>이동 중에는 돌지 않고, 손을 놓고 한참 있을 때만 한 번 돈다. 퍼즐처럼 멈춰서 생각하는 시간이 긴 게임에서 얼굴이 다시 보인다.</td><td>③</td></tr>
+          <tr><td>방향을 바꿀 때 종이처럼 뒤집는다</td><td>페이퍼 마리오</td><td>그림이 바뀌는 순간에 좌우로 납작해졌다 펴지는 짧은 회전을 넣는다. 그림을 더 그리지 않아도 "돌았다"는 느낌이 난다.</td><td>④</td></tr>
+          <tr><td>완전한 뒷모습 대신 비스듬한 뒷모습</td><td>쿠키런: 킹덤 같은 쿼터뷰 게임</td><td>얼굴이 조금 남아 있어 앞모습과의 차이가 작다. 돌아와도 덜 튄다.</td><td>⑤</td></tr>
+          <tr><td>몸을 돌리지 않고 눈이나 기울기로만 방향을 낸다</td><td>Patrick's Parabox</td><td>도는 문제가 아예 없다. 다만 "그 방향을 보고 뛰는" 느낌은 약해서 이번 시안에서는 뺐다.</td><td>-</td></tr>
+          <tr><td>몸이 실제로 돌아간다</td><td>동물의 숲, 크로시 로드 같은 3D 게임</td><td>3D라서 가능한 방식. 2D에서는 중간 각도 그림을 여러 장 그려야 한다.</td><td>-</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top: 8px">위 표는 알고 있는 내용을 정리한 것이고, 이번에 각 게임의 영상을 다시 확인하지는 않았습니다.</p>
+
+      <h2>시안</h2>
+      <div class="bar">
+        <button data-mode="tap" class="on">한 칸씩 누르기</button>
+        <button data-mode="hold">꾹 눌러 연속 이동</button>
+        <button data-slow="1">느리게 보기 (1/4)</button>
+        <span>뛰는 자세</span>
+        <button data-set="a">A 달려 나가기</button>
+        <button data-set="b">B 종종 걷기</button>
+        <button data-set="c" class="on">C 두 발로</button>
+      </div>
+      <div class="row" id="row"></div>
+    </main>
+    <script>
+      const CARDS = [
+        { clip: 'walkF', now: true, title: '지금 게임 (위아래)', text: '앞발을 들고 뛰어오른 자세로 높이 뛴다.' },
+        { clip: 'walkS', now: true, side: true, title: '지금 게임 (옆)', text: '비교용. 달리기 자세로 낮게 뛴다.' },
+        { turn: 'snap', title: '① 바로 정면으로', text: '앞서 보신 시안. 멈추면 곧바로 정면 앉은 자세가 된다.' },
+        { turn: 'keep', title: '② 방향 유지', text: '위로 간 뒤에는 위를 본 채로 앉아 있는다. 다음에 움직일 때만 돈다.', ref: '포켓몬, Baba Is You' },
+        { turn: 'delay', title: '③ 잠깐 본 뒤 돌아보기', text: '위를 본 채로 있다가 1초쯤 가만히 두면 빙글 돌아 정면을 본다.', ref: '②에 쉬는 자세 복귀를 더한 것' },
+        { turn: 'flip', title: '④ 종이 뒤집기', text: '멈추면 정면으로 오되, 그림이 바뀔 때 납작해졌다 펴지며 돈다. 새 그림이 필요 없다.', ref: '페이퍼 마리오' },
+        { turn: 'quarter', title: '⑤ 비스듬한 뒷모습', text: '위로 갈 때 어깨 너머로 얼굴이 조금 보인다. 멈추면 정면으로 온다.', ref: '쿠키런: 킹덤' },
+      ];
+      const FRAME = 240, MOVE = 0.16, ANIM = 0.2, FPS = 36, CELL = 84, FLIP = 0.12, LOOK = 1.0;
+      const SCALE = (0.94 * 400) / 232, GROUND = 352 / 400;
+      let mode = 'tap', slow = 1, set = 'c';
+      const load = (name) => Object.assign(new Image(), { src: `motion/default_${name}.webp` });
+      const IMG = {};
+      for (const n of ['idle', 'walkF', 'walkS', 'v_back', 'v_up_d', ...['a', 'b', 'c'].flatMap((k) => ['v_up_' + k, 'v_down_' + k])]) IMG[n] = load(n);
+      const ok = (img) => img.complete && img.naturalWidth > 0;
+
+      for (const card of CARDS) {
+        const fig = document.createElement('figure');
+        if (card.now) fig.className = 'now';
+        const cv = document.createElement('canvas');
+        cv.width = card.side ? CELL * 4 + 40 : CELL + 100;
+        cv.height = card.side ? CELL + 100 : CELL * 4 + 40;
+        if (card.side) cv.style.marginTop = (CELL * 3 - 60) / 2 + 'px';
+        fig.append(cv, Object.assign(document.createElement('figcaption'), { innerHTML: `<b>${card.title}</b><span>${card.text}</span>` + (card.ref ? `<em>참고: ${card.ref}</em>` : '') }));
+        document.getElementById('row').append(fig);
+        Object.assign(card, { cv, ctx: cv.getContext('2d'), cell: 3, from: 3, dir: -1, moveT0: -9, animT0: -9, animUntil: -9, next: 0.6, facing: 'front', flipT0: -9, shown: null });
+      }
+
+      function step(c, t) {
+        if (t < c.next) return;
+        if ((c.dir < 0 && c.cell === 0) || (c.dir > 0 && c.cell === 3)) c.dir = -c.dir;
+        c.from = c.cell;
+        c.cell += c.dir;
+        c.moveT0 = t;
+        if (t > c.animUntil) c.animT0 = t;
+        c.animUntil = t + ANIM + 0.04;
+        const end = c.cell === 0 || c.cell === 3;
+        c.next = t + (end ? 2.4 : mode === 'hold' ? 0.18 : 0.55);
+      }
+
+      // 지금 보여 줄 그림과 프레임. facing은 몸이 보는 쪽(front 또는 back)
+      function sprite(c, t, moving) {
+        if (c.now) return moving ? [IMG[c.clip], Math.floor((t - c.animT0) * FPS) % 12] : [IMG.idle, Math.floor(t * 30) % 48];
+        if (moving) {
+          const name = c.dir > 0 ? 'v_down_' + set : c.turn === 'quarter' ? 'v_up_d' : 'v_up_' + set;
+          return [IMG[name], Math.floor((t - c.animT0) * FPS) % 12];
+        }
+        return [c.facing === 'back' ? IMG.v_back : IMG.idle, Math.floor(t * 30) % 48];
+      }
+
+      function draw(c, t) {
+        const { ctx, cv } = c;
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        const ox = c.side ? 20 : 50, oy = c.side ? 60 : 20;
+        for (let i = 0; i < 4; i++) {
+          ctx.fillStyle = i % 2 ? '#e9cfa0' : '#f0d9ad';
+          ctx.fillRect(ox + (c.side ? i * CELL : 0), oy + (c.side ? 0 : i * CELL), CELL, CELL);
+        }
+        const mk = Math.min(1, Math.max(0, (t - c.moveT0) / MOVE));
+        const p = c.from + (c.cell - c.from) * (1 - (1 - mk) * (1 - mk));
+        const cx = ox + (c.side ? p + 0.5 : 0.5) * CELL;
+        const cy = oy + (c.side ? 0.5 : p + 0.5) * CELL - Math.sin(mk * Math.PI) * CELL * 0.07;
+        const moving = t < c.animUntil;
+
+        // 몸이 봐야 하는 쪽
+        let want = 'front';
+        if (!c.now && c.turn !== 'quarter') {
+          if (moving) want = c.dir < 0 ? 'back' : 'front';
+          else if (c.turn === 'keep') want = c.dir < 0 ? 'back' : 'front';
+          else if (c.turn === 'delay') want = c.dir < 0 && t - c.animUntil < LOOK ? 'back' : 'front';
+        }
+        const flips = c.turn === 'keep' || c.turn === 'delay' || c.turn === 'flip';
+        let sx = 1;
+        let frozen = null;
+        if (want !== c.facing) {
+          if (!flips) c.facing = want;
+          else {
+            if (c.flipTo !== want || t - c.flipT0 > FLIP) { c.flipT0 = t; c.flipTo = want; c.frozen = c.shown; }
+            const k = (t - c.flipT0) / FLIP;
+            if (k >= 0.5) c.facing = want;
+            else frozen = c.frozen;
+          }
+        }
+        if (flips && t - c.flipT0 < FLIP) sx = Math.max(0.06, Math.abs(Math.cos(((t - c.flipT0) / FLIP) * Math.PI)));
+        const [img, frame] = frozen ?? sprite(c, t, moving);
+        if (!frozen) c.shown = [img, frame];
+
+        const size = CELL * SCALE;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(0, CELL * 0.335, CELL * 0.29, CELL * 0.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.scale((c.side && c.dir < 0 ? -1 : 1) * sx, 1);
+        if (ok(img)) ctx.drawImage(img, frame * FRAME, 0, FRAME, FRAME, -size / 2, CELL * 0.36 - size * GROUND, size, size);
+        ctx.restore();
+      }
+
+      let clock = 0, last = performance.now();
+      function tick(nowMs) {
+        clock += (Math.min(100, nowMs - last) / 1000) * slow;
+        last = nowMs;
+        for (const c of CARDS) {
+          step(c, clock);
+          draw(c, clock);
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      for (const b of document.querySelectorAll('button')) {
+        b.onclick = () => {
+          const key = b.dataset.mode ? 'mode' : b.dataset.set ? 'set' : null;
+          if (key) {
+            if (key === 'mode') mode = b.dataset.mode;
+            else set = b.dataset.set;
+            for (const o of document.querySelectorAll(`[data-${key}]`)) o.classList.toggle('on', o === b);
+          } else {
+            slow = slow === 1 ? 0.25 : 1;
+            b.classList.toggle('on', slow !== 1);
+          }
+        };
+      }
+    </script>
+  </body>
+</html>

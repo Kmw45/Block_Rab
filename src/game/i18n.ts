@@ -103,6 +103,10 @@ const STRINGS = {
   storyNext: ['다음', 'Next'],
   storyStart: ['출발!', "Let's go!"],
   storySkip: ['건너뛰기', 'Skip'],
+  storyClose: ['닫기', 'Close'],
+  storyMore: ['다음 이야기는 {n}단계를 지나면 열려요', 'The next page opens after stage {n}'],
+  storyNew: ['새 이야기', 'New story'],
+  storyPages: ['이야기 {a}/{b}', 'Story {a}/{b}'],
   storyReplay: ['이야기 다시 보기', 'Replay story'],
 } as const;
 

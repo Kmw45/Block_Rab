@@ -28,7 +28,35 @@ const TAU = Math.PI * 2;
 const SLEEP_AFTER = 14; // 이만큼(초) 조작이 없으면 존다
 const CRYSTAL_X = -0.48;
 const CRYSTAL_Y = 0.18;
+// 위를 보고 앉은 뒷모습에서는 꼬리가 오른쪽에 있다
+const BACK_CRYSTAL_X = 0.29;
+const BACK_CRYSTAL_Y = 0.07;
+// 등을 보이는 동작. 앞모습 동작과 바뀌는 순간에는 종이를 뒤집듯 납작해졌다가 펴진다
+const BACK_ANIMS: ReadonlySet<AnimName> = new Set(['walkU', 'pushU', 'idleB', 'bumpB']);
+const TURN_TIME = 0.12;
 const MOVE_TIME = 0.16;
+// 디오라마 판(board_N 그림, 폭 900px로 줄인 것)에서 잰 치수(px): side는 좌우 턱, top은 위쪽 턱, bottom은 아래쪽 턱과 앞 단면을 합친 높이.
+// slant는 그림이 위로 갈수록 좁아지는 정도(맨 위에서 한쪽이 안으로 들어온 px)다. 판의 칸은 반듯한 네모이므로 그릴 때 이만큼 펴서 쓴다(straighten).
+// 그림마다 다르므로 그림을 다시 뽑으면 다시 잰다. 턱보다 조금 작게 적어야 판 안쪽 색이 바닥 밖으로 비치지 않는다.
+const SLABS: { side: number; top: number; bottom: number; slant: number }[] = [
+  { side: 62, top: 60, bottom: 205, slant: 22 },
+  { side: 68, top: 45, bottom: 250, slant: 42 },
+  { side: 50, top: 46, bottom: 178, slant: 35 },
+  { side: 36, top: 26, bottom: 180, slant: 42 },
+  { side: 46, top: 37, bottom: 186, slant: 38 },
+  { side: 58, top: 42, bottom: 190, slant: 40 },
+  { side: 76, top: 48, bottom: 204, slant: 41 },
+  { side: 47, top: 22, bottom: 186, slant: 35 },
+];
+const straightened = new Map<HTMLImageElement, HTMLCanvasElement>();
+const SLAB_FRONT = 0.62; // 앞 단면은 위에서 내려다본 것처럼 세로로 눌러 그린다
+// 클리어: 여우가 빛기둥을 타고 떠올라(WIN_RISE부터) 별에 닿는 순간(WIN_MERGE) 별이 터진다
+const WIN_RISE = 0.5;
+const WIN_MERGE = 1.05;
+const STAR_HEIGHT = 0.46; // 출구 위에 떠 있는 별의 높이(칸 단위)
+
+// 막혔을 때 부딪힌 것. 흔들림과 소리가 이것에 따라 달라진다
+export type BumpKind = 'edge' | 'wall' | 'fixed' | 'door' | 'oneway' | 'pit' | 'normal' | 'rail' | 'ice' | 'link' | 'locked';
 const SLIDE_TIME_PER_CELL = 0.055;
 
 interface Tween {
@@ -98,6 +126,15 @@ export class BoardView {
   // 캐릭터 동작: 움직이거나 밀 때 잠깐 걷기·밀기를 재생하고, 끝나면 숨쉬기로 돌아간다
   private animName: AnimName = 'idle';
   private animT0 = 0;
+  private backShown = false; // 지금 등을 보이고 있는지
+  private turnT0 = -9; // 앞뒤로 돌기 시작한 시각
+  private turnFrom?: { name: AnimName; t: number; look: Dir }; // 도는 앞 절반 동안 보여 줄, 돌기 직전의 모습
+  private shown?: { name: AnimName; t: number; look: Dir };
+  private world = 1; // 던전 번호. 판, 벽, 바닥 그림을 고른다
+  private shakeLink = false; // 쌍둥이 블록은 함께 흔들린다
+  private cellFx = new Map<number, { t0: number; dir: Dir; kind: BumpKind | 'press' }>(); // 칸마다의 반응(벽의 흔들림, 문의 덜컹거림 등)
+  private rings: { x: number; y: number; t0: number; life: number; color: string; r0: number; r1: number }[] = []; // 바닥에 누워 퍼지는 고리
+  private starAng = 0; // 출구의 별이 도는 각도
   private animUntil = 0; // 구덩이에 가라앉은 정도(0~1)
   private pending: { at: number; run: () => void }[] = [];
   private last = now();
@@ -117,13 +154,18 @@ export class BoardView {
     this.observer.observe(canvas);
   }
 
-  load(def: BoardDef, theme: WorldTheme, state: State): void {
+  load(def: BoardDef, theme: WorldTheme, state: State, world = 1): void {
     this.def = def;
     this.theme = theme;
+    this.world = world;
+    this.cellFx.clear();
+    this.rings = [];
     this.particles = [];
     this.hint = [];
     this.winT0 = -1;
     this.look = 2;
+    this.backShown = false;
+    this.turnT0 = -9;
     this.blocks = def.kinds.map(() => ({ fx: 0, fy: 0, tx: 0, ty: 0, t0: 0, dur: 1 }));
     this.lock = def.kinds.map(() => 0);
     this.pulseT0 = def.kinds.map(() => -9);
@@ -200,13 +242,36 @@ export class BoardView {
         this.spawn(kx + 0.5, ky + 0.55, { color: 'rgba(120,90,80,0.8)', speed: 1.3, life: 0.5, size: 0.22, tex: 'fx_dust', grow: 1 });
       }
     }
+    // 스위치가 눌리거나 풀리면 스위치에서 고리가 퍼지고 문이 덜컹거린다
+    if (doorsOpen(this.def, before) !== doorsOpen(this.def, res.state)) {
+      this.pending.push({
+        at: time + MOVE_TIME * 0.8,
+        run: () => {
+          const t0 = now();
+          const open = doorsOpen(this.def, this.state);
+          for (const sw of this.def.switches) {
+            if (open !== blockAt(this.state, sw) >= 0) continue;
+            const [sx, sy] = this.xy(sw);
+            this.cellFx.set(sw, { t0, dir, kind: 'press' });
+            this.rings.push({ x: sx + 0.5, y: sy + 0.5, t0, life: 0.5, color: '#ffd978', r0: 0.2, r1: 0.9 });
+          }
+          this.def.tile.forEach((t, cell) => {
+            if (t !== TILE_DOOR) return;
+            const [dx, dy] = this.xy(cell);
+            this.cellFx.set(cell, { t0, dir, kind: 'door' });
+            for (let i = 0; i < 5; i++) this.spawn(dx + 0.5, dy + 0.6, { color: 'rgba(210,200,190,0.7)', speed: 0.9, life: 0.45, size: 0.2, tex: 'fx_dust', grow: 1 });
+            if (open) for (let i = 0; i < 5; i++) this.spawn(dx + 0.5, dy + 0.5, { color: '#ffe2a8', speed: 1.6, life: 0.4, size: 0.12, tex: 'fx_spark' });
+          });
+        },
+      });
+    }
     this.moveT0 = time;
     this.lastActT = time;
     // 빙판에서는 미끄러진 칸 수만큼 길게 움직이고, 마법진을 탔다면 도착한 뒤 순간이동한다
     const walkDur = MOVE_TIME + res.slid * SLIDE_TIME_PER_CELL;
-    // 옆으로 갈 때와 위아래로 갈 때 다른 동작을 쓴다
-    const side = dir === 1 || dir === 3;
-    const clip: AnimName = res.pushed >= 0 ? (side ? 'pushS' : 'pushF') : side ? 'walkS' : 'walkF';
+    // 가는 쪽을 본다: 옆으로는 옆모습, 위로는 뒷모습, 아래로는 앞모습
+    const way = dir === 0 ? 'U' : dir === 2 ? 'D' : 'S';
+    const clip: AnimName = `${res.pushed >= 0 ? 'push' : 'walk'}${way}`;
     this.playAnim(clip, (res.pushed >= 0 ? 0.3 : MOVE_TIME + 0.04) + res.slid * SLIDE_TIME_PER_CELL);
     this.retarget(this.player, res.walkTo, walkDur, false);
     if (res.slid > 0) this.moveT0 = time + walkDur - MOVE_TIME;
@@ -302,13 +367,92 @@ export class BoardView {
     else this.hint = [];
   }
 
-  bump(res: StepResult, dir: Dir): void {
+  // 막혔을 때: 부딪힌 것이 무엇인지 돌려주고(소리를 고르는 데 쓴다), 그것에 맞는 반응을 보여 준다
+  bump(res: StepResult, dir: Dir): BumpKind {
+    const { def, state } = this;
+    const t0 = now();
     this.shakeBlock = res.bumpBlock;
-    this.shakeT0 = now();
-    this.lastActT = this.shakeT0;
+    this.shakeT0 = t0;
+    this.lastActT = t0;
     this.shakeDir = dir;
     this.look = dir;
-    this.playAnim('bump', 0.4);
+    this.playAnim(dir === 0 ? 'bumpB' : 'bump', 0.4);
+
+    const cell = res.bumpCell;
+    const tile = cell >= 0 ? def.tile[cell] : 0;
+    let kind: BumpKind;
+    if (cell < 0) kind = 'edge';
+    else if (def.solid[cell] === SOLID_WALL) kind = 'wall';
+    else if (def.solid[cell] === SOLID_FIXED) kind = 'fixed';
+    else if (tile >= TILE_ONEWAY && tile < TILE_ONEWAY + 4 && tile - TILE_ONEWAY !== dir) kind = 'oneway';
+    else if (tile === TILE_DOOR && !doorsOpen(def, state)) kind = 'door';
+    else if (res.bumpBlock >= 0) {
+      const k = def.kinds[res.bumpBlock];
+      kind = k === 'count' ? 'locked' : k === 'railH' || k === 'railV' ? 'rail' : k;
+    } else kind = 'pit';
+    this.shakeLink = kind === 'link';
+    if (cell >= 0) this.cellFx.set(cell, { t0, dir, kind });
+
+    // 부딪힌 자리(두 칸의 경계)에서 튀는 것들
+    const [px, py] = this.xy(state.p);
+    const hx = px + 0.5 + DX[dir] * 0.5;
+    const hy = py + 0.5 + DY[dir] * 0.5;
+    const back = { vx: -DX[dir] * 0.9, vy: -DY[dir] * 0.9 };
+    const dust = (n: number, color = 'rgba(225,214,196,0.75)') => {
+      for (let i = 0; i < n; i++) this.spawn(hx + (Math.random() - 0.5) * 0.3, hy + 0.1, { color, speed: 0.6, life: 0.35 + Math.random() * 0.25, size: 0.17 + Math.random() * 0.1, tex: 'fx_dust', grow: 0.9, ...back });
+    };
+    const chips = (n: number, color: string, star = false) => {
+      for (let i = 0; i < n; i++) this.spawn(hx, hy, { color, speed: 1.6, life: 0.4 + Math.random() * 0.25, size: 0.045 + Math.random() * 0.035, grav: 4, star, vx: back.vx * 1.4, vy: back.vy * 1.4 - 0.8 });
+    };
+    const sparks = (n: number, color: string) => {
+      for (let i = 0; i < n; i++) this.spawn(hx, hy, { color, speed: 2, life: 0.3, size: 0.13, tex: 'fx_spark', ...back });
+    };
+    if (kind === 'wall') {
+      dust(4);
+      chips(3, '#9a94a6');
+    } else if (kind === 'fixed' || kind === 'locked') {
+      dust(4);
+      this.camShake = Math.max(this.camShake, 0.02);
+      if (kind === 'locked') this.rings.push({ x: hx + DX[dir] * 0.5, y: hy + DY[dir] * 0.5, t0, life: 0.35, color: '#ff9a7d', r0: 0.25, r1: 0.6 });
+    } else if (kind === 'edge') {
+      dust(3);
+      this.camShake = Math.max(this.camShake, 0.025);
+    } else if (kind === 'door') {
+      sparks(6, '#ffc7a0');
+      this.camShake = Math.max(this.camShake, 0.02);
+    } else if (kind === 'oneway') {
+      // 화살표가 가리키는 쪽으로 바람이 밀어낸다
+      const d = (tile - TILE_ONEWAY) as Dir;
+      const [cx, cy] = this.xy(cell);
+      for (let i = 0; i < 7; i++) this.spawn(cx + 0.5 + (Math.random() - 0.5) * 0.6, cy + 0.5 + (Math.random() - 0.5) * 0.6, { color: '#ffe19a', speed: 0.2, life: 0.35, size: 0.05, vx: DX[d] * 2.4, vy: DY[d] * 2.4 });
+    } else if (kind === 'pit') {
+      // 발끝에서 돌멩이가 구덩이로 굴러떨어진다
+      for (let i = 0; i < 4; i++) this.spawn(hx, hy, { color: '#b7ab97', speed: 0.3, life: 0.45, size: 0.05, vx: DX[dir] * 1.1, vy: DY[dir] * 1.1 + 0.4 });
+    } else if (kind === 'normal') {
+      chips(4, '#c98d4b');
+      dust(2);
+    } else if (kind === 'rail') sparks(7, '#ffeeb0');
+    else if (kind === 'ice') chips(6, '#e3f6ff', true);
+    else if (kind === 'link') {
+      state.b.forEach((b, i) => {
+        if (def.kinds[i] !== 'link' || state.c[i] === SUNK) return;
+        const [bx, by] = this.xy(b);
+        for (let n = 0; n < 4; n++) this.spawn(bx + 0.5, by + 0.5, { color: n % 2 ? '#ffffff' : '#ffc2dd', speed: 1.5, life: 0.45, size: 0.06, star: true });
+      });
+    }
+    return kind;
+  }
+
+  // 부딪힌 칸이 흔들리는 정도: [x, y, 회전]. 0.3초 동안 잦아든다
+  private cellShake(cell: number, time: number, kind: string): [number, number, number] {
+    const fx = this.cellFx.get(cell);
+    if (!fx || fx.kind !== kind) return [0, 0, 0];
+    const k = (time - fx.t0) / 0.3;
+    if (k >= 1) return [0, 0, 0];
+    const wob = Math.sin(k * Math.PI * 5) * (1 - k);
+    const push = Math.sin(Math.min(1, k * 3) * Math.PI) * (1 - k);
+    const s = this.cell;
+    return [(DX[fx.dir] * push * 0.07 + DY[fx.dir] * wob * 0.015) * s, (DY[fx.dir] * push * 0.07 + DX[fx.dir] * wob * 0.015) * s, wob * 0.06];
   }
 
   // 힌트는 여우의 꼬리 끝 결정이 길을 비춰 주는 것이다. 켜지는 순간 결정에서 빛이 튄다.
@@ -316,12 +460,20 @@ export class BoardView {
     if (dirs.length && !this.hint.length) {
       this.hintT0 = now();
       const [x, y] = this.xy(this.state.p);
-      const tx = x + 0.5 + (this.look === 3 ? -CRYSTAL_X : CRYSTAL_X);
-      this.spawn(tx, y + 0.5 - CRYSTAL_Y, { color: '#ffe07a', speed: 0, life: 0.5, size: 0.3, tex: 'fx_ring', grow: 2.4 });
-      for (let i = 0; i < 8; i++) this.spawn(tx, y + 0.5 - CRYSTAL_Y, { color: '#fff3b0', speed: 1.8, life: 0.5, size: 0.13, tex: 'fx_spark' });
+      const [gx, gy] = this.crystalAt();
+      const tx = x + 0.5 + gx;
+      const ty = y + 0.5 - gy;
+      this.spawn(tx, ty, { color: '#ffe07a', speed: 0, life: 0.5, size: 0.3, tex: 'fx_ring', grow: 2.4 });
+      for (let i = 0; i < 8; i++) this.spawn(tx, ty, { color: '#fff3b0', speed: 1.8, life: 0.5, size: 0.13, tex: 'fx_spark' });
     }
     this.hint = dirs;
     this.lastActT = now();
+  }
+
+  // 꼬리 끝 결정의 자리(칸 단위, 캐릭터 가운데에서 오른쪽·위로). 보는 쪽에 따라 다르다
+  private crystalAt(): [number, number] {
+    if (this.look === 0 && now() - this.lastActT <= SLEEP_AFTER) return [BACK_CRYSTAL_X, BACK_CRYSTAL_Y];
+    return [this.look === 3 ? -CRYSTAL_X : CRYSTAL_X, CRYSTAL_Y];
   }
 
   private drawCrystalGlow(time: number, s: number): void {
@@ -329,8 +481,9 @@ export class BoardView {
     const flash = Math.max(0, 1 - (time - this.hintT0) / 0.5);
     const pulse = 0.8 + Math.sin(time * 5) * 0.2;
     const r = s * (0.4 + flash * 0.35);
-    const y = -s * CRYSTAL_Y;
-    const x = s * (this.look === 3 ? -CRYSTAL_X : CRYSTAL_X);
+    const [gx, gy] = this.crystalAt();
+    const y = -s * gy;
+    const x = s * gx;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, `rgba(255,246,200,${Math.min(1, pulse + flash)})`);
     g.addColorStop(0.4, `rgba(255,214,92,${Math.min(1, (pulse + flash) * 0.4)})`);
@@ -343,23 +496,48 @@ export class BoardView {
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  // 클리어: 출구에 올라서면 바닥에서 고리가 퍼지고, 여우가 빛기둥을 타고 떠올라 별에 닿는 순간 별이 터진다
   playWin(): void {
     const time = now();
     this.winT0 = time;
     const [x, y] = this.xy(this.def.exit);
-    this.camShake = 0.06;
-    this.spawn(x + 0.5, y + 0.5, { color: '#ffffff', speed: 0, life: 0.9, size: 1.6, tex: 'fx_burst', grow: 1.6 });
-    this.spawn(x + 0.5, y + 0.5, { color: '#ffffff', speed: 0, life: 0.6, size: 0.5, tex: 'fx_ring', grow: 4 });
-    for (let i = 0; i < 46; i++) {
-      this.spawn(x + 0.5, y + 0.5, {
-        color: i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? this.theme.accent : '#ffe07a',
-        speed: 1.5 + Math.random() * 3.5,
-        life: 0.6 + Math.random() * 0.7,
-        size: 0.05 + Math.random() * 0.07,
-        star: i % 2 === 0,
-        grav: 2.5,
+    const cx = x + 0.5;
+    const cy = y + 0.5;
+    this.rings.push({ x: cx, y: cy, t0: time, life: 0.6, color: '#fff1b8', r0: 0.25, r1: 1.1 });
+    // 떠오르는 동안 빛 알갱이가 기둥을 따라 올라간다
+    for (let i = 0; i < 16; i++) {
+      this.pending.push({
+        at: time + WIN_RISE * 0.6 + i * 0.035,
+        run: () => this.spawn(cx + (Math.random() - 0.5) * 0.6, cy + 0.3, { color: i % 2 ? '#ffffff' : '#ffe07a', speed: 0.1, life: 0.6, size: 0.05 + Math.random() * 0.04, vy: -2.6, star: i % 3 === 0 }),
       });
     }
+    this.pending.push({
+      at: time + WIN_MERGE,
+      run: () => {
+        const t0 = now();
+        const top = cy - STAR_HEIGHT - 0.55; // 별이 터지는 높이
+        this.camShake = 0.07;
+        this.spawn(cx, top, { color: '#ffffff', speed: 0, life: 0.9, size: 1.7, tex: 'fx_burst', grow: 1.6 });
+        this.spawn(cx, top, { color: '#ffffff', speed: 0, life: 0.5, size: 0.5, tex: 'fx_ring', grow: 3.4 });
+        // 바닥에는 충격이 고리 셋으로 퍼진다
+        [0, 0.09, 0.2].forEach((d, i) => this.rings.push({ x: cx, y: cy, t0: t0 + d, life: 0.7, color: i === 1 ? this.theme.accent : '#ffe9a0', r0: 0.3, r1: 1.7 + i * 0.5 }));
+        // 불꽃놀이처럼 위로 솟았다가 떨어진다
+        for (let i = 0; i < 52; i++) {
+          const a = (i / 52) * TAU;
+          const sp = 1.6 + Math.random() * 3;
+          this.spawn(cx, top, {
+            color: i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? this.theme.accent : '#ffe07a',
+            speed: 0.4,
+            life: 0.7 + Math.random() * 0.7,
+            size: 0.05 + Math.random() * 0.07,
+            star: i % 2 === 0,
+            grav: 5,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp * 0.6 - 1.6,
+          });
+        }
+      },
+    });
   }
 
   private spawn(
@@ -395,6 +573,15 @@ export class BoardView {
     this.canvas.width = Math.round(rect.width * dpr);
     this.canvas.height = Math.round(rect.height * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const slab = getSprite('board_' + this.world);
+    if (slab) {
+      const m = this.slabMetrics(slab, 1);
+      this.cell = Math.floor(Math.min((rect.width * 0.98) / (this.def.w + m.side * 2), rect.height / (this.def.h + m.top + m.bottom + 0.45)));
+      this.ox = (rect.width - this.cell * this.def.w) / 2;
+      // 위쪽 턱과 아래쪽 단면을 합친 덩어리가 가운데 오게 한다
+      this.oy = (rect.height - this.cell * (this.def.h + m.bottom - m.top + 0.3)) / 2;
+      return;
+    }
     this.cell = Math.floor(Math.min(rect.width / (this.def.w + 0.6), rect.height / (this.def.h + 0.7)));
     this.ox = (rect.width - this.cell * this.def.w) / 2;
     this.oy = (rect.height - this.cell * this.def.h) / 2;
@@ -439,6 +626,9 @@ export class BoardView {
       p.y += p.vy * dt;
     }
     this.particles = this.particles.filter((p) => p.age < p.life);
+    this.rings = this.rings.filter((r) => time - r.t0 < r.life);
+    // 별은 천천히 돌다가, 클리어하면 여우를 맞으며 빨리 돈다
+    this.starAng += dt * (this.winT0 < 0 ? 1.7 : 3 + Math.min(1, (time - this.winT0) / WIN_MERGE) * 16);
     const life = TRAIL_LIFE[this.trail] ?? 0;
     while (this.marks.length > 1 && time - this.marks[0].born > life + 0.5) this.marks.shift();
 
@@ -463,22 +653,49 @@ export class BoardView {
       ctx.translate((Math.random() - 0.5) * 2 * this.camShake * s, (Math.random() - 0.5) * 2 * this.camShake * s);
     }
 
-    // 판 테두리
-    const pad = s * 0.22;
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    rr(ctx, ox - pad, oy - pad + s * 0.1, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
-    ctx.fill();
-    // 크림색 틀 안에 모래색 바닥(화면 시안의 판). 던전이 달라도 판의 색은 같고 배경색만 바뀐다.
-    ctx.fillStyle = BOARD_FRAME;
-    rr(ctx, ox - pad, oy - pad, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
-    ctx.fill();
-    ctx.fillStyle = BOARD_GROUT;
-    rr(ctx, ox - pad * 0.3, oy - pad * 0.3, def.w * s + pad * 0.6, def.h * s + pad * 0.6, s * 0.14);
-    ctx.fill();
+    // 판. 디오라마 그림이 있으면 두께가 있는 판 위에 그 던전의 바닥을 깐다
+    const slab = getSprite('board_' + this.world);
+    const floorImg = getSprite('floor_' + this.world) ?? getSprite('floor');
+    if (slab) this.drawSlab(slab);
+    else {
+      const pad = s * 0.22;
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      rr(ctx, ox - pad, oy - pad + s * 0.1, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
+      ctx.fill();
+      // 크림색 틀 안에 모래색 바닥(화면 시안의 판)
+      ctx.fillStyle = BOARD_FRAME;
+      rr(ctx, ox - pad, oy - pad, def.w * s + pad * 2, def.h * s + pad * 2, s * 0.3);
+      ctx.fill();
+      ctx.fillStyle = BOARD_GROUT;
+      rr(ctx, ox - pad * 0.3, oy - pad * 0.3, def.w * s + pad * 0.6, def.h * s + pad * 0.6, s * 0.14);
+      ctx.fill();
+    }
 
-    const floorImg = getSprite('floor');
+    if (slab && floorImg) {
+      // 바닥을 빈틈없이 깔고 칸의 경계만 옅게 긋는다
+      for (let y = 0; y < def.h; y++) for (let x = 0; x < def.w; x++) ctx.drawImage(floorImg, ox + x * s, oy + y * s, s + 0.5, s + 0.5);
+      ctx.strokeStyle = 'rgba(70,45,25,0.16)';
+      ctx.lineWidth = Math.max(1, s * 0.022);
+      ctx.beginPath();
+      for (let x = 1; x < def.w; x++) {
+        ctx.moveTo(ox + x * s, oy);
+        ctx.lineTo(ox + x * s, oy + def.h * s);
+      }
+      for (let y = 1; y < def.h; y++) {
+        ctx.moveTo(ox, oy + y * s);
+        ctx.lineTo(ox + def.w * s, oy + y * s);
+      }
+      ctx.stroke();
+      // 둘레 턱이 바닥에 드리우는 옅은 그늘
+      const shade = ctx.createLinearGradient(0, oy, 0, oy + s * 0.22);
+      shade.addColorStop(0, 'rgba(60,35,20,0.22)');
+      shade.addColorStop(1, 'rgba(60,35,20,0)');
+      ctx.fillStyle = shade;
+      ctx.fillRect(ox, oy, def.w * s, s * 0.22);
+    }
     for (let y = 0; y < def.h; y++) {
       for (let x = 0; x < def.w; x++) {
+        if (slab && floorImg) continue;
         if (floorImg) {
           ctx.save();
           rr(ctx, ox + x * s + s * 0.025, oy + y * s + s * 0.025, s * 0.95, s * 0.95, s * 0.09);
@@ -499,9 +716,10 @@ export class BoardView {
     this.drawTiles(time);
     this.drawSunk(time);
     this.drawExit(time);
+    this.drawRings(time);
     drawTrail(ctx, this.trail, this.marks, time, ox, oy, s);
 
-    const wallImg = getSprite('wall');
+    const wallImg = getSprite('wall_' + this.world) ?? getSprite('wall');
     for (let y = 0; y < def.h; y++) {
       for (let x = 0; x < def.w; x++) {
         const kind = def.solid[y * def.w + x];
@@ -509,7 +727,20 @@ export class BoardView {
         const cy = oy + (y + 0.5) * s;
         if (kind === SOLID_WALL) {
           if (wallImg) {
-            ctx.drawImage(wallImg, cx - s * 0.49, cy - s * 0.49, s * 0.98, s * 0.98);
+            // 바닥에 닿는 그늘을 깔고, 부딪혔을 때는 밀린 쪽으로 살짝 흔들린다
+            const [dx, dy, rot] = this.cellShake(y * def.w + x, time, 'wall');
+            if (slab) {
+              ctx.fillStyle = 'rgba(40,24,14,0.22)';
+              rr(ctx, cx - s * 0.47, cy - s * 0.4, s * 0.94, s * 0.94, s * 0.16);
+              ctx.fill();
+            }
+            if (dx || dy || rot) {
+              ctx.save();
+              ctx.translate(cx + dx, cy + dy);
+              ctx.rotate(rot);
+              ctx.drawImage(wallImg, -s * 0.49, -s * 0.49, s * 0.98, s * 0.98);
+              ctx.restore();
+            } else ctx.drawImage(wallImg, cx - s * 0.49, cy - s * 0.49, s * 0.98, s * 0.98);
           } else this.drawWall(cx, cy);
         } else if (kind === SOLID_FIXED) {
           let dx = 0;
@@ -523,7 +754,7 @@ export class BoardView {
     this.blocks.forEach((tw, i) => {
       if (this.sink[i] > 0) return; // 가라앉은 블록은 바닥 층에서 그린다
       let [bx, by] = tweenPos(tw, time);
-      if (i === this.shakeBlock && this.isShaking(time)) {
+      if ((i === this.shakeBlock || (this.shakeLink && def.kinds[i] === 'link')) && this.isShaking(time)) {
         const [dx, dy] = this.shakeOffset(time);
         bx += dx / s;
         by += dy / s;
@@ -542,7 +773,9 @@ export class BoardView {
     });
 
     this.drawHint(time);
+    this.drawStar(time, false);
     this.drawPlayer(time);
+    this.drawStar(time, true);
 
     for (const p of this.particles) {
       const k = 1 - p.age / p.life;
@@ -602,6 +835,12 @@ export class BoardView {
           ctx.arc(cx, cy, s * 0.3, 0, TAU);
           ctx.fill();
         }
+        const pfx = this.cellFx.get(i);
+        if (pfx && pfx.kind === 'press' && time - pfx.t0 < 0.3) {
+          // 눌리거나 풀리는 순간 번쩍인다
+          ctx.fillStyle = `rgba(255,244,200,${0.7 * (1 - (time - pfx.t0) / 0.3)})`;
+          ctx.fillRect(x, y, s, s);
+        }
         if (blockAt(this.state, i) >= 0) {
           // 눌린 스위치는 빛난다
           const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * 0.6);
@@ -615,7 +854,11 @@ export class BoardView {
         const open = doorsOpen(def, this.state);
         const img = getSprite('tile_door');
         ctx.globalAlpha = open ? 0.2 : 1;
-        if (img) ctx.drawImage(img, x, y, s, s);
+        // 부딪히거나 여닫힐 때 쇠창살이 좌우로 덜컹거린다
+        const fx = this.cellFx.get(i);
+        const rk = fx && fx.kind === 'door' ? (time - fx.t0) / 0.32 : 1;
+        const rattle = rk < 1 ? Math.sin(rk * Math.PI * 9) * (1 - rk) * s * 0.045 : 0;
+        if (img) ctx.drawImage(img, x + rattle, y, s, s);
         else {
           ctx.fillStyle = '#2a2d38';
           ctx.fillRect(x, y, s, s);
@@ -624,8 +867,8 @@ export class BoardView {
         }
         ctx.globalAlpha = 1;
         if (!open) {
-          ctx.strokeStyle = 'rgba(255,90,70,0.55)';
-          ctx.lineWidth = s * 0.05;
+          ctx.strokeStyle = `rgba(255,90,70,${0.55 + (rk < 1 ? (1 - rk) * 0.45 : 0)})`;
+          ctx.lineWidth = s * (0.05 + (rk < 1 ? (1 - rk) * 0.04 : 0));
           rr(ctx, x + s * 0.06, y + s * 0.06, s * 0.88, s * 0.88, s * 0.1);
           ctx.stroke();
         }
@@ -696,7 +939,18 @@ export class BoardView {
         const img = getSprite('tile_oneway');
         ctx.translate(cx, cy);
         ctx.rotate((dir * Math.PI) / 2);
+        // 거꾸로 들어오려 하면 화살표가 번쩍이며 튕겨 낸다
+        const ofx = this.cellFx.get(i);
+        const ok = ofx && ofx.kind === 'oneway' ? (time - ofx.t0) / 0.3 : 1;
+        if (ok < 1) {
+          const k = 1 + Math.sin(ok * Math.PI) * 0.12;
+          ctx.scale(k, k);
+        }
         if (img) ctx.drawImage(img, -s / 2, -s / 2, s, s);
+        if (ok < 1) {
+          ctx.fillStyle = `rgba(255,246,205,${0.6 * (1 - ok)})`;
+          ctx.fillRect(-s / 2, -s / 2, s, s);
+        }
         // 화살표 방향으로 흐르는 빛
         const flow = (time * 1.4) % 1;
         ctx.fillStyle = `rgba(255,214,120,${img ? 0.5 * (1 - flow) : 0.9})`;
@@ -791,16 +1045,23 @@ export class BoardView {
     const cx = this.ox + (x + 0.5) * s;
     const cy = this.oy + (y + 0.5) * s;
     const pulse = 0.5 + Math.sin(time * 2.6) * 0.5;
-    const img0 = getSprite('exit');
+    const img0 = getSprite('exit_pad') ?? getSprite('exit');
     if (img0) {
-      // 그림 출구(초록 바탕의 별 칸): 제자리에서 맥박처럼 숨쉬고 둘레가 은은하게 빛난다
+      // 받침: 둘레가 은은하게 빛나고, 바닥에 누운 고리가 번져 나간다. 별은 그 위에 떠 있다(drawStar)
       const g = ctx.createRadialGradient(cx, cy, s * 0.3, cx, cy, s * 0.78);
       g.addColorStop(0, `rgba(255,226,120,${0.32 + pulse * 0.2})`);
       g.addColorStop(1, 'rgba(255,226,120,0)');
       ctx.fillStyle = g;
       ctx.fillRect(cx - s * 0.8, cy - s * 0.8, s * 1.6, s * 1.6);
-      const k = s * (0.95 + pulse * 0.04);
-      ctx.drawImage(img0, cx - k / 2, cy - k / 2, k, k);
+      ctx.drawImage(img0, cx - s * 0.48, cy - s * 0.48, s * 0.96, s * 0.96);
+      for (let i = 0; i < 2; i++) {
+        const k = (time * 0.55 + i * 0.5) % 1;
+        ctx.strokeStyle = `rgba(255,236,150,${0.55 * (1 - k)})`;
+        ctx.lineWidth = s * 0.035 * (1 - k * 0.5);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + s * 0.06, s * (0.2 + k * 0.42), s * (0.2 + k * 0.42) * 0.5, 0, 0, TAU);
+        ctx.stroke();
+      }
       return;
     }
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * (0.62 + pulse * 0.1));
@@ -852,6 +1113,181 @@ export class BoardView {
     ctx.fillStyle = '#fff';
     drawStarShape(ctx, cx, cy, s * (0.15 + pulse * 0.03));
     ctx.fill();
+  }
+
+  // 디오라마 판을 칸 크기 s로 그릴 때의 치수: 좌우 턱, 위쪽 턱, 아래쪽(턱과 앞 단면)의 두께. 그림의 가운데가 판의 칸들에 꼭 맞게 늘어난다
+  private slabMetrics(img: HTMLImageElement, s: number): { side: number; top: number; bottom: number; src: { side: number; top: number; bottom: number } } {
+    const m = SLABS[this.world - 1] ?? SLABS[0];
+    const k = img.naturalWidth / 900;
+    const src = { side: m.side * k, top: m.top * k, bottom: m.bottom * k };
+    const f = (this.def.w * s) / (img.naturalWidth - src.side * 2);
+    return { side: src.side * f, top: src.top * f, bottom: src.bottom * f * SLAB_FRONT, src };
+  }
+
+  // 위로 갈수록 좁아지게 그려진 판 그림을 반듯하게 편다: 윗면의 줄마다 좌우를 그 줄의 폭만큼 늘린다. 한 번 만들어 두고 쓴다
+  private straighten(img: HTMLImageElement): HTMLCanvasElement {
+    let out = straightened.get(img);
+    if (out) return out;
+    const m = SLABS[this.world - 1] ?? SLABS[0];
+    const k = img.naturalWidth / 900;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const flat = h - m.bottom * k; // 이 아래(앞 단면)는 기울지 않았다
+    out = document.createElement('canvas');
+    out.width = w;
+    out.height = h;
+    const c = out.getContext('2d')!;
+    for (let y = 0; y < h; y++) {
+      const inset = y < flat ? m.slant * k * (1 - y / flat) : 0;
+      c.drawImage(img, inset, y, w - inset * 2, 1, 0, y, w, 1);
+    }
+    straightened.set(img, out);
+    return out;
+  }
+
+  // 두께가 있는 판. 모서리는 그대로 두고 가운데만 늘리는 9-슬라이스로 그려 판의 크기가 달라도 턱이 뭉개지지 않는다
+  private drawSlab(img: HTMLImageElement): void {
+    const { ctx, def, cell: s, ox, oy } = this;
+    const { side, top, bottom, src } = this.slabMetrics(img, s);
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const sx = [0, src.side, w - src.side, w];
+    const sy = [0, src.top, h - src.bottom, h];
+    const flat = this.straighten(img);
+    const dx = [ox - side, ox, ox + def.w * s, ox + def.w * s + side].map(Math.round);
+    const dy = [oy - top, oy, oy + def.h * s, oy + def.h * s + bottom].map(Math.round);
+    // 떠 있는 판 아래의 그림자
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    g.addColorStop(0, 'rgba(20,10,30,0.34)');
+    g.addColorStop(1, 'rgba(20,10,30,0)');
+    ctx.save();
+    ctx.translate(ox + (def.w * s) / 2, dy[3] + s * 0.2);
+    ctx.scale(def.w * s * 0.62, s * 0.5);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        ctx.drawImage(flat, sx[c], sy[r], sx[c + 1] - sx[c], sy[r + 1] - sy[r], dx[c], dy[r], dx[c + 1] - dx[c], dy[r + 1] - dy[r]);
+      }
+    }
+  }
+
+  // 바닥에 누워 퍼지는 고리. 위에서 비스듬히 본 것처럼 납작한 타원으로 그려 깊이를 준다
+  private drawRings(time: number): void {
+    const { ctx, cell: s, ox, oy } = this;
+    for (const r of this.rings) {
+      const k = (time - r.t0) / r.life;
+      if (k < 0 || k >= 1) continue;
+      const e = 1 - (1 - k) * (1 - k);
+      const rad = s * (r.r0 + (r.r1 - r.r0) * e);
+      ctx.globalAlpha = (1 - k) * 0.85;
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = s * 0.07 * (1 - k * 0.6);
+      ctx.beginPath();
+      ctx.ellipse(ox + r.x * s, oy + r.y * s + s * 0.06, rad, rad * 0.5, 0, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // 출구 위에 떠서 도는 별. 두께가 있는 원반처럼 세로축으로 돌고, 바닥에는 그림자가 지고, 빛기둥이 선다.
+  // front가 false면 별 뒤쪽의 것(빛기둥, 그림자, 뒤로 도는 빛 알갱이), true면 별과 앞쪽의 것을 그린다.
+  private drawStar(time: number, front: boolean): void {
+    const img = getSprite('exit_star') ?? getSprite('ui_star');
+    if (!getSprite('exit_pad') && !getSprite('exit')) return; // 그림이 없을 때의 출구는 drawExit가 다 그린다
+    const { ctx, cell: s } = this;
+    const [x, y] = this.xy(this.def.exit);
+    const cx = this.ox + (x + 0.5) * s;
+    const cy = this.oy + (y + 0.5) * s;
+    const win = this.winT0 >= 0 ? time - this.winT0 : -1;
+    const rise = win < 0 ? 0 : Math.min(1, win / WIN_MERGE); // 여우를 맞으러 올라간 정도
+    const after = win < 0 ? -1 : win - WIN_MERGE; // 별이 터진 뒤의 시간
+    const bob = Math.sin(time * 2.2) * 0.04;
+    const height = (STAR_HEIGHT + bob + rise * rise * 0.55) * s;
+    const pop = after >= 0 ? 1 + Math.sin(Math.min(1, after / 0.45) * Math.PI) * 0.9 : 1 + rise * 0.15;
+    const c = Math.cos(this.starAng);
+    const sn = Math.sin(this.starAng);
+    const size = s * 0.6 * pop;
+
+    if (!front) {
+      // 그림자: 별이 높이 뜰수록 작고 옅다
+      ctx.fillStyle = `rgba(30,20,10,${0.26 - rise * 0.14})`;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + s * 0.12, s * (0.06 + 0.17 * Math.abs(c)) * (1 - rise * 0.3), s * 0.07, 0, 0, TAU);
+      ctx.fill();
+      // 빛기둥: 위로 갈수록 넓어지며 옅어진다. 클리어하면 굵고 밝아진다
+      const glow = win < 0 ? 0.22 + Math.sin(time * 2.6) * 0.05 : after < 0 ? 0.3 + rise * 0.45 : Math.max(0, 0.75 - after * 1.6);
+      const top = cy - s * (1.5 + rise * 0.7);
+      const half = s * (0.26 + rise * 0.14);
+      const beam = ctx.createLinearGradient(0, cy, 0, top);
+      beam.addColorStop(0, `rgba(255,238,160,${glow})`);
+      beam.addColorStop(1, 'rgba(255,238,160,0)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(cx - half, cy + s * 0.08);
+      ctx.lineTo(cx + half, cy + s * 0.08);
+      ctx.lineTo(cx + half * 1.5, top);
+      ctx.lineTo(cx - half * 1.5, top);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 별 둘레를 도는 빛 알갱이: 뒤로 갈 때는 별보다 먼저, 앞으로 올 때는 별 다음에 그려 감싸 도는 것처럼 보이게 한다
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 4; i++) {
+      const a = time * 2.1 + (i * TAU) / 4;
+      if (Math.sin(a) > 0 !== front) continue;
+      const depth = 0.75 + Math.sin(a) * 0.25;
+      ctx.fillStyle = `rgba(255,244,190,${0.55 + Math.sin(a) * 0.35})`;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(a) * s * 0.4 * pop, cy - height + Math.sin(a) * s * 0.11 + Math.sin(time * 3 + i) * s * 0.05, s * 0.035 * depth, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+    if (!front) return;
+
+    // 별: 가장자리를 여러 겹 쌓아 두께를 내고, 보는 쪽을 향한 면을 맨 위에 그린다
+    const thick = size * 0.13;
+    const face = Math.max(0.07, Math.abs(c));
+    const off = Math.sign(c || 1) * sn * thick * 0.5;
+    const edge = getTinted(getSprite('exit_star') ? 'exit_star' : 'ui_star', '#b77a2c');
+    const one = (source: CanvasImageSource | undefined, ox2: number) => {
+      ctx.save();
+      ctx.translate(cx + ox2, cy - height);
+      ctx.scale(face, 1);
+      if (source) ctx.drawImage(source, -size / 2, -size / 2, size, size);
+      else {
+        ctx.fillStyle = '#ffd24d';
+        drawStarShape(ctx, 0, 0, size * 0.5);
+        ctx.fill();
+      }
+      ctx.restore();
+    };
+    for (let i = -3; i < 3; i++) one(edge ?? img, (off * i) / 3);
+    one(img, off);
+    // 정면을 지날 때의 반짝임과, 터질 때의 섬광
+    const glint = Math.max(0, Math.abs(c) - 0.86) / 0.14;
+    const flash = after >= 0 ? Math.max(0, 1 - after / 0.4) : 0;
+    if (glint > 0 || flash > 0) {
+      const r = size * (0.5 + flash * 1.4);
+      const g = ctx.createRadialGradient(cx + off, cy - height, 0, cx + off, cy - height, r);
+      g.addColorStop(0, `rgba(255,255,240,${Math.min(1, glint * 0.45 + flash)})`);
+      g.addColorStop(1, 'rgba(255,255,240,0)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx + off, cy - height, r, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   private drawHint(time: number): void {
@@ -907,16 +1343,33 @@ export class BoardView {
     if (this.winT0 >= 0 && getSheet(this.skin)) {
       // 클리어: 팔을 들고 뛰어오른 뒤 출구로 빨려 들어간다
       const t = time - this.winT0;
-      const k = Math.min(1, Math.max(0, (t - 0.8) / 0.28));
+      const k = Math.min(1, Math.max(0, (t - WIN_RISE) / (WIN_MERGE - WIN_RISE)));
       if (k >= 1) return;
+      const e = k * k;
+      // 세로축으로 도는 것처럼 폭이 접혔다 펴지고, 올라갈수록 작아지며 빛에 녹는다
+      const turn = 0.2 + 0.8 * Math.abs(Math.cos(e * Math.PI * 3));
+      const lift = e * s * (STAR_HEIGHT + 0.5);
+      const scale = 1 - e * 0.72;
       ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(k * Math.PI * 2);
-      ctx.scale(1 - k, 1 - k);
-      ctx.globalAlpha = 1 - k * 0.6;
+      ctx.translate(cx, cy - lift);
+      ctx.scale(scale * turn, scale);
+      ctx.globalAlpha = 1 - e * 0.35;
       drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, 1, { name: 'win', t });
       ctx.restore();
       ctx.globalAlpha = 1;
+      if (e > 0) {
+        const r = s * (0.25 + e * 0.5);
+        const g = ctx.createRadialGradient(cx, cy - lift - s * 0.1, 0, cx, cy - lift - s * 0.1, r);
+        g.addColorStop(0, `rgba(255,250,220,${e * 0.9})`);
+        g.addColorStop(1, 'rgba(255,250,220,0)');
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cx, cy - lift - s * 0.1, r, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
       return;
     }
     if (this.winT0 >= 0) {
@@ -940,7 +1393,20 @@ export class BoardView {
     ctx.translate(cx, cy - hop);
     ctx.scale(intro, intro);
     const moving = time < this.animUntil;
-    drawCharacter(ctx, this.skin, 0, 0, s, this.look, time, squash, { name: moving ? this.animName : time - this.lastActT > SLEEP_AFTER ? 'sleep' : 'idle', t: moving ? time - this.animT0 : time });
+    // 위로 간 뒤에는 돌아서지 않고 위를 본 채로 쉰다. 졸 때만 이쪽으로 돌아앉는다
+    const rest: AnimName = time - this.lastActT > SLEEP_AFTER ? 'sleep' : this.look === 0 ? 'idleB' : 'idle';
+    let pose = { name: moving ? this.animName : rest, t: moving ? time - this.animT0 : time, look: this.look };
+    const back = BACK_ANIMS.has(pose.name);
+    if (back !== this.backShown) {
+      this.backShown = back;
+      this.turnT0 = time;
+      this.turnFrom = this.shown;
+    }
+    const turn = (time - this.turnT0) / TURN_TIME;
+    if (turn < 0.5 && this.turnFrom) pose = this.turnFrom;
+    else this.shown = pose;
+    if (turn < 1) ctx.scale(Math.max(0.06, Math.abs(Math.cos(turn * Math.PI))), 1);
+    drawCharacter(ctx, this.skin, 0, 0, s, pose.look, time, squash, pose);
     // 움직이는 동안에는 자세 그림이 바뀌어 꼬리 위치가 달라지므로 빛을 잠깐 끈다
     if (this.hint.length && !moving) this.drawCrystalGlow(time, s);
     ctx.restore();

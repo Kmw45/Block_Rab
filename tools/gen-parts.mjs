@@ -1,10 +1,10 @@
 // 주인공(빛꼬리 여우)과 치장 스킨을 관절 애니메이션용 부위 그림으로 Codex CLI에서 생성한다.
 // 사용: node tools/gen-parts.mjs [로그 폴더] [동시 실행 수] [작업 이름 쉼표 목록]
-// 작업 이름: default_body, tail, tailtip, <id>_body, <id>_run, <id>_push, <id>_jump (id는 default 또는 스킨 id)
+// 작업 이름: default_body, tail, tailtip, <id>_body, <id>_run, <id>_push, <id>_jump, <id>_up, <id>_down, <id>_back (id는 default 또는 스킨 id)
 // - 주인공의 몸통은 시안의 정면 그림(art/concepts/fox-front.png)을 그대로 옮긴 앉은 자세 한 장이고, 꼬리만 따로다.
 // - 스킨은 몸통만 그린다. 주인공의 몸통을 참조로 넘겨 "같은 여우가 그 옷을 입은" 그림이 되게 한다.
 //   꼬리는 주인공의 것을 쓰고(털 색이 바뀌는 스킨만 물들임), 꼬리 끝의 결정은 모든 스킨에 남는다.
-// - 동작 자세(run, push, jump)는 스킨마다 한 장씩 따로 그린다.
+// - 동작 자세(run, push, jump)와 위아래를 보는 그림(up, down, back)은 스킨마다 한 장씩 따로 그린다.
 // 이미 있는 파일은 건너뛴다. 스킨의 모습은 tools/skins.json에 있다.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -61,7 +61,18 @@ const POSES = {
   jump:
     'seen from the front, jumping straight up in mid-air with joy: both front paws thrown up high, hind legs dangling below, ears perked up, a big happy smile with closed curved eyes, ' +
     'its fluffy tail visible at its left side with the warm golden crystal flame at the tip',
+  // 위아래로 갈 때는 가는 쪽을 본다: 위로는 뒷모습, 아래로는 앞모습. 위로 간 뒤에는 뒷모습으로 앉아 있는다.
+  up:
+    'seen from directly BEHIND, moving AWAY from the viewer: we see the back of its round head (NO face, no eyes), the backs of its two big ears, its back and its bottom, ' +
+    'scampering upright on its two hind legs like a toddler: little arms swinging out at its sides, one foot lifted mid-step, ears bouncing, its fluffy tail raised behind it with the warm golden crystal flame glowing at the tip',
+  down:
+    'seen from directly in FRONT, moving straight TOWARD the viewer, its face looking at the viewer, ' +
+    'scampering upright on its two hind legs like a toddler: little arms swinging at its sides, one foot lifted mid-step, ears bouncing, a big happy smile, its fluffy tail raised behind it with the warm golden crystal flame glowing at the tip and visible at its left side',
+  back:
+    'seen from directly BEHIND, sitting still and upright in the same calm sitting pose as the big front drawing but turned around: we see the back of its round head (NO face, no eyes), the backs of its two big upright ears and its round back, ' +
+    'its two hind feet peeking out at the left and right, and its fluffy tail curling up at its right side with the warm golden crystal flame glowing at the tip',
 };
+const FROM_BEHIND = new Set(['up', 'back']); // 얼굴이 보이지 않는 그림
 const POSE_END = ' The whole fox including its tail is one single drawing. No ground, no shadow, no motion lines, no sparkles, nothing else in the picture. Centered, fills about 88% of the frame. ';
 for (const [pose, text] of Object.entries(POSES)) {
   JOBS[`default_${pose}`] = [CONCEPT, `Draw the fox from the attached character sheet in a new pose, in exactly the same drawing style, colours, proportions and soft brown outline: ${FOX}, ${text}.${POSE_END}`];
@@ -72,7 +83,7 @@ for (const [id, skin] of Object.entries(SKINS)) {
     JOBS[`${id}_${pose}`] = [
       `${OUT}/default_${pose}.png`,
       `The attached picture is the hero fox in an action pose. Draw the SAME fox in exactly the same pose, size, proportions, outline and fur texture, ${skin.form}. ` +
-        `It must still be clearly the same character and the same pose (${POSES[pose].split(':')[0]}). Both big ears stay visible and the face stays uncovered.${POSE_END}`,
+        `It must still be clearly the same character and the same pose (${POSES[pose].split(':')[0]}). ${FROM_BEHIND.has(pose) ? 'We see the costume from behind; both big ears stay visible and NO face is drawn.' : 'Both big ears stay visible and the face stays uncovered.'}${POSE_END}`,
     ];
   }
 }

@@ -503,12 +503,17 @@ function accessoryFront(ctx: Ctx, id: string, r: number, time: number, d: SkinDe
 const ANIMS = {
   idle: [0, 48, 30, true],
   walkS: [48, 12, 36, true], // 한 칸 이동에 한 걸음(반 주기)
-  walkF: [60, 12, 36, true],
+  walkD: [60, 12, 36, true], // 아래로: 이쪽을 보고 뛰어온다
   pushS: [72, 14, 28, true],
-  pushF: [86, 14, 28, true],
+  pushD: [86, 14, 28, true],
   win: [100, 30, 30, false],
   bump: [130, 12, 30, false], // 막혔을 때: 놀랐다가 귀가 처진다
   sleep: [142, 40, 20, true], // 오래 가만히 두면 존다
+  // 위를 보는 동작(뒷모습). 위로 간 뒤에는 돌아서지 않고 idleB로 쉰다
+  walkU: [182, 12, 36, true],
+  pushU: [194, 14, 28, true],
+  idleB: [208, 48, 30, true],
+  bumpB: [256, 12, 30, false],
 } as const;
 export type AnimName = keyof typeof ANIMS;
 const SHEET_COLS = 10;

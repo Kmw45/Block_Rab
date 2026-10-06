@@ -2891,7 +2891,9 @@ h2 {
 
 .play-screen {
   --play-bg: color-mix(in srgb, var(--accent) 45%, #26323a);
+  /* 던전마다의 배경 그림(--play-img, app.ts가 넣는다)이 있으면 그것을 깔고, 없으면 던전 색 민무늬다 */
   background:
+    var(--play-img, none) center / cover no-repeat,
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190'%3E%3Cg fill='%23fff' fill-opacity='.07'%3E%3Cpath d='M30 22l5 9-5 9-5-9z'/%3E%3Cpath d='M128 118c0-9 5-14 5-14s5 5 5 14c5-4 11-3 11-3s-1 8-10 10h-12c-9-2-10-10-10-10s6-1 11 3z'/%3E%3Cpath d='M158 30l4 7-4 7-4-7z'/%3E%3Cpath d='M50 138c0-7 4-11 4-11s4 4 4 11c4-3 9-2 9-2s-1 6-8 8H49c-7-2-8-8-8-8s5-1 9 2z'/%3E%3C/g%3E%3C/svg%3E"),
     var(--play-bg);
 }
@@ -3675,6 +3677,60 @@ button.hud-chip {
 .draw-btn:disabled {
   filter: grayscale(0.8);
   opacity: 0.7;
+}
+
+/* 던전 이야기: 카드 그림 아래쪽의 장 표시(열린 장은 금색) */
+.scene-pages {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(40, 28, 24, 0.7);
+}
+
+.scene-pages i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.scene-pages i.on {
+  background: var(--gold);
+}
+
+.world:not(.locked) .card-scene {
+  cursor: pointer;
+}
+
+/* 던전 이야기의 그림은 가로로 길다(5:4). 좌우가 잘리지 않게 그림 칸을 그 비율로 낮추고 종이 가운데에 둔다 */
+.story-book.wide .story-frame {
+  top: 21.5%;
+  height: 33%;
+  border-radius: 7% / 9%;
+}
+
+/* 그림책의 글 아래에 덧붙이는 말(다음 장이 열리는 조건) */
+.story-book .story-note {
+  margin: 4px 0 0;
+  font-size: clamp(0.72rem, 3.2cqw, 0.9rem);
+  color: #a08a68;
+  text-align: center;
+}
+
+/* 결과 창: 새 이야기가 열렸다는 표시 */
+.story-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0 8px;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  color: #4f9a78;
 }
 
 /* ───── 시안 대조 뒤의 손질 ───── */

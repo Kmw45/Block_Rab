@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>던전 이야기 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1400px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      h2 { font-size: 1.2rem; margin: 28px 0 8px; color: #ffd24d; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      .wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: #231d30; border-radius: 14px; overflow: hidden; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #332a47; vertical-align: top; }
+      th { color: #b9b0cc; font-weight: 600; }
+      .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 -20px 18px; padding: 12px 20px; background: #17131fee; backdrop-filter: blur(6px); }
+      .bar b { font-size: 1.1rem; color: #ffd24d; min-width: 9.5em; }
+      .bar input { flex: 1; min-width: 200px; accent-color: #ffd24d; }
+      button { padding: 6px 14px; border: 0; border-radius: 999px; background: #2d2540; color: #f3eefc; font: inherit; font-size: 0.9rem; cursor: pointer; }
+      .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
+      .concept h3 { margin: 0 0 2px; font-size: 1.05rem; color: #ffd24d; }
+      .concept p { margin: 0 0 10px; color: #cfc7e0; font-size: 0.9rem; }
+      .concept em { display: block; margin-top: 8px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+      /* 던전 카드 모형 */
+      .card { border-radius: 18px; overflow: hidden; background: #fbf1dc; color: #4a2f1e; box-shadow: 0 0 0 3px #ead9b5; }
+      .pic { position: relative; aspect-ratio: 5 / 4; background: #100d17; overflow: hidden; }
+      .pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s; }
+      .pic .tag { position: absolute; left: 10px; bottom: 8px; padding: 2px 10px; border-radius: 999px; background: rgba(20, 12, 30, 0.6); color: #fff; font-size: 0.8rem; }
+      .pic .dots { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 5px; }
+      .pic .dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); }
+      .pic .dots i.on { background: #ffd24d; }
+      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; }
+      .grid span { aspect-ratio: 1; border-radius: 10px; display: grid; place-items: center; font-weight: 700; background: #e9dcc0; color: #8a7558; background-size: 400% 300%; }
+      .grid span.done { background-color: #ffd24d; color: #5b3a12; }
+      .grid.mosaic { gap: 2px; padding: 10px; }
+      .grid.mosaic span { aspect-ratio: 4 / 3; border-radius: 3px; background-color: #8b8494; color: #d8d2e2; }
+      .grid.mosaic span.done { color: transparent; }
+      .story { margin: 0; padding: 4px 14px 12px; list-style: none; font-size: 0.88rem; }
+      .story li { padding: 5px 0; border-top: 1px dashed #dccba4; }
+      .story li.lock { color: #a8977a; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>던전 이야기 시안</h1>
+      <p class="lead">던전의 12단계를 깰수록 이야기가 풀리고, 스테이지 화면의 던전 그림이 이야기에 맞게 바뀌는 방식 네 가지입니다. 1번 던전(무너진 유적)으로 그려 봤습니다. 아래 막대를 움직이면 깬 단계 수에 따라 카드가 어떻게 보이는지 볼 수 있습니다. 게임에는 아직 넣지 않았습니다.</p>
+
+      <div class="bar">
+        <b id="count">깬 단계 0 / 12</b>
+        <input id="n" type="range" min="0" max="12" value="0" />
+        <button id="play">자동으로 넘기기</button>
+      </div>
+
+      <div class="row" id="row"></div>
+
+      <h2>상용 게임은 어떻게 하나</h2>
+      <div class="wrap">
+        <table>
+          <tr><th>방식</th><th>참고 게임</th><th>특징</th><th>시안</th></tr>
+          <tr><td>같은 장소가 조금씩 되살아난다</td><td>꿈의 정원, 꿈의 집 같은 꾸미기 퍼즐. 색이 돌아오는 연출은 오카미, Flower</td><td>퍼즐을 깬 결과가 한 장소에 쌓여 보여서 "내가 바꿨다"는 느낌이 가장 크다. 같은 구도의 그림이 여러 장 필요하다.</td><td>A</td></tr>
+          <tr><td>고비마다 이야기 장면을 한 장씩 준다</td><td>캔디크러시 사가의 에피소드 이야기, 컷 더 로프의 만화</td><td>이야기를 가장 또렷하게 전한다. 장면마다 새 그림이라 그릴 것이 많고, 그림끼리 이어지는 느낌은 약하다.</td><td>B</td></tr>
+          <tr><td>조각을 모아 그림 한 장을 완성한다</td><td>여러 퍼즐 게임의 조각 수집 이벤트</td><td>한 판을 깰 때마다 눈에 보이는 보상이 하나씩 생긴다(12단계 = 12조각). 그림은 던전마다 한 장이면 된다. 이야기는 그림 한 장에 담긴 만큼만 전한다.</td><td>C</td></tr>
+          <tr><td>그곳의 누군가가 깨어나 친구가 된다</td><td>고양이와 스프(식구가 늘어남), 오리와 눈먼 숲(정령을 되살림)</td><td>던전마다 정이 가는 인물이 생겨 이야기를 기억하기 쉽다. 던전 여덟 곳의 인물을 새로 디자인해야 한다.</td><td>D</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top: 8px">위 표는 알고 있는 내용을 정리한 것이고, 이번에 각 게임을 다시 확인하지는 않았습니다.</p>
+
+      <h2>만드는 양 (던전 여덟 곳)</h2>
+      <div class="wrap">
+        <table>
+          <tr><th>시안</th><th>새 그림</th><th>이야기 글</th><th>비고</th></tr>
+          <tr><td>A 빛이 번지는 그림</td><td>던전마다 3장, 모두 24장</td><td>던전마다 4줄</td><td>마지막 장은 지금의 던전 그림을 그대로 쓴다. 구도가 같아 그림 사이를 섞을 수 있으므로 한 단계를 깰 때마다 조금씩 밝아진다.</td></tr>
+          <tr><td>B 그림책 장면</td><td>던전마다 4장, 모두 32장</td><td>던전마다 4줄</td><td>지난 장면을 다시 넘겨 볼 수 있다.</td></tr>
+          <tr><td>C 조각 벽화</td><td>던전마다 1장, 모두 8장</td><td>던전마다 3~4줄</td><td>스테이지 칸 열두 개가 그대로 그림 조각이 된다. 지금의 던전 그림은 그대로 둔다.</td></tr>
+          <tr><td>D 지킴이가 깨어난다</td><td>던전마다 4장, 모두 32장</td><td>던전마다 4줄(지킴이의 말)</td><td>던전마다 지킴이 인물을 새로 정해야 한다.</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top: 8px">섞을 수도 있습니다. 예: A의 그림 변화에 D의 지킴이를 등장시키기, 또는 A에 C의 조각 칸을 더하기.</p>
+    </main>
+    <script>
+      const P = (k) => `screens/prog_${k}.png`;
+      const FINAL = 'screens/current/prog.png';
+      const CONCEPTS = [
+        {
+          id: 'a', title: 'A 빛이 번지는 그림', text: '같은 그림에 빛이 조금씩 돌아온다. 한 단계를 깰 때마다 조금씩 밝아지고, 4·8·12단계에서 이야기가 한 줄씩 풀린다.', ref: '꿈의 정원, 오카미',
+          frames: [P('a1'), P('a2'), P('a3'), FINAL], blend: true,
+          story: ['빛이 꺼지며 가장 먼저 무너진 회랑. 여우의 꼬리 끝만 희미하게 빛난다.', '꼬리빛이 닿자, 꺼져 있던 등불 하나가 깜빡 켜졌다.', '물길이 다시 흐르고 덩굴에 꽃이 피기 시작했다.', '회랑에 빛이 돌아왔다. 다음 던전으로 가는 문이 열린다.'],
+        },
+        {
+          id: 'b', title: 'B 그림책 장면', text: '4단계마다 새 장면이 한 장씩 열린다. 카드에는 가장 최근 장면이 보이고, 지난 장면을 넘겨 볼 수 있다.', ref: '캔디크러시 사가, 컷 더 로프',
+          frames: [P('b1'), P('b2'), P('b3'), P('b4')], dots: true,
+          story: ['도착: 무너진 회랑 앞에 선 여우.', '길을 잇다: 돌을 밀어 꺼진 바닥을 메우자 등불이 켜졌다.', '누군가 깨어난다: 돌 틈에서 유적지기가 눈을 떴다.', '빛이 돌아오다: 둘은 열린 문 너머를 함께 바라본다.'],
+        },
+        {
+          id: 'c', title: 'C 조각 벽화', text: '스테이지 칸 열두 개가 벽화의 조각이다. 한 단계를 깰 때마다 그 칸의 조각이 드러나고, 한 줄(4칸)을 다 채우면 이야기가 풀린다.', ref: '퍼즐 게임의 조각 수집',
+          frames: [FINAL, FINAL, FINAL, FINAL], mosaic: P('c'),
+          story: ['오래된 벽화가 먼지에 덮여 있다.', '첫 줄: 빛을 지닌 작은 여우가 회랑에 들어섰다.', '둘째 줄: 등불이 하나씩 켜지고 덩굴이 꽃을 피웠다.', '셋째 줄: 유적지기와 여우가 열린 문 앞에 섰다.'],
+        },
+        {
+          id: 'd', title: 'D 지킴이가 깨어난다', text: '던전마다 잠든 지킴이가 있다. 단계를 깰수록 지킴이가 깨어나 친구가 되고, 이야기는 지킴이의 말로 풀린다.', ref: '고양이와 스프, 오리와 눈먼 숲',
+          frames: [P('d1'), P('d2'), P('d3'), P('d4')],
+          story: ['이끼에 덮여 잠든 돌 지킴이. "……"', '"…따뜻해. 거기 누구니?"', '"작은 빛아, 고맙구나. 등불은 내가 들마."', '"심장으로 가는 길을 열어 줄게. 또 놀러 오렴."'],
+        },
+      ];
+      const row = document.getElementById('row');
+      for (const c of CONCEPTS) {
+        const el = document.createElement('section');
+        el.className = 'concept';
+        el.innerHTML = `<h3>${c.title}</h3><p>${c.text}</p>
+          <div class="card">
+            <div class="pic">${c.frames.map((f) => `<img src="${f}" alt="" />`).join('')}<span class="tag"></span>${c.dots ? '<span class="dots">' + '<i></i>'.repeat(4) + '</span>' : ''}</div>
+            <div class="grid ${c.mosaic ? 'mosaic' : ''}">${Array.from({ length: 12 }, (_, i) => `<span>${i + 1}</span>`).join('')}</div>
+            <ul class="story">${c.story.map(() => '<li></li>').join('')}</ul>
+          </div><em>참고: ${c.ref}</em>`;
+        row.append(el);
+        c.el = el;
+      }
+      function render(n) {
+        document.getElementById('count').textContent = `깬 단계 ${n} / 12`;
+        const stage = Math.floor(n / 4); // 풀린 이야기 수 - 1 (0~3)
+        for (const c of CONCEPTS) {
+          const imgs = c.el.querySelectorAll('.pic img');
+          imgs.forEach((img, i) => {
+            if (c.blend) {
+              // 구도가 같은 그림을 겹쳐 두고 다음 그림을 조금씩 드러낸다
+              const k = n / 4 - (i - 1);
+              img.style.opacity = i === 0 ? 1 : Math.max(0, Math.min(1, k));
+            } else img.style.opacity = i === stage ? 1 : 0;
+          });
+          c.el.querySelector('.tag').textContent = c.mosaic ? '던전 그림은 그대로' : c.blend ? `빛 ${Math.round((n / 12) * 100)}%` : `장면 ${stage + 1} / 4`;
+          c.el.querySelectorAll('.dots i').forEach((d, i) => d.classList.toggle('on', i <= stage));
+          c.el.querySelectorAll('.grid span').forEach((s, i) => {
+            s.classList.toggle('done', i < n);
+            if (c.mosaic) {
+              s.style.backgroundImage = i < n ? `url(${c.mosaic})` : '';
+              s.style.backgroundPosition = `${((i % 4) / 3) * 100}% ${(Math.floor(i / 4) / 2) * 100}%`;
+            }
+          });
+          c.el.querySelectorAll('.story li').forEach((li, i) => {
+            const open = i <= stage;
+            li.className = open ? '' : 'lock';
+            li.textContent = open ? c.story[i] : `🔒 ${i * 4}단계를 깨면 열려요`;
+          });
+        }
+      }
+      const input = document.getElementById('n');
+      input.oninput = () => render(Number(input.value));
+      let timer = 0;
+      document.getElementById('play').onclick = () => {
+        clearInterval(timer);
+        input.value = 0;
+        render(0);
+        timer = setInterval(() => {
+          if (Number(input.value) >= 12) return clearInterval(timer);
+          input.value = Number(input.value) + 1;
+          render(Number(input.value));
+        }, 900);
+      };
+      render(0);
+    </script>
+  </body>
+</html>

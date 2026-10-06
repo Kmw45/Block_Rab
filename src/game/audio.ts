@@ -99,6 +99,102 @@ export const sfx = {
     tone({ type: 'square', freq: 96, to: 62, dur: 0.12, vol: 0.2 });
     noise(0.08, 0.16, 260, 120, 1.2);
   },
+  // 부딪힌 것에 따라 다른 소리(boardView의 BumpKind)
+  bumpOf(kind: string) {
+    switch (kind) {
+      case 'wall': // 돌벽: 낮고 짧은 툭, 이어서 자갈이 구르는 소리
+        tone({ type: 'sine', freq: 130, to: 70, dur: 0.14, vol: 0.45 });
+        noise(0.06, 0.3, 900, 300, 1.2);
+        noise(0.09, 0.08, 2400, 1200, 2, 0.07);
+        break;
+      case 'fixed': // 고정 블록: 더 낮고 묵직하게
+        tone({ type: 'sine', freq: 85, to: 45, dur: 0.22, vol: 0.55 });
+        noise(0.1, 0.3, 400, 120, 1);
+        break;
+      case 'edge': // 판의 가장자리: 무디고 조용하게
+        tone({ type: 'sine', freq: 110, to: 80, dur: 0.1, vol: 0.25 });
+        noise(0.06, 0.1, 500, 200, 1);
+        break;
+      case 'normal': // 나무 상자: 속이 빈 똑똑
+        tone({ type: 'triangle', freq: 320, to: 210, dur: 0.07, vol: 0.3 });
+        tone({ type: 'triangle', freq: 250, to: 170, dur: 0.09, vol: 0.22, at: 0.07 });
+        noise(0.04, 0.14, 1500, 700, 1.5);
+        break;
+      case 'rail': // 쇠 블록: 땡 하고 울린다
+        tone({ type: 'square', freq: 620, dur: 0.05, vol: 0.12 });
+        tone({ type: 'sine', freq: 1240, dur: 0.5, vol: 0.14 });
+        tone({ type: 'sine', freq: 1853, dur: 0.35, vol: 0.07 });
+        noise(0.04, 0.18, 3000, 1500, 2);
+        break;
+      case 'ice': // 얼음: 유리처럼 맑은 팅
+        tone({ type: 'sine', freq: 2100, to: 1700, dur: 0.18, vol: 0.14 });
+        tone({ type: 'triangle', freq: 3150, dur: 0.12, vol: 0.06, at: 0.01 });
+        noise(0.05, 0.1, 5000, 3000, 3);
+        break;
+      case 'link': // 쌍둥이 블록: 두 음이 함께 울린다
+        tone({ type: 'sine', freq: 784, dur: 0.5, vol: 0.13 });
+        tone({ type: 'sine', freq: 1174.7, dur: 0.5, vol: 0.13, at: 0.03 });
+        tone({ type: 'triangle', freq: 1568, dur: 0.3, vol: 0.05, at: 0.05 });
+        break;
+      case 'locked': // 굳은 횟수 블록: 흙덩이처럼 둔하게
+        tone({ type: 'sine', freq: 110, to: 60, dur: 0.18, vol: 0.45 });
+        tone({ type: 'square', freq: 200, dur: 0.06, vol: 0.08, at: 0.02 });
+        noise(0.08, 0.2, 600, 200, 1);
+        break;
+      case 'door': // 닫힌 문: 쇠창살이 덜컹거린다
+        for (let i = 0; i < 4; i++) noise(0.05, 0.2 - i * 0.03, 1800 + Math.random() * 800, 700, 3, i * 0.05);
+        tone({ type: 'square', freq: 140, to: 90, dur: 0.2, vol: 0.14 });
+        tone({ type: 'sine', freq: 880, dur: 0.25, vol: 0.05, at: 0.02 });
+        break;
+      case 'oneway': // 일방통행: 바람이 밀어낸다
+        noise(0.18, 0.14, 2500, 600, 1.5);
+        tone({ type: 'triangle', freq: 520, to: 300, dur: 0.14, vol: 0.12 });
+        break;
+      case 'pit': // 구덩이: 돌멩이가 굴러떨어진다
+        [0, 0.09, 0.2].forEach((at, i) => tone({ type: 'triangle', freq: 700 - i * 170, to: 420 - i * 110, dur: 0.06, vol: 0.14 - i * 0.035, at }));
+        noise(0.05, 0.08, 1800, 900, 2);
+        break;
+      default:
+        this.bump();
+    }
+  },
+  // 블록을 밀 때: 블록의 재질에 따라 소리를 덧붙인다
+  pushOf(kind: string) {
+    this.push();
+    if (kind === 'railH' || kind === 'railV') {
+      noise(0.14, 0.09, 3600, 2200, 4);
+      tone({ type: 'sine', freq: 930, dur: 0.14, vol: 0.05 });
+    } else if (kind === 'count') tone({ type: 'square', freq: 1200, dur: 0.03, vol: 0.08, at: 0.1 });
+    else if (kind === 'link') {
+      tone({ type: 'sine', freq: 784, dur: 0.3, vol: 0.07, at: 0.04 });
+      tone({ type: 'sine', freq: 1174.7, dur: 0.3, vol: 0.07, at: 0.07 });
+    }
+  },
+  // 스위치가 눌릴 때와 풀릴 때
+  switchOn() {
+    tone({ type: 'square', freq: 300, to: 200, dur: 0.05, vol: 0.16 });
+    tone({ type: 'sine', freq: 660, dur: 0.16, vol: 0.14, at: 0.04 });
+    tone({ type: 'sine', freq: 990, dur: 0.28, vol: 0.12, at: 0.12 });
+  },
+  switchOff() {
+    tone({ type: 'square', freq: 250, to: 150, dur: 0.05, vol: 0.16 });
+    tone({ type: 'sine', freq: 660, to: 440, dur: 0.22, vol: 0.12, at: 0.04 });
+  },
+  // 여우가 스위치를 밟았을 때: 가벼워서 눌리지 않고 딸깍하기만 한다
+  tick() {
+    tone({ type: 'triangle', freq: 900, dur: 0.04, vol: 0.1 });
+  },
+  // 클리어: 빛기둥을 타고 떠오르는 소리, 이어서 별이 터지는 소리
+  enter() {
+    tone({ type: 'sine', freq: 660, dur: 0.2, vol: 0.14 });
+    tone({ type: 'sine', freq: 380, to: 1700, dur: 0.6, vol: 0.12, at: 0.42, attack: 0.1 });
+    noise(0.6, 0.06, 1800, 9000, 2, 0.42);
+  },
+  starBurst() {
+    [1318.5, 1760, 2637].forEach((f, i) => tone({ type: 'sine', freq: f, dur: 0.6, vol: 0.12, at: i * 0.02 }));
+    noise(0.35, 0.2, 7000, 1800, 0.8);
+    tone({ type: 'sine', freq: 180, to: 70, dur: 0.25, vol: 0.35 });
+  },
   slide(cells: number) {
     const dur = 0.12 + cells * 0.06;
     noise(dur, 0.2, 2600, 5200, 3, 0, 'bandpass');

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>인게임 톤 시안</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 28px 20px 60px; background: #17131f; color: #f3eefc; font-family: system-ui, 'Malgun Gothic', sans-serif; line-height: 1.65; }
+      main { max-width: 1400px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; margin: 0 0 4px; }
+      h2 { font-size: 1.2rem; margin: 28px 0 8px; color: #ffd24d; }
+      .lead { color: #b9b0cc; margin: 0 0 12px; }
+      .wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: #231d30; border-radius: 14px; overflow: hidden; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #332a47; vertical-align: top; }
+      th { color: #b9b0cc; font-weight: 600; }
+      .row { display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+      figure { margin: 0; min-width: 220px; }
+      figure img { width: 100%; aspect-ratio: 9 / 16; object-fit: cover; object-position: top; border-radius: 14px; display: block; background: #100d17; }
+      figure.now img { outline: 2px dashed #4a4263; outline-offset: -2px; }
+      figcaption b { display: block; margin-top: 10px; font-size: 1rem; color: #ffd24d; }
+      figcaption span { display: block; color: #cfc7e0; font-size: 0.9rem; }
+      figcaption em { display: block; margin-top: 4px; color: #9c93b3; font-size: 0.85rem; font-style: normal; }
+      ul { margin: 6px 0 0; padding-left: 1.2em; color: #cfc7e0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>인게임 톤 시안</h1>
+      <p class="lead">플레이 화면의 구성(위쪽 알약, 판, 이동 막대, 아래 버튼 셋)은 그대로 두고, 판 안의 벽·블록·구덩이·바닥과 배경의 그림 톤만 여우에 맞춘 시안입니다. 같은 스테이지(1-3)를 네 방향으로 그렸습니다. 게임에는 아직 넣지 않았습니다. 그림을 누르면 크게 보입니다.</p>
+
+      <h2>지금 화면에서 여우와 어긋나는 점</h2>
+      <ul>
+        <li>벽과 고정 블록이 짙은 회색·검정이라 판에서 가장 무겁고, 크림색 여우와 명도 차이가 크다.</li>
+        <li>벽은 돌 결과 음영이 들어가 입체적인데, 여우는 납작한 파스텔에 갈색 외곽선이다.</li>
+        <li>구덩이가 새까만 사각형이라 그림책 느낌과 따로 논다.</li>
+        <li>배경이 던전 색 한 가지 민무늬라 판만 떠 있는 느낌이다.</li>
+      </ul>
+
+      <h2>상용 게임은 어떻게 맞추나</h2>
+      <div class="wrap">
+        <table>
+          <tr><th>방식</th><th>참고 게임</th><th>특징</th><th>시안</th></tr>
+          <tr><td>캐릭터와 같은 외곽선·채색으로 전부 그린다</td><td>포켓몬 카페 리믹스, 고양이와 스프</td><td>캐릭터, 소품, 배경이 같은 갈색 선과 수채풍 파스텔을 쓴다. 가장 따뜻하고 한 장의 그림책처럼 보인다. 그릴 것이 많고, 판이 배경에 묻히지 않게 명도를 관리해야 한다.</td><td>A</td></tr>
+          <tr><td>배경과 고정물은 단순하게, 움직이는 것만 또렷하게</td><td>A Good Snowman Is Hard to Build, Two Dots</td><td>질감을 빼고 색 면만 쓴다. 밀 수 있는 것과 캐릭터에만 선을 줘서 퍼즐이 가장 잘 읽힌다. 던전마다의 분위기는 색으로만 낸다.</td><td>B</td></tr>
+          <tr><td>판을 작은 디오라마(장난감)로 만든다</td><td>동물의 숲 포켓 캠프, 캡틴 토드</td><td>벽과 블록에 두께를 주고 판 자체를 손에 올린 모형처럼 보이게 한다. 아기자기하지만 위에서 본 격자와 두께 표현이 부딪히지 않게 해야 한다.</td><td>C</td></tr>
+          <tr><td>어두운 저녁빛에 캐릭터의 빛으로 대비를 준다</td><td>고양이와 스프의 밤 장면</td><td>바닥과 벽을 어둡고 차분하게 두고 캐릭터와 빛나는 것만 밝힌다. "빛을 되찾는다"는 설정과 맞고 여우가 가장 눈에 띈다. 전체가 어두워 오래 보면 답답할 수 있다.</td><td>D</td></tr>
+        </table>
+      </div>
+      <p class="lead" style="margin-top: 8px">위 표는 알고 있는 내용을 정리한 것이고, 이번에 각 게임의 화면을 다시 확인하지는 않았습니다.</p>
+
+      <h2>시안</h2>
+      <div class="row">
+        <figure class="now"><a href="screens/current/tone.png"><img src="screens/current/tone.png" alt="지금 화면" /></a><figcaption><b>지금 게임</b><span>모래 바닥, 짙은 회색 돌벽, 민무늬 배경.</span></figcaption></figure>
+        <figure><a href="screens/tone_a.png"><img src="screens/tone_a.png" alt="A" /></a><figcaption><b>A 그림책 수채</b><span>벽을 이끼 낀 연보라 조약돌로, 배경은 흐린 유적 수채.</span><em>참고: 포켓몬 카페 리믹스, 고양이와 스프</em></figcaption></figure>
+        <figure><a href="screens/tone_b.png"><img src="screens/tone_b.png" alt="B" /></a><figcaption><b>B 미니멀 파스텔</b><span>질감 없이 색 면만. 여우와 상자에만 외곽선.</span><em>참고: A Good Snowman Is Hard to Build, Two Dots</em></figcaption></figure>
+        <figure><a href="screens/tone_c.png"><img src="screens/tone_c.png" alt="C" /></a><figcaption><b>C 장난감 디오라마</b><span>두께가 있는 판과 통통한 벽. 손바닥 위의 모형 느낌.</span><em>참고: 동물의 숲 포켓 캠프, 캡틴 토드</em></figcaption></figure>
+        <figure><a href="screens/tone_d.png"><img src="screens/tone_d.png" alt="D" /></a><figcaption><b>D 저녁빛과 등불</b><span>어두운 판에 꼬리 끝과 출구의 빛이 번진다.</span><em>참고: 고양이와 스프의 밤 장면</em></figcaption></figure>
+      </div>
+
+      <h2>고른 뒤에 하는 일</h2>
+      <ul>
+        <li>시안은 화면 한 장을 통째로 그린 그림입니다. 실제로는 그 톤으로 벽, 고정 블록, 상자, 구덩이, 바닥, 출구와 던전 여덟 곳의 기믹 타일(빙판, 마법진, 스위치와 문, 무너지는 바닥 등), 블록 종류를 낱장으로 다시 그립니다.</li>
+        <li>배경은 던전마다 색이나 그림을 달리합니다.</li>
+        <li>두 시안을 섞을 수도 있습니다(예: A의 벽과 B의 배경).</li>
+      </ul>
+    </main>
+  </body>
+</html>

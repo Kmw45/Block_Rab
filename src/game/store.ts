@@ -123,6 +123,11 @@ export function isPassed(id: string): boolean {
   return (save.stars[id] ?? 0) > 0 || save.skipped === id;
 }
 
+// 그 던전에서 지난 스테이지 수(건너뛴 것 포함). 던전 이야기가 이 수에 따라 열린다
+export function worldPassed(world: number): number {
+  return worldLevels(world).filter((l) => isPassed(l.id)).length;
+}
+
 // 그 던전의 스테이지를 모두 지났는가(건너뛴 것 포함)
 export function isWorldCleared(world: number): boolean {
   return worldLevels(world).every((l) => isPassed(l.id));
